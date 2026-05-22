@@ -241,3 +241,23 @@ option {
     }
 }
 
+.error-message {
+            display: none;
+            background-color: #fdecea;
+            color: #b91c1c;
+            border: 1px solid #f87171;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            font-size: 0.875rem;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-message.locked {
+            background-color: #fff3cd;
+            color: #92400e;
+            border-color: #fbbf24;
+        }

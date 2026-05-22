@@ -1,10 +1,23 @@
-<?php include 'includes/sidebar.php'; ?>
-<?php include 'includes/header.php'; ?>
+<?php
 
-<main class="main-content">
-    <div class="container">
 
-    </div>
-</main>
+date_default_timezone_set('Asia/Manila');
+require_once __DIR__ . '/app/bootstrap.php';
 
-<?php include 'includes/footer.php'; ?>
+use App\Core\Router;
+use App\Core\Session;
+
+Session::start();
+
+
+
+// for the routing
+$router = new Router();
+$router->dispatch();
+
+
+
+
+
+
+

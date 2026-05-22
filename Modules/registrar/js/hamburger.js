@@ -97,4 +97,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 250);
     });
+
+
+  document.querySelectorAll('.menu-toggle').forEach(dropdown => {
+
+    dropdown.addEventListener('click', (e) => {
+
+        let icon = e.currentTarget.querySelector('i');
+
+        if (icon.classList.contains('fa-chevron-down')) {
+            icon.classList.remove("fa-chevron-down");
+            icon.classList.add("fa-chevron-up");
+        } else {
+            icon.classList.remove("fa-chevron-up");
+            icon.classList.add("fa-chevron-down");
+        }
+
+    });
+
+});
+
+
+
+
 });

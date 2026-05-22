@@ -1,9 +1,17 @@
-<?php include 'includes/sidebar.php'; ?>
-<?php include 'includes/header.php'; ?>
+<?php
+require_once('../../auth/guard.php');
+require_once 'classes/Page.php';
+
+$pageController = new Page();
+$currentPage = $pageController->getPage();
+
+include 'includes/sidebar.php';
+include 'includes/header.php';
+?>
 
 <main class="main-content">
     <div class="container">
-
+        <?php $pageController->render(); ?>
     </div>
 </main>
 

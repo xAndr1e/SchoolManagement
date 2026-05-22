@@ -7,6 +7,7 @@
     font-family: 'Inter', sans-serif;
 }
 
+
 :root {
     --color1: rgba(32, 0, 130, 1); 
     --color2: rgba(51, 65, 85, 1);
@@ -422,3 +423,15 @@ footer {
         margin-top: 0;
     }
 }
+
+
+/* Reset the damage done by the * and button selectors */
+.driver-popover * {
+    margin: initial;
+    padding: initial;
+}
+
+.driver-popover button {
+    margin-top: 0 !important; /* Removes that 40px gap */
+}
+

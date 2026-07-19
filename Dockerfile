@@ -39,4 +39,10 @@ RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-available
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["apache2-foreground"]
+# Startup script re-applies the MPM fix at container boot time (not
+# just at build time), since the conflict was observed reappearing
+# specifically at runtime on this platform.
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+CMD ["/usr/local/bin/start.sh"]

@@ -7,6 +7,11 @@ RUN docker-php-ext-install pdo pdo_mysql mysqli
 # some libraries/assets may expect it)
 RUN a2enmod rewrite
 
+# mod_php requires the prefork MPM. Some base image updates enable
+# event/worker MPM alongside it, which causes Apache to refuse to start
+# with "More than one MPM loaded". Force prefork only.
+RUN a2dismod mpm_event mpm_worker 2>/dev/null; a2enmod mpm_prefork
+
 # Copy application code into Apache's web root
 COPY . /var/www/html/
 

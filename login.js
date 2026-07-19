@@ -73,7 +73,7 @@ form.addEventListener('submit', async function (e) {
     setLoading(true);
 
     try {
-        const response = await fetch('/sms/auth/login.php', {
+        const response = await fetch('/auth/login.php', {
             method: 'POST',
             body: new FormData(form)
         });

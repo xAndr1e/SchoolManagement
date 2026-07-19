@@ -78,15 +78,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['department_name'] = $user['department_name'];   // 👈 fixed
 
         $redirectMap = [
-            1 => '/sms/modules/school-directress/index.php',
-            2 => '/sms/modules/enrollment/index.php',
-            3 => '/sms/modules/registrar/',
-            4 => '/sms/modules/clinic/index.php',
-            5 => '/sms/modules/library/index.php',
-            6 => '/sms/modules/laboratory/',
-            7 => '/sms/modules/monitoring/index.php',
-            8 => '/sms/modules/guidance/index.php',
-            9 => '/sms/modules/college-coor/index.php',
+            1 => '/modules/school-directress/index.php',
+            2 => '/modules/enrollment/index.php',
+            3 => '/modules/registrar/',
+            4 => '/modules/clinic/index.php',
+            5 => '/modules/library/index.php',
+            6 => '/modules/laboratory/',
+            7 => '/modules/monitoring/index.php',
+            8 => '/modules/guidance/index.php',
+            9 => '/modules/college-coor/index.php',
         ];
 
         $role = (int) $user['role'];

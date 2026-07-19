@@ -3,7 +3,7 @@
  * views/layout.php
  * Master layout — BCP design + Library Management System
  */
-$userInitial = strtoupper(substr($userName ?? 'L', 0, 1));
+$userInitial = strtoupper(substr($employeeName, 0, 1));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,7 +73,7 @@ $userInitial = strtoupper(substr($userName ?? 'L', 0, 1));
                         <div class="dropdown-user-info">
                             <div class="dropdown-avatar"><?= $userInitial ?></div>
                             <div>
-                                <strong><?= htmlspecialchars($userName ?? 'Librarian') ?></strong>
+                                <strong><?= htmlspecialchars($employeeName ?? 'Librarian') ?></strong>
                                 <span><?= htmlspecialchars($userRole ?? 'Staff') ?></span>
                             </div>
                         </div>
@@ -96,7 +96,7 @@ $userInitial = strtoupper(substr($userName ?? 'L', 0, 1));
     <!-- User info -->
     <div class="sidebar-header">
         <div class="user_avatar"><?= $userInitial ?></div>
-        <h1 class="employee_name"><?= htmlspecialchars($userName ?? 'Librarian') ?></h1>
+        <h1 class="employee_name"><?= htmlspecialchars($employeeName ?? 'Librarian') ?></h1>
         <p class="employee_position"><?= htmlspecialchars($userPosition ?? $userRole ?? 'Staff') ?></p>
     </div>
 

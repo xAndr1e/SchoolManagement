@@ -7,10 +7,6 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 // 2. Guard — redirect to login if not authenticated
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: login.php');
-    exit;
-}
 
 // 3. Load app
 require_once __DIR__ . '/includes/config.php';
@@ -34,10 +30,10 @@ class LibraryPageController
     public function render(): void
     {
         $libraryName  = $this->settings->get('library_name', 'BCP School Library');
-        $userName     = $_SESSION['name']     ?? 'Librarian';
+        $employeeName     = $_SESSION['first_name ']  ?? 'Librarian';
         $userRole     = $_SESSION['role']     ?? 'Staff';
         $userPosition = $_SESSION['position'] ?? $userRole;
-        $userInitial  = strtoupper(substr($userName, 0, 1));
+        $userInitial  = strtoupper(substr($employeeName, 0, 1));
 
         $currentDate  = date('D, M j Y');
         $currentYear  = date('Y');

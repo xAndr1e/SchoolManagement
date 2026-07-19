@@ -1,6 +1,6 @@
 /* ── Welcome Banner ───────────────────────────── */
     .welcome-banner {
-        background: linear-gradient(135deg, var(--color1) 0%, var(--color7) 100%);
+        background: var(--color1);
         border-radius: 10px;
         padding: 1.6rem 2rem;
         margin-bottom: 1.75rem;
@@ -18,9 +18,6 @@
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.05);
     }
-
-    .welcome-banner::before { width: 180px; height: 180px; top: -50px; right: -30px; }
-    .welcome-banner::after  { width: 120px; height: 120px; bottom: -50px; right: 130px; }
 
     .welcome-text h2 {
         font-size: 1.3rem;
@@ -88,17 +85,6 @@
     .summary-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(32, 0, 130, 0.1);
-    }
-
-    /* Left accent bar */
-    .summary-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 4px;
-        border-radius: 10px 0 0 10px;
     }
 
     /* ── Card Accent Colors ───────────────────────── */

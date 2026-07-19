@@ -15,5 +15,5 @@ if (ini_get('session.use_cookies')) {
 session_destroy();
 
 // Redirect to login.php (one level up from /auth/)
-header('Location: ../login.php');
+header('Location: ../../../index.php');
 exit;

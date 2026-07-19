@@ -43,7 +43,4 @@ class Database {
     }
 }
 
-$database = new Database();
-$roles = $database->getRoles();
-$conn = $database->getConnection();
 

@@ -10,12 +10,9 @@
 @import url('pages/approval-decision-support.css');
 @import url('pages/concerns-issue-tracking.css');
 @import url('pages/report-submission-management.css');
-@import url('pages/analytics-reports.css');
-@import url('pages/dashboard-overview.css');
-@import url('pages/counseling-records.css');
-@import url('pages/student-profiling.css');
-@import url('pages/incident-reports.css');
-@import url('pages/appointments.css');
+@import url('pages/students.css');
+@import url('pages/cases.css');
+
 /*Components CSS*/
 @import url('components/dropdown.css');
 

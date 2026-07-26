@@ -7,9 +7,9 @@ class Page {
     /*Sidebar Content*/ 
     private $labels = [
         'dashboard-overview'    => 'Dashboard Overview',
-        'student-profiling'     => 'Student Profiling',
-        'counseling-records'    => 'Counseling Records',
-        'incident-reports'      => 'Incident Reports',
+        'students'     => 'Students',
+        'cases'    => 'Cases',
+        'incident'      => 'Incident',
         'appointments'          => 'Appointments',
         'analytics-reports'     => 'Analytics Reports',
         'report-submission'     => 'Report Submission',
@@ -20,9 +20,9 @@ class Page {
     /*Content Sections*/ 
     private $sections = [
         'top'                   => ['dashboard-overview'],
-        'student-management'    => ['student-profiling'],
-        'counseling-services'   => ['counseling-records','appointments'],
-        'disciplinary'          => ['incident-reports'],  
+        'student-management'    => ['students'],
+        'counseling-services'   => ['cases','appointments'],
+        'disciplinary'          => ['incident'],  
         'analytics'             => ['analytics-reports'],
         'requests-and-reports'  => ['report-submission', 'concern-submission', 'approval-submission']
     ];

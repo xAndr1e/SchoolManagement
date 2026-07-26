@@ -6,4 +6,5 @@ import './components/dropdown.js';
 import './modules/report.js';
 import './modules/issue.js';
 import './modules/approval.js';
-import './modules/counseling-records.js';
+import './modules/students.js';
+import './modules/cases.js';

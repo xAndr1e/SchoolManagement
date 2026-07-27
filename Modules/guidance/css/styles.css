@@ -12,6 +12,7 @@
 @import url('pages/report-submission-management.css');
 @import url('pages/students.css');
 @import url('pages/cases.css');
+@import url('pages/appointments.css');
 
 /*Components CSS*/
 @import url('components/dropdown.css');

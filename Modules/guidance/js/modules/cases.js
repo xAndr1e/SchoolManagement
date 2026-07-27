@@ -22,7 +22,7 @@
 (function () {
     'use strict';
 
-    const API_URL = 'controller/CasesController.php';
+    const API_URL = '/sms/modules/guidance/controller/CasesController.php';
 
     const els = {
         searchInput: document.getElementById('caseSearchInput'),

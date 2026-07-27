@@ -8,3 +8,4 @@ import './modules/issue.js';
 import './modules/approval.js';
 import './modules/students.js';
 import './modules/cases.js';
+import './modules/appointments.js';

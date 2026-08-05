@@ -258,40 +258,28 @@ class Students
        to a case (case_id NOT NULL), so both join through gd_cases to
        reach the student. Appointments and incidents link directly via
        student_number (case_id is optional/nullable on those two).
+       Counseling/Referral detail is intentionally NOT surfaced here
+       anymore — the profile was too crowded. getCaseHistory() below
+       gives the case-level summary; drilling into a specific case's
+       referral/session detail happens by navigating to the Cases module.
     --------------------------------------------------------------- */
-    public function getCounselingHistory(string $studentNumber): array
+    public function getCaseHistory(string $studentNumber): array
     {
         $stmt = $this->conn->prepare("
             SELECT
-                cs.session_date AS date,
-                cs.session_type AS title,
-                cs.session_notes AS `desc`,
-                cs.recommendations,
-                cs.next_session,
-                cs.duration_minutes,
-                'Completed' AS status
-            FROM gd_counseling_sessions cs
-            JOIN gd_cases c ON c.case_id = cs.case_id
+                c.case_id,
+                c.case_number,
+                c.case_type,
+                c.priority,
+                c.status,
+                c.summary,
+                c.opened_at,
+                c.closed_at,
+                CONCAT(e.first_name, ' ', e.last_name) AS counselor_name
+            FROM gd_cases c
+            JOIN sms_employee e ON e.employee_id = c.counselor_id
             WHERE c.student_number = :student_number
-            ORDER BY cs.session_date DESC
-        ");
-        $stmt->execute(['student_number' => $studentNumber]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getReferralHistory(string $studentNumber): array
-    {
-        $stmt = $this->conn->prepare("
-            SELECT
-                r.referral_date AS date,
-                r.referral_source AS title,
-                r.referral_reason AS `desc`,
-                r.referral_status AS status,
-                r.remarks
-            FROM gd_referrals r
-            JOIN gd_cases c ON c.case_id = r.case_id
-            WHERE c.student_number = :student_number
-            ORDER BY r.referral_date DESC
+            ORDER BY c.opened_at DESC
         ");
         $stmt->execute(['student_number' => $studentNumber]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

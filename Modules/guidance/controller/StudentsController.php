@@ -76,11 +76,13 @@ switch ($action) {
         }
 
         $overview['remarks_history']     = formatHistoryRows($studentsClass->getRemarks($studentNumber));
-        $overview['counseling_history']  = formatHistoryRows($studentsClass->getCounselingHistory($studentNumber));
-        $overview['referral_history']    = formatHistoryRows($studentsClass->getReferralHistory($studentNumber));
         $overview['appointment_history'] = formatHistoryRows($studentsClass->getAppointmentHistory($studentNumber));
         $overview['incident_history']    = formatHistoryRows($studentsClass->getIncidentHistory($studentNumber));
         $overview['documents']           = formatHistoryRows($studentsClass->getDocuments($studentNumber));
+
+        $cases = $studentsClass->getCaseHistory($studentNumber);
+        $overview['case_history'] = formatCaseHistory($cases);
+        $overview['case_summary'] = summarizeCases($cases);
 
         echo json_encode(['success' => true, 'data' => $overview]);
         break;
@@ -208,4 +210,37 @@ function formatHistoryRows(array $rows): array
         }
         return $row;
     }, $rows);
+}
+
+function formatCaseHistory(array $cases): array
+{
+    return array_map(function ($case) {
+        $case['opened_at_display'] = date('M d, Y', strtotime($case['opened_at']));
+        $case['closed_at_display'] = !empty($case['closed_at']) ? date('M d, Y', strtotime($case['closed_at'])) : null;
+        return $case;
+    }, $cases);
+}
+
+// Quick-glance counts for the Overview badge cluster (e.g. "4 Cases — 1 In
+// Progress, 3 Closed"), broken down by both status and case_type so a
+// pattern like "mostly self-referrals" vs "mostly incidents" is visible
+// without opening the full Cases tab.
+function summarizeCases(array $cases): array
+{
+    $summary = [
+        'total' => count($cases),
+        'by_status' => ['Open' => 0, 'In Progress' => 0, 'Closed' => 0],
+        'by_type' => ['Referral' => 0, 'Walk-in' => 0, 'Self Referral' => 0, 'Incident' => 0],
+    ];
+
+    foreach ($cases as $case) {
+        if (isset($summary['by_status'][$case['status']])) {
+            $summary['by_status'][$case['status']]++;
+        }
+        if (isset($summary['by_type'][$case['case_type']])) {
+            $summary['by_type'][$case['case_type']]++;
+        }
+    }
+
+    return $summary;
 }

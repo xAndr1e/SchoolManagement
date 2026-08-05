@@ -91,7 +91,18 @@ switch ($action) {
         break;
 
     // ------------------------------------------------------------------
-    // POST create a case directly (Walk-in / Self Referral / Incident)
+    // GET  unlinked_incidents — incidents with no case yet, for the
+    // "Select Incident" picker when case_type = 'Incident'
+    // ------------------------------------------------------------------
+    case 'unlinked_incidents':
+        $incidents = array_map('formatUnlinkedIncident', $casesClass->getUnlinkedIncidents());
+        echo json_encode(['success' => true, 'data' => $incidents]);
+        break;
+
+    // ------------------------------------------------------------------
+    // POST create a case directly (Walk-in / Self Referral), or from an
+    // existing incident (case_type = 'Incident' — strictly requires an
+    // incident_id; there is no freeform "Incident" case without one)
     // ------------------------------------------------------------------
     case 'create_case':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -99,26 +110,49 @@ switch ($action) {
             exit;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $input    = json_decode(file_get_contents('php://input'), true) ?? [];
+        $caseType = $input['case_type'] ?? '';
+        $counselorId = $input['counselor_id'] ?? '';
 
-        $studentNumber = $input['student_number'] ?? '';
-        $counselorId   = $input['counselor_id'] ?? '';
-        $caseType      = $input['case_type'] ?? '';
-
-        if ($studentNumber === '' || $counselorId === '' || !in_array($caseType, ['Walk-in', 'Self Referral', 'Incident'], true)) {
-            echo json_encode(['success' => false, 'message' => 'student_number, counselor_id, and a valid case_type are required.']);
+        if ($counselorId === '' || !in_array($caseType, ['Walk-in', 'Self Referral', 'Incident'], true)) {
+            echo json_encode(['success' => false, 'message' => 'counselor_id and a valid case_type are required.']);
             exit;
         }
 
-        $caseId = $casesClass->createCase([
-            'student_number' => $studentNumber,
-            'counselor_id'   => $counselorId,
-            'case_type'      => $caseType,
-            'priority'       => $input['priority'] ?? 'Medium',
-            'summary'        => trim($input['summary'] ?? ''),
-        ]);
+        try {
+            if ($caseType === 'Incident') {
+                $incidentId = $input['incident_id'] ?? '';
+                if ($incidentId === '') {
+                    echo json_encode(['success' => false, 'message' => 'An existing incident must be selected for an Incident-type case.']);
+                    exit;
+                }
 
-        echo json_encode(['success' => true, 'message' => 'Case created successfully.', 'data' => ['case_id' => $caseId]]);
+                $caseId = $casesClass->createCaseFromIncident([
+                    'incident_id'   => $incidentId,
+                    'counselor_id'  => $counselorId,
+                    'priority'      => $input['priority'] ?? 'Medium',
+                    'summary'       => trim($input['summary'] ?? ''),
+                ]);
+            } else {
+                $studentNumber = $input['student_number'] ?? '';
+                if ($studentNumber === '') {
+                    echo json_encode(['success' => false, 'message' => 'student_number is required.']);
+                    exit;
+                }
+
+                $caseId = $casesClass->createCase([
+                    'student_number' => $studentNumber,
+                    'counselor_id'   => $counselorId,
+                    'case_type'      => $caseType,
+                    'priority'       => $input['priority'] ?? 'Medium',
+                    'summary'        => trim($input['summary'] ?? ''),
+                ]);
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Case created successfully.', 'data' => ['case_id' => $caseId]]);
+        } catch (RuntimeException $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
         break;
 
     // ------------------------------------------------------------------
@@ -310,6 +344,12 @@ switch ($action) {
 }
 
 // ── Formatting helpers ───────────────────────────────────────────────────────
+function formatUnlinkedIncident(array $incident): array
+{
+    $incident['incident_date_display'] = date('M d, Y g:i A', strtotime($incident['incident_date']));
+    return $incident;
+}
+
 function formatCaseRow(array $row): array
 {
     $row['opened_at_display'] = date('M d, Y', strtotime($row['opened_at']));

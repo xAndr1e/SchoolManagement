@@ -22,62 +22,82 @@
 (function () {
     'use strict';
 
-    const API_URL = '/sms/modules/guidance/controller/CasesController.php';
+    const API_URL = 'controller/CasesController.php';
+    const PAGE_KEY = 'cases'; // must match the Page class's $_GET['page'] key
 
-    const els = {
-        searchInput: document.getElementById('caseSearchInput'),
-        filterStatus: document.getElementById('caseFilterStatus'),
-        filterPriority: document.getElementById('caseFilterPriority'),
-        filterType: document.getElementById('caseFilterType'),
-        filterCounselor: document.getElementById('caseFilterCounselor'),
-        tableBody: document.querySelector('.case-table tbody'),
-        pagination: document.querySelector('.case-pagination'),
+    /* ---------------------------------------------------------
+       Element references — rebuilt fresh on every init() call.
+       See students.js for the full explanation of why this can't
+       be a one-time top-level const capture.
+    --------------------------------------------------------- */
+    let els = {};
 
-        createBtn: document.getElementById('caseCreateBtn'),
-        createModal: document.getElementById('caseCreateModal'),
-        createForm: document.getElementById('caseCreateForm'),
-        createType: document.getElementById('caseCreateType'),
-        createCloseBtn: document.getElementById('caseCreateCloseBtn'),
-        createCancelBtn: document.getElementById('caseCreateCancelBtn'),
+    function queryElements() {
+        return {
+            searchInput: document.getElementById('caseSearchInput'),
+            filterStatus: document.getElementById('caseFilterStatus'),
+            filterPriority: document.getElementById('caseFilterPriority'),
+            filterType: document.getElementById('caseFilterType'),
+            filterCounselor: document.getElementById('caseFilterCounselor'),
+            tableBody: document.querySelector('.case-table tbody'),
+            pagination: document.querySelector('.case-pagination'),
 
-        overlay: document.getElementById('caseOverlay'),
-        drawer: document.getElementById('caseDrawer'),
-        drawerCloseBtn: document.getElementById('caseDrawerCloseBtn'),
-        drawerNumber: document.getElementById('caseDrawerNumber'),
-        drawerTitle: document.getElementById('caseDrawerTitle'),
-        drawerBadges: document.getElementById('caseDrawerBadges'),
-        referralTabBtn: document.getElementById('caseReferralTabBtn'),
-        referralContent: document.getElementById('caseReferralContent'),
-        sessionList: document.getElementById('caseSessionList'),
+            createBtn: document.getElementById('caseCreateBtn'),
+            createModal: document.getElementById('caseCreateModal'),
+            createForm: document.getElementById('caseCreateForm'),
+            createType: document.getElementById('caseCreateType'),
+            createCloseBtn: document.getElementById('caseCreateCloseBtn'),
+            createCancelBtn: document.getElementById('caseCreateCancelBtn'),
 
-        assignCounselorBtn: document.getElementById('caseAssignCounselorBtn'),
-        updateStatusBtn: document.getElementById('caseUpdateStatusBtn'),
-        setPriorityBtn: document.getElementById('caseSetPriorityBtn'),
-        recordSessionBtn: document.getElementById('caseRecordSessionBtn'),
+            overlay: document.getElementById('caseOverlay'),
+            drawer: document.getElementById('caseDrawer'),
+            drawerCloseBtn: document.getElementById('caseDrawerCloseBtn'),
+            drawerNumber: document.getElementById('caseDrawerNumber'),
+            drawerTitle: document.getElementById('caseDrawerTitle'),
+            drawerBadges: document.getElementById('caseDrawerBadges'),
+            referralTabBtn: document.getElementById('caseReferralTabBtn'),
+            referralContent: document.getElementById('caseReferralContent'),
+            sessionList: document.getElementById('caseSessionList'),
 
-        sessionModal: document.getElementById('caseSessionModal'),
-        sessionModalTitle: document.getElementById('caseSessionModalTitle'),
-        sessionForm: document.getElementById('caseSessionForm'),
-        sessionCloseBtn: document.getElementById('caseSessionCloseBtn'),
-        sessionCancelBtn: document.getElementById('caseSessionCancelBtn'),
+            assignCounselorBtn: document.getElementById('caseAssignCounselorBtn'),
+            updateStatusBtn: document.getElementById('caseUpdateStatusBtn'),
+            setPriorityBtn: document.getElementById('caseSetPriorityBtn'),
+            recordSessionBtn: document.getElementById('caseRecordSessionBtn'),
 
-        quickActionModal: document.getElementById('caseQuickActionModal'),
-        quickActionTitle: document.getElementById('caseQuickActionTitle'),
-        quickActionBody: document.getElementById('caseQuickActionBody'),
-        quickActionForm: document.getElementById('caseQuickActionForm'),
-        quickActionCloseBtn: document.getElementById('caseQuickActionCloseBtn'),
-        quickActionCancelBtn: document.getElementById('caseQuickActionCancelBtn'),
-    };
+            sessionModal: document.getElementById('caseSessionModal'),
+            sessionModalTitle: document.getElementById('caseSessionModalTitle'),
+            sessionForm: document.getElementById('caseSessionForm'),
+            sessionCloseBtn: document.getElementById('caseSessionCloseBtn'),
+            sessionCancelBtn: document.getElementById('caseSessionCancelBtn'),
+
+            quickActionModal: document.getElementById('caseQuickActionModal'),
+            quickActionTitle: document.getElementById('caseQuickActionTitle'),
+            quickActionBody: document.getElementById('caseQuickActionBody'),
+            quickActionForm: document.getElementById('caseQuickActionForm'),
+            quickActionCloseBtn: document.getElementById('caseQuickActionCloseBtn'),
+            quickActionCancelBtn: document.getElementById('caseQuickActionCancelBtn'),
+        };
+    }
 
     let currentPage = 1;
     let activeCaseId = null;
     let activeCaseType = null;
     let quickActionMode = null; // 'assign_counselor' | 'update_status' | 'set_priority'
+    let globalListenersBound = false; // document/window listeners must only ever bind once
 
     document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('page:loaded', (e) => {
+        if (e.detail && e.detail.page === PAGE_KEY) init();
+    });
 
     function init() {
+        els = queryElements();
         if (!els.tableBody) return;
+
+        currentPage = 1;
+        activeCaseId = null;
+        activeCaseType = null;
+        quickActionMode = null;
 
         bindFilterEvents();
         bindTableEvents();
@@ -87,6 +107,15 @@
         bindTabEvents();
         bindSessionModal();
         bindQuickActionModal();
+
+        // Arrived here via a click-through link (e.g. from a student's
+        // Cases tab: index.php?page=cases&case_id=123) — open that case's
+        // drawer immediately instead of requiring another click.
+        const params = new URLSearchParams(window.location.search);
+        const caseIdFromUrl = params.get('case_id');
+        if (caseIdFromUrl) {
+            openDrawer(caseIdFromUrl);
+        }
     }
 
     /* ---------------------------------------------------------
@@ -243,20 +272,43 @@
         els.createBtn?.addEventListener('click', () => {
             els.createForm?.reset();
             toggleReferralFields(false);
+            toggleIncidentPicker(false);
+            unlockStudentNumberField();
             els.createModal?.classList.add('case-modal-overlay--open');
         });
         els.createCloseBtn?.addEventListener('click', closeCreateModal);
         els.createCancelBtn?.addEventListener('click', closeCreateModal);
 
         els.createType?.addEventListener('change', () => {
-            toggleReferralFields(els.createType.value === 'Referral');
+            const type = els.createType.value;
+            toggleReferralFields(type === 'Referral');
+            toggleIncidentPicker(type === 'Incident');
+
+            if (type === 'Incident') {
+                loadUnlinkedIncidents();
+                lockStudentNumberField();
+            } else {
+                unlockStudentNumberField();
+            }
+        });
+
+        const incidentSelect = document.getElementById('caseIncidentSelect');
+        incidentSelect?.addEventListener('change', () => {
+            const selected = unlinkedIncidentsCache.find(i => String(i.incident_id) === incidentSelect.value);
+            populateIncidentInfoBox(selected || null);
         });
 
         els.createForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(els.createForm);
-            const isReferral = formData.get('case_type') === 'Referral';
+            const caseType = formData.get('case_type');
+            const isReferral = caseType === 'Referral';
             const action = isReferral ? 'submit_referral' : 'create_case';
+
+            if (caseType === 'Incident' && !formData.get('incident_id')) {
+                alert('Please select an incident for this case.');
+                return;
+            }
 
             const body = Object.fromEntries(formData.entries());
 
@@ -283,6 +335,79 @@
         });
     }
 
+    let unlinkedIncidentsCache = [];
+
+    async function loadUnlinkedIncidents() {
+        const select = document.getElementById('caseIncidentSelect');
+        if (!select) return;
+        select.innerHTML = `<option value="">Loading incidents...</option>`;
+
+        try {
+            const res = await fetch(`${API_URL}?action=unlinked_incidents`);
+            const payload = await res.json();
+            if (!payload.success) throw new Error(payload.message || 'Request failed');
+
+            unlinkedIncidentsCache = payload.data;
+
+            if (!unlinkedIncidentsCache.length) {
+                select.innerHTML = `<option value="">No unlinked incidents available</option>`;
+                return;
+            }
+
+            select.innerHTML = '<option value="">Select an incident</option>' +
+                unlinkedIncidentsCache.map(i => `
+                    <option value="${escapeHtml(i.incident_id)}">
+                        ${escapeHtml(i.student_name)} — ${escapeHtml(i.incident_type)} (${escapeHtml(i.incident_date_display)})
+                    </option>
+                `).join('');
+        } catch (err) {
+            console.error('Failed to load unlinked incidents:', err);
+            select.innerHTML = `<option value="">Failed to load incidents</option>`;
+        }
+    }
+
+    function populateIncidentInfoBox(incident) {
+        const infoGroup = document.getElementById('caseIncidentInfoGroup');
+        const infoBox = document.getElementById('caseIncidentInfoBox');
+        const studentInput = document.getElementById('caseCreateStudentNumber');
+
+        if (!incident) {
+            infoGroup?.classList.add('case-form-group--hidden');
+            if (studentInput) studentInput.value = '';
+            return;
+        }
+
+        infoGroup?.classList.remove('case-form-group--hidden');
+        if (infoBox) {
+            infoBox.innerHTML = `
+                <strong>${escapeHtml(incident.student_name)}</strong> (#${escapeHtml(incident.student_number)})<br>
+                ${escapeHtml(incident.incident_type)} — ${escapeHtml(incident.severity)}<br>
+                ${escapeHtml(incident.incident_date_display)}${incident.location ? ' · ' + escapeHtml(incident.location) : ''}<br>
+                <em>${escapeHtml(incident.description)}</em>
+            `;
+        }
+        if (studentInput) studentInput.value = incident.student_number;
+    }
+
+    function toggleIncidentPicker(show) {
+        document.getElementById('caseIncidentPickerGroup')?.classList.toggle('case-form-group--hidden', !show);
+        if (!show) {
+            document.getElementById('caseIncidentInfoGroup')?.classList.add('case-form-group--hidden');
+        }
+        const incidentSelect = document.getElementById('caseIncidentSelect');
+        if (incidentSelect) incidentSelect.required = show;
+    }
+
+    function lockStudentNumberField() {
+        const input = document.getElementById('caseCreateStudentNumber');
+        if (input) { input.readOnly = true; input.value = ''; }
+    }
+
+    function unlockStudentNumberField() {
+        const input = document.getElementById('caseCreateStudentNumber');
+        if (input) { input.readOnly = false; }
+    }
+
     function toggleReferralFields(show) {
         ['caseReferralFields1', 'caseReferralFields2', 'caseReferralFields3'].forEach(id => {
             document.getElementById(id)?.classList.toggle('case-form-group--hidden', !show);
@@ -303,7 +428,11 @@
     function bindDrawerEvents() {
         els.drawerCloseBtn?.addEventListener('click', closeDrawer);
         els.overlay?.addEventListener('click', closeDrawer);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+        if (!globalListenersBound) {
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+            globalListenersBound = true;
+        }
     }
 
     async function openDrawer(caseId) {

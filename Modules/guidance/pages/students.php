@@ -37,7 +37,7 @@ $pageSize = 10;
 $result        = $studentsClass->getList($filters, $page, $pageSize);
 $students       = $result['rows'];
 $totalStudents  = $result['total'];
-$totalPages     = (int) ceil($pageSize);
+$totalPages     = (int) ceil($totalStudents / $pageSize);
 
 // The modal is populated live via AJAX (students.js -> StudentsController.php)
 // the moment "View Profile" is clicked, so no profile detail needs to be
@@ -48,7 +48,7 @@ $profileDetail = [
     'student_number' => '', 'name' => '', 'year_level' => '', 'section' => '',
     'course' => '', 'gender' => '', 'birth_date' => '', 'email' => '', 'phone' => '',
     'academic_status' => '', 'risk_level' => 'Low', 'guidance_status' => 'Active',
-    'remarks_history' => [], 'counseling_history' => [], 'referral_history' => [],
+    'remarks_history' => [], 'case_history' => [], 'case_summary' => ['total' => 0],
     'appointment_history' => [], 'incident_history' => [], 'documents' => [],
 ];
 
@@ -251,8 +251,7 @@ function std_status_badge_class($status) {
         <div class="std-tabs">
             <button class="std-tab std-tab--active" data-tab="overview">Overview</button>
             <button class="std-tab" data-tab="remarks">Guidance &amp; Remarks</button>
-            <button class="std-tab" data-tab="counseling">Counseling History</button>
-            <button class="std-tab" data-tab="referrals">Referral History</button>
+            <button class="std-tab" data-tab="cases">Cases</button>
             <button class="std-tab" data-tab="appointments">Appointment History</button>
             <button class="std-tab" data-tab="incidents">Incident History</button>
             <button class="std-tab" data-tab="documents">Documents</button>
@@ -308,11 +307,16 @@ function std_status_badge_class($status) {
                         </span>
                     </div>
                 </div>
+
+                <div class="std-profile-field__label" style="margin-top:16px;">Case Involvement</div>
+                <div class="std-case-summary" id="stdCaseSummary">
+                    <span class="std-badge std-badge--status-active">0 Cases</span>
+                </div>
             </div>
 
             <!-- Guidance & Remarks -->
             <div class="std-tab-panel" data-panel="remarks">
-                <form class="std-remarks-form" id="stdRemarksForm">
+                <form class="std-remarks-form" id="stdRemarksForm" data-skip>
                     <div class="std-profile-field__label">Add Guidance Remark</div>
                     <textarea name="remarks" placeholder="Enter observation, recommendation, or update..."></textarea>
                     <div class="std-remarks-form__actions">
@@ -330,35 +334,10 @@ function std_status_badge_class($status) {
                 </div>
             </div>
 
-            <!-- Counseling History -->
-            <div class="std-tab-panel" data-panel="counseling">
-                <div class="std-history-list">
-                    <?php foreach ($profileDetail['counseling_history'] as $h): ?>
-                    <div class="std-history-item">
-                        <div class="std-history-item__date"><?= htmlspecialchars($h['date']) ?></div>
-                        <div class="std-history-item__body">
-                            <div class="std-history-item__title"><?= htmlspecialchars($h['title']) ?></div>
-                            <div class="std-history-item__desc"><?= htmlspecialchars($h['desc']) ?></div>
-                        </div>
-                        <span class="std-badge std-badge--status-active std-history-item__status"><?= htmlspecialchars($h['status']) ?></span>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Referral History -->
-            <div class="std-tab-panel" data-panel="referrals">
-                <div class="std-history-list">
-                    <?php foreach ($profileDetail['referral_history'] as $h): ?>
-                    <div class="std-history-item">
-                        <div class="std-history-item__date"><?= htmlspecialchars($h['date']) ?></div>
-                        <div class="std-history-item__body">
-                            <div class="std-history-item__title"><?= htmlspecialchars($h['title']) ?></div>
-                            <div class="std-history-item__desc"><?= htmlspecialchars($h['desc']) ?></div>
-                        </div>
-                        <span class="std-badge std-badge--status-monitoring std-history-item__status"><?= htmlspecialchars($h['status']) ?></span>
-                    </div>
-                    <?php endforeach; ?>
+            <!-- Cases -->
+            <div class="std-tab-panel" data-panel="cases">
+                <div class="std-case-list" id="stdCaseList">
+                    <div class="std-table__empty">Loading cases...</div>
                 </div>
             </div>
 
@@ -396,7 +375,7 @@ function std_status_badge_class($status) {
 
             <!-- Documents -->
             <div class="std-tab-panel" data-panel="documents">
-                <form class="std-upload-row" id="stdUploadForm">
+                <form class="std-upload-row" id="stdUploadForm" data-skip>
                     <select name="document_type">
                         <option value="Consent Form">Consent Form</option>
                         <option value="Assessment">Assessment</option>

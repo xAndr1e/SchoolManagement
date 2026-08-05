@@ -9,3 +9,5 @@ import './modules/approval.js';
 import './modules/students.js';
 import './modules/cases.js';
 import './modules/appointments.js';
+import './modules/incidents.js';
+import './modules/analytics.js';

@@ -50,6 +50,7 @@ $totalAppointments = $result['total'];
 $totalPages       = (int) ceil($totalAppointments / $pageSize);
 
 $counselors = $appointmentsClass->getCounselors();
+$openCases  = $appointmentsClass->getOpenCases();
 
 function apt_status_badge_class($status) {
     return match ($status) {
@@ -214,7 +215,7 @@ function apt_status_badge_class($status) {
             <h3>Reschedule Appointment</h3>
             <button type="button" class="apt-modal__close" id="aptRescheduleCloseBtn">&times;</button>
         </div>
-        <form id="aptRescheduleForm">
+        <form id="aptRescheduleForm" data-skip>
             <div class="apt-modal__body">
                 <div class="apt-form-group">
                     <label>New Date &amp; Time</label>
@@ -238,7 +239,7 @@ function apt_status_badge_class($status) {
             <h3>Reject Appointment</h3>
             <button type="button" class="apt-modal__close" id="aptRejectCloseBtn">&times;</button>
         </div>
-        <form id="aptRejectForm">
+        <form id="aptRejectForm" data-skip>
             <div class="apt-modal__body">
                 <div class="apt-form-group">
                     <label>Reason</label>
@@ -262,11 +263,26 @@ function apt_status_badge_class($status) {
             <h3>Book Appointment</h3>
             <button type="button" class="apt-modal__close" id="aptBookCloseBtn">&times;</button>
         </div>
-        <form id="aptBookForm">
+        <form id="aptBookForm" data-skip>
             <div class="apt-modal__body">
                 <div class="apt-form-group">
+                    <label>Case (optional — link this appointment to an existing case)</label>
+                    <select name="case_id" id="aptBookCase">
+                        <option value="">No case (general appointment)</option>
+                        <?php foreach ($openCases as $c): ?>
+                            <option value="<?= htmlspecialchars($c['case_id']) ?>"
+                                    data-student="<?= htmlspecialchars($c['student_number']) ?>"
+                                    data-student-name="<?= htmlspecialchars($c['student_name']) ?>"
+                                    data-counselor="<?= htmlspecialchars($c['counselor_id']) ?>"
+                                    data-counselor-name="<?= htmlspecialchars($c['counselor_name']) ?>">
+                                #<?= htmlspecialchars($c['case_number']) ?> — <?= htmlspecialchars($c['student_name']) ?> (<?= htmlspecialchars($c['case_type']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="apt-form-group">
                     <label>Student Number</label>
-                    <input type="text" name="student_number" placeholder="e.g. 2023001" required>
+                    <input type="text" name="student_number" id="aptBookStudentNumber" placeholder="e.g. 2023001" required>
                 </div>
                 <div class="apt-form-group">
                     <label>Counselor</label>

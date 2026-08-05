@@ -88,6 +88,14 @@ switch ($action) {
         break;
 
     // ------------------------------------------------------------------
+    // GET  open_cases — Open/In Progress cases (all students), for the
+    // "Case" picker in the booking modal
+    // ------------------------------------------------------------------
+    case 'open_cases':
+        echo json_encode(['success' => true, 'data' => $appointmentsClass->getOpenCases()]);
+        break;
+
+    // ------------------------------------------------------------------
     // GET  booked_times — existing bookings for a counselor on a date,
     // used by the booking modal to show/avoid conflicts
     // ------------------------------------------------------------------

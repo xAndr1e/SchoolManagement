@@ -135,6 +135,12 @@
     width: 480px; max-width: 92vw; max-height: 88vh;
     border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
 }
+.apt-modal > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
 .apt-modal__header {
     flex-shrink: 0; padding: 16px 20px; border-bottom: 1px solid var(--color9);
     display: flex; justify-content: space-between; align-items: center;
@@ -160,6 +166,16 @@
 }
 .apt-availability-box strong { color: var(--color2); }
 .apt-availability-slot { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border-radius: 6px; background: var(--color3); border: 1px solid var(--color4); }
+
+.apt-locked {
+    pointer-events: none;
+    background: var(--color9);
+    color: var(--color5);
+}
+.apt-form-group input[readonly] {
+    background: var(--color9);
+    color: var(--color5);
+}
 
 .apt-modal__footer { flex-shrink: 0; padding: 14px 20px; border-top: 1px solid var(--color9); display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .apt-modal__actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }

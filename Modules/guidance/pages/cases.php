@@ -226,12 +226,8 @@ function case_priority_badge_class($priority) {
             <h3>Create Case</h3>
             <button type="button" class="case-drawer__close" id="caseCreateCloseBtn">&times;</button>
         </div>
-        <form id="caseCreateForm">
+        <form id="caseCreateForm" data-skip>
             <div class="case-modal__body">
-                <div class="case-form-group">
-                    <label>Student Number</label>
-                    <input type="text" name="student_number" placeholder="e.g. 2023001" required>
-                </div>
                 <div class="case-form-group">
                     <label>Case Type</label>
                     <select name="case_type" id="caseCreateType" required>
@@ -241,6 +237,22 @@ function case_priority_badge_class($priority) {
                         <option value="Incident">Incident</option>
                         <option value="Referral">Referral</option>
                     </select>
+                </div>
+
+                <!-- Incident-only: strict picker, no freeform Incident case without one -->
+                <div class="case-form-group case-form-group--hidden" id="caseIncidentPickerGroup">
+                    <label>Select Incident</label>
+                    <select name="incident_id" id="caseIncidentSelect">
+                        <option value="">Loading incidents...</option>
+                    </select>
+                </div>
+                <div class="case-form-group case-form-group--hidden" id="caseIncidentInfoGroup">
+                    <div class="case-summary-box" id="caseIncidentInfoBox"></div>
+                </div>
+
+                <div class="case-form-group" id="caseStudentNumberGroup">
+                    <label>Student Number</label>
+                    <input type="text" name="student_number" id="caseCreateStudentNumber" placeholder="e.g. 2023001" required>
                 </div>
                 <div class="case-form-group">
                     <label>Counselor</label>
@@ -303,7 +315,7 @@ function case_priority_badge_class($priority) {
             <h3 id="caseSessionModalTitle">Record Counseling Session</h3>
             <button type="button" class="case-drawer__close" id="caseSessionCloseBtn">&times;</button>
         </div>
-        <form id="caseSessionForm">
+        <form id="caseSessionForm" data-skip>
             <input type="hidden" name="session_id" value="">
             <div class="case-modal__body">
                 <div class="case-form-group">
@@ -355,7 +367,7 @@ function case_priority_badge_class($priority) {
             <h3 id="caseQuickActionTitle">Update</h3>
             <button type="button" class="case-drawer__close" id="caseQuickActionCloseBtn">&times;</button>
         </div>
-        <form id="caseQuickActionForm">
+        <form id="caseQuickActionForm" data-skip>
             <div class="case-modal__body" id="caseQuickActionBody"></div>
             <div class="case-modal__footer">
                 <button type="button" class="case-btn case-btn--ghost case-btn--sm" id="caseQuickActionCancelBtn">Cancel</button>

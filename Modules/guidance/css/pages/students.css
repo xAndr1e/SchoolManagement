@@ -498,6 +498,55 @@
     color: var(--color5);
 }
 
+/* Case involvement summary (Overview tab quick-glance) */
+.std-case-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* Cases tab: consolidated list, click-through to the Cases module */
+.std-case-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.std-case-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--color9);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: background .12s ease;
+}
+.std-case-item:hover { background: var(--color9); }
+
+.std-case-item__type-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+/* Subtle color-coding per case_type — distinct from the status/priority badge palette */
+.std-case-item__type-icon--referral { background: rgba(81,70,183,.12); color: var(--color7); }
+.std-case-item__type-icon--walkin { background: rgba(51,65,85,.1); color: var(--color6); }
+.std-case-item__type-icon--self-referral { background: rgba(51,65,85,.1); color: var(--color6); }
+.std-case-item__type-icon--incident { background: rgba(229,62,62,.12); color: var(--color10); }
+
+.std-case-item__body { flex: 1; min-width: 0; }
+.std-case-item__number { font-size: 13px; font-weight: 700; color: var(--color1); }
+.std-case-item__meta { font-size: 12px; color: var(--color5); margin-top: 2px; }
+.std-case-item__badges { display: flex; gap: 6px; flex-shrink: 0; }
+.std-case-item__chevron { color: var(--color5); flex-shrink: 0; }
+
 .std-history-item__status {
     align-self: flex-start;
 }
@@ -518,6 +567,38 @@
     padding: 8px 10px;
     font-size: 13px;
     color: var(--color2);
+}
+
+/* Style just the native "Choose File" button portion to match .std-btn,
+   while leaving the "No file chosen" filename text as normal browser text */
+.std-upload-row input[type="file"]::file-selector-button {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    margin-right: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    background: var(--color1);
+    color: var(--color3);
+    transition: opacity .15s ease;
+}
+.std-upload-row input[type="file"]::file-selector-button:hover {
+    opacity: .88;
+}
+/* Older WebKit fallback (Safari) */
+.std-upload-row input[type="file"]::-webkit-file-upload-button {
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    margin-right: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    background: var(--color1);
+    color: var(--color3);
 }
 
 .std-doc-list {

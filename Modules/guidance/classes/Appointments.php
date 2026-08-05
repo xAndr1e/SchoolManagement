@@ -1,27 +1,4 @@
 <?php
-/**
- * Appointments.php
- * Model / data-access layer for the Appointment Management module
- * (counselor-facing side only — student-facing request/cancel/view-status
- * features live in a separate student portal, out of scope here).
- *
- * Confirmed table: gd_appointments (student_number, counselor_id,
- * case_id nullable, appointment_date, purpose, meeting_type, status,
- * remarks). Also gd_counselor_schedules for the weekly availability
- * template used by the booking helper.
- *
- * Business-logic decisions locked in with the project owner:
- *   - Cancelled / No Show appointments are terminal — the student must
- *     submit a brand new request rather than reusing/reopening this one.
- *   - "Reschedule" updates appointment_date in place (no separate
- *     'Rescheduled' status exists in the schema).
- *   - "Reject" maps to status = 'Cancelled' (no 'Rejected' enum value).
- *   - Double-booking check is exact-timestamp collision only (no
- *     duration/end-time exists on this table to check overlapping ranges).
- *   - "Counselor" = any active employee in department 8 (Guidance and
- *     Counseling Office).
- */
-
 include_once __DIR__ . '/../../../database/db.php';
 // NOTE: adjust this relative path if Appointments.php doesn't sit at the
 // same folder depth as Students.php / Cases.php.
@@ -177,6 +154,37 @@ class Appointments
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         return ((int) $stmt->fetchColumn()) > 0;
+    }
+
+    /* ---------------------------------------------------------------
+       Open/In Progress cases (across all students), for the "Case"
+       picker in the booking modal. Selecting a case is the source of
+       truth for student + counselor — those fields get auto-filled/
+       locked from whichever case is picked, matching the same pattern
+       used for incident selection in Cases. Closed cases are excluded
+       since booking a new appointment against an already-closed case
+       shouldn't happen silently.
+    --------------------------------------------------------------- */
+    public function getOpenCases(): array
+    {
+        $stmt = $this->conn->prepare("
+            SELECT
+                c.case_id,
+                c.case_number,
+                c.student_number,
+                CONCAT(s.last_name, ', ', s.first_name) AS student_name,
+                c.case_type,
+                c.status,
+                c.counselor_id,
+                CONCAT(e.first_name, ' ', e.last_name) AS counselor_name
+            FROM gd_cases c
+            JOIN rgr_students s ON s.student_number = c.student_number
+            JOIN sms_employee e ON e.employee_id = c.counselor_id
+            WHERE c.status IN ('Open', 'In Progress')
+            ORDER BY c.opened_at DESC
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

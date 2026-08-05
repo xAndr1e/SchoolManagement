@@ -19,37 +19,56 @@
 (function () {
     'use strict';
 
-    const API_URL = '/sms/modules/guidance/controller/StudentsController.php';
+    const API_URL = 'controller/StudentsController.php';
+    const PAGE_KEY = 'students'; // must match the Page class's $_GET['page'] key
 
     /* ---------------------------------------------------------
-       Element references
+       Element references — rebuilt fresh on every init() call,
+       since the AJAX page router (page-switcher.js) replaces
+       .container's contents via innerHTML on every navigation.
+       DOMContentLoaded only ever fires once, so a one-time const
+       capture would go stale the moment someone navigates away
+       and back without a hard refresh.
     --------------------------------------------------------- */
-    const els = {
-        searchInput: document.getElementById('stdSearchInput'),
-        filterYear: document.getElementById('stdFilterYear'),
-        filterSection: document.getElementById('stdFilterSection'),
-        filterCourse: document.getElementById('stdFilterCourse'),
-        filterRisk: document.getElementById('stdFilterRisk'),
-        filterStatus: document.getElementById('stdFilterStatus'),
-        exportBtn: document.getElementById('stdExportBtn'),
-        tableBody: document.querySelector('.std-table tbody'),
-        pagination: document.querySelector('.std-pagination'),
-        modalOverlay: document.getElementById('stdProfileModal'),
-        closeModalBtn: document.getElementById('stdCloseModalBtn'),
-        remarksForm: document.getElementById('stdRemarksForm'),
-        uploadForm: document.getElementById('stdUploadForm'),
-    };
+    let els = {};
+
+    function queryElements() {
+        return {
+            searchInput: document.getElementById('stdSearchInput'),
+            filterYear: document.getElementById('stdFilterYear'),
+            filterSection: document.getElementById('stdFilterSection'),
+            filterCourse: document.getElementById('stdFilterCourse'),
+            filterRisk: document.getElementById('stdFilterRisk'),
+            filterStatus: document.getElementById('stdFilterStatus'),
+            exportBtn: document.getElementById('stdExportBtn'),
+            tableBody: document.querySelector('.std-table tbody'),
+            pagination: document.querySelector('.std-pagination'),
+            modalOverlay: document.getElementById('stdProfileModal'),
+            closeModalBtn: document.getElementById('stdCloseModalBtn'),
+            remarksForm: document.getElementById('stdRemarksForm'),
+            uploadForm: document.getElementById('stdUploadForm'),
+        };
+    }
 
     let currentPage = 1;
     let activeStudentNumber = null;
+    let globalListenersBound = false; // document/window listeners must only ever bind once
 
     /* ---------------------------------------------------------
-       Init
+       Init — runs on the real first page load AND every time the
+       router swaps this page back into .container via AJAX.
     --------------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('page:loaded', (e) => {
+        if (e.detail && e.detail.page === PAGE_KEY) init();
+    });
 
     function init() {
-        if (!els.tableBody) return; // fragment not loaded on this page
+        els = queryElements();
+        if (!els.tableBody) return; // fragment not currently in .container
+
+        currentPage = 1;
+        activeStudentNumber = null;
 
         bindFilterEvents();
         bindTableEvents();
@@ -247,9 +266,13 @@
         els.modalOverlay?.addEventListener('click', (e) => {
             if (e.target === els.modalOverlay) closeProfileModal();
         });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeProfileModal();
-        });
+
+        if (!globalListenersBound) {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeProfileModal();
+            });
+            globalListenersBound = true;
+        }
     }
 
     async function openProfileModal(studentNumber) {
@@ -315,12 +338,93 @@
             statusBadge.textContent = profile.guidance_status;
         }
 
-        renderHistoryList('counseling', profile.counseling_history);
-        renderHistoryList('referrals', profile.referral_history);
+        renderCaseSummary(profile.case_summary);
+        renderCaseList(profile.case_history);
         renderHistoryList('appointments', profile.appointment_history);
         renderHistoryList('incidents', profile.incident_history);
         renderRemarksHistory(profile.remarks_history);
         renderDocuments(profile.documents);
+    }
+
+    function renderCaseSummary(summary) {
+        const wrap = document.getElementById('stdCaseSummary');
+        if (!wrap || !summary) return;
+
+        if (!summary.total) {
+            wrap.innerHTML = `<span class="std-badge std-badge--status-closed">No cases on record</span>`;
+            return;
+        }
+
+        const parts = [`<span class="std-badge std-badge--status-active">${summary.total} Case${summary.total === 1 ? '' : 's'}</span>`];
+
+        Object.entries(summary.by_status || {}).forEach(([status, count]) => {
+            if (count > 0) {
+                parts.push(`<span class="std-badge ${caseStatusBadgeClass(status)}">${count} ${escapeHtml(status)}</span>`);
+            }
+        });
+
+        wrap.innerHTML = parts.join('');
+    }
+
+    function renderCaseList(cases = []) {
+        const wrap = document.getElementById('stdCaseList');
+        if (!wrap) return;
+
+        if (!cases.length) {
+            wrap.innerHTML = `<div class="std-table__empty">No cases on record for this student.</div>`;
+            return;
+        }
+
+        wrap.innerHTML = cases.map(c => `
+            <div class="std-case-item" data-case-id="${escapeHtml(c.case_id)}">
+                <div class="std-case-item__type-icon ${caseTypeIconClass(c.case_type)}">${caseTypeInitial(c.case_type)}</div>
+                <div class="std-case-item__body">
+                    <div class="std-case-item__number">#${escapeHtml(c.case_number)} &middot; ${escapeHtml(c.case_type)}</div>
+                    <div class="std-case-item__meta">Opened ${escapeHtml(c.opened_at_display)}${c.closed_at_display ? ' &middot; Closed ' + escapeHtml(c.closed_at_display) : ''} &middot; ${escapeHtml(c.counselor_name)}</div>
+                </div>
+                <div class="std-case-item__badges">
+                    <span class="std-badge ${casePriorityBadgeClass(c.priority)}">${escapeHtml(c.priority)}</span>
+                    <span class="std-badge ${caseStatusBadgeClass(c.status)}">${escapeHtml(c.status)}</span>
+                </div>
+                <div class="std-case-item__chevron">&rsaquo;</div>
+            </div>
+        `).join('');
+
+        wrap.querySelectorAll('.std-case-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Full navigation to the Cases module with this case's
+                // drawer pre-opened, per the app's ?page= routing pattern.
+                window.location.href = `index.php?page=cases&case_id=${item.dataset.caseId}`;
+            });
+        });
+    }
+
+    function caseStatusBadgeClass(status) {
+        if (status === 'Open') return 'std-badge--status-active';
+        if (status === 'In Progress') return 'std-badge--status-monitoring';
+        return 'std-badge--status-closed';
+    }
+
+    function casePriorityBadgeClass(priority) {
+        if (priority === 'Critical' || priority === 'High') return 'std-badge--risk-high';
+        if (priority === 'Medium') return 'std-badge--risk-moderate';
+        return 'std-badge--risk-low';
+    }
+
+    function caseTypeIconClass(caseType) {
+        if (caseType === 'Referral') return 'std-case-item__type-icon--referral';
+        if (caseType === 'Walk-in') return 'std-case-item__type-icon--walkin';
+        if (caseType === 'Self Referral') return 'std-case-item__type-icon--self-referral';
+        if (caseType === 'Incident') return 'std-case-item__type-icon--incident';
+        return '';
+    }
+
+    function caseTypeInitial(caseType) {
+        if (caseType === 'Referral') return 'R';
+        if (caseType === 'Walk-in') return 'W';
+        if (caseType === 'Self Referral') return 'S';
+        if (caseType === 'Incident') return '!';
+        return '?';
     }
 
     function renderHistoryList(panelName, items = []) {

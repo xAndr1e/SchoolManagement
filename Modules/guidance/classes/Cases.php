@@ -201,6 +201,12 @@ class Cases
     --------------------------------------------------------------- */
     public function createCase(array $data): int
     {
+        // A case implies ongoing guidance involvement — the student must
+        // have a gd_student_profiles row to show up in the Students
+        // module's caseload view at all. Auto-create a default one
+        // (Low risk, Active status) if this is their first-ever case.
+        $this->ensureStudentProfile($data['student_number']);
+
         $caseNumber = $this->generateCaseNumber();
 
         $stmt = $this->conn->prepare("
@@ -219,6 +225,29 @@ class Cases
         ]);
 
         return (int) $this->conn->lastInsertId();
+    }
+
+    /**
+     * Creates a default gd_student_profiles row for this student if one
+     * doesn't already exist. Idempotent/safe to call on every case
+     * creation — existing profiles (and their real risk_level/
+     * guidance_status/remarks) are never touched or overwritten.
+     */
+    private function ensureStudentProfile(string $studentNumber): void
+    {
+        $stmt = $this->conn->prepare("
+            SELECT profile_id FROM gd_student_profiles WHERE student_number = :student_number
+        ");
+        $stmt->execute(['student_number' => $studentNumber]);
+        if ($stmt->fetchColumn()) {
+            return; // profile already exists — leave it exactly as-is
+        }
+
+        $stmt = $this->conn->prepare("
+            INSERT INTO gd_student_profiles (student_number, risk_level, guidance_status)
+            VALUES (:student_number, 'Low', 'Active')
+        ");
+        $stmt->execute(['student_number' => $studentNumber]);
     }
 
     /**
@@ -252,6 +281,90 @@ class Cases
                 'referral_date'   => $data['referral_date'] ?? date('Y-m-d'),
                 'remarks'         => $data['remarks'] ?? null,
             ]);
+
+            $this->conn->commit();
+            return $caseId;
+        } catch (Throwable $e) {
+            $this->conn->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Unlinked incidents (case_id IS NULL) across all students, for the
+     * "Select Incident" picker shown when case_type = 'Incident'. Incident
+     * selection is the source of truth for which student the case is
+     * for — the student_number field in the UI gets auto-filled/locked
+     * from whichever incident is picked, not the other way around.
+     */
+    public function getUnlinkedIncidents(): array
+    {
+        $stmt = $this->conn->prepare("
+            SELECT
+                i.incident_id,
+                i.student_number,
+                CONCAT(s.last_name, ', ', s.first_name) AS student_name,
+                i.incident_type,
+                i.severity,
+                i.incident_date,
+                i.location,
+                i.description
+            FROM gd_incidents i
+            JOIN rgr_students s ON s.student_number = i.student_number
+            WHERE i.case_id IS NULL
+            ORDER BY i.incident_date DESC
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Creates an Incident-type case from an existing, unlinked incident
+     * record, then writes the link back onto that incident (case_id).
+     * student_number is pulled from the incident row itself server-side
+     * (not trusted from client input) so the case can never end up
+     * attached to a different student than the incident actually is.
+     * The WHERE case_id IS NULL guard prevents a race where the same
+     * incident gets linked to two cases if double-submitted.
+     *
+     * @throws RuntimeException if the incident doesn't exist or is
+     *         already linked to a case
+     */
+    public function createCaseFromIncident(array $data): int
+    {
+        $stmt = $this->conn->prepare("
+            SELECT student_number, incident_type, description
+            FROM gd_incidents
+            WHERE incident_id = :incident_id AND case_id IS NULL
+        ");
+        $stmt->execute(['incident_id' => $data['incident_id']]);
+        $incident = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$incident) {
+            throw new RuntimeException('This incident no longer exists or is already linked to a case.');
+        }
+
+        $this->conn->beginTransaction();
+        try {
+            $caseId = $this->createCase([
+                'student_number' => $incident['student_number'],
+                'counselor_id'   => $data['counselor_id'],
+                'case_type'      => 'Incident',
+                'priority'       => $data['priority'] ?? 'Medium',
+                'summary'        => $data['summary'] ?: $incident['description'],
+            ]);
+
+            $update = $this->conn->prepare("
+                UPDATE gd_incidents SET case_id = :case_id
+                WHERE incident_id = :incident_id AND case_id IS NULL
+            ");
+            $update->execute(['case_id' => $caseId, 'incident_id' => $data['incident_id']]);
+
+            if ($update->rowCount() === 0) {
+                // Someone else linked this incident in the moment between
+                // our SELECT check and this UPDATE — bail out entirely.
+                throw new RuntimeException('This incident was just linked to another case. Please refresh and try again.');
+            }
 
             $this->conn->commit();
             return $caseId;

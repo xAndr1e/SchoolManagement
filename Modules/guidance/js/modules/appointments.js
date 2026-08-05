@@ -2,7 +2,7 @@
  * appointments.js
  * Module: Appointment Management (counselor-facing side)
  *
- * Talks to controllers/AppointmentsController.php via fetch(). Every
+ * Talks to controller/AppointmentsController.php via fetch(). Every
  * response is shaped as { success, message?, data? }.
  */
 
@@ -10,53 +10,70 @@
     'use strict';
 
     const API_URL = 'controller/AppointmentsController.php';
+    const PAGE_KEY = 'appointments'; // must match the Page class's $_GET['page'] key
 
-    const els = {
-        searchInput: document.getElementById('aptSearchInput'),
-        dateInput: document.getElementById('aptDateInput'),
-        viewToggle: document.getElementById('aptViewToggle'),
-        filterStatus: document.getElementById('aptFilterStatus'),
-        filterMeetingType: document.getElementById('aptFilterMeetingType'),
-        filterCounselor: document.getElementById('aptFilterCounselor'),
-        tableBody: document.querySelector('.apt-table tbody'),
-        pagination: document.querySelector('.apt-pagination'),
+    /* ---------------------------------------------------------
+       Element references — rebuilt fresh on every init() call.
+       See students.js for the full explanation.
+    --------------------------------------------------------- */
+    let els = {};
 
-        bookBtn: document.getElementById('aptBookBtn'),
-        bookModal: document.getElementById('aptBookModal'),
-        bookForm: document.getElementById('aptBookForm'),
-        bookCloseBtn: document.getElementById('aptBookCloseBtn'),
-        bookCancelBtn: document.getElementById('aptBookCancelBtn'),
-        bookCounselor: document.getElementById('aptBookCounselor'),
-        bookDateTime: document.getElementById('aptBookDateTime'),
-        availabilityBox: document.getElementById('aptAvailabilityBox'),
-        availabilitySlots: document.getElementById('aptAvailabilitySlots'),
+    function queryElements() {
+        return {
+            searchInput: document.getElementById('aptSearchInput'),
+            dateInput: document.getElementById('aptDateInput'),
+            viewToggle: document.getElementById('aptViewToggle'),
+            filterStatus: document.getElementById('aptFilterStatus'),
+            filterMeetingType: document.getElementById('aptFilterMeetingType'),
+            filterCounselor: document.getElementById('aptFilterCounselor'),
+            tableBody: document.querySelector('.apt-table tbody'),
+            pagination: document.querySelector('.apt-pagination'),
 
-        detailModal: document.getElementById('aptDetailModal'),
-        detailCloseBtn: document.getElementById('aptDetailCloseBtn'),
-        actionButtons: document.getElementById('aptActionButtons'),
-        remarksInput: document.getElementById('aptRemarksInput'),
-        saveRemarksBtn: document.getElementById('aptSaveRemarksBtn'),
+            bookBtn: document.getElementById('aptBookBtn'),
+            bookModal: document.getElementById('aptBookModal'),
+            bookForm: document.getElementById('aptBookForm'),
+            bookCloseBtn: document.getElementById('aptBookCloseBtn'),
+            bookCancelBtn: document.getElementById('aptBookCancelBtn'),
+            bookCase: document.getElementById('aptBookCase'),
+            bookStudentNumber: document.getElementById('aptBookStudentNumber'),
+            bookCounselor: document.getElementById('aptBookCounselor'),
+            bookDateTime: document.getElementById('aptBookDateTime'),
+            availabilityBox: document.getElementById('aptAvailabilityBox'),
+            availabilitySlots: document.getElementById('aptAvailabilitySlots'),
 
-        rescheduleModal: document.getElementById('aptRescheduleModal'),
-        rescheduleForm: document.getElementById('aptRescheduleForm'),
-        rescheduleCloseBtn: document.getElementById('aptRescheduleCloseBtn'),
-        rescheduleCancelBtn: document.getElementById('aptRescheduleCancelBtn'),
+            detailModal: document.getElementById('aptDetailModal'),
+            detailCloseBtn: document.getElementById('aptDetailCloseBtn'),
+            actionButtons: document.getElementById('aptActionButtons'),
+            remarksInput: document.getElementById('aptRemarksInput'),
+            saveRemarksBtn: document.getElementById('aptSaveRemarksBtn'),
 
-        rejectModal: document.getElementById('aptRejectModal'),
-        rejectForm: document.getElementById('aptRejectForm'),
-        rejectCloseBtn: document.getElementById('aptRejectCloseBtn'),
-        rejectCancelBtn: document.getElementById('aptRejectCancelBtn'),
-    };
+            rescheduleModal: document.getElementById('aptRescheduleModal'),
+            rescheduleForm: document.getElementById('aptRescheduleForm'),
+            rescheduleCloseBtn: document.getElementById('aptRescheduleCloseBtn'),
+            rescheduleCancelBtn: document.getElementById('aptRescheduleCancelBtn'),
+
+            rejectModal: document.getElementById('aptRejectModal'),
+            rejectForm: document.getElementById('aptRejectForm'),
+            rejectCloseBtn: document.getElementById('aptRejectCloseBtn'),
+            rejectCancelBtn: document.getElementById('aptRejectCancelBtn'),
+        };
+    }
 
     let currentPage = 1;
     let currentView = 'daily';
     let activeAppointmentId = null;
 
     document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('page:loaded', (e) => {
+        if (e.detail && e.detail.page === PAGE_KEY) init();
+    });
 
     function init() {
+        els = queryElements();
         if (!els.tableBody) return;
 
+        currentPage = 1;
+        activeAppointmentId = null;
         currentView = document.querySelector('.apt-view-toggle--active')?.dataset.view || 'daily';
 
         bindFilterEvents();
@@ -216,10 +233,27 @@
         els.bookBtn?.addEventListener('click', () => {
             els.bookForm?.reset();
             els.availabilityBox.style.display = 'none';
+            setCaseLock(false);
             els.bookModal?.classList.add('apt-modal-overlay--open');
         });
         els.bookCloseBtn?.addEventListener('click', closeBookModal);
         els.bookCancelBtn?.addEventListener('click', closeBookModal);
+
+        els.bookCase?.addEventListener('change', () => {
+            const option = els.bookCase.selectedOptions[0];
+            const caseId = els.bookCase.value;
+
+            if (!caseId) {
+                setCaseLock(false);
+                return;
+            }
+
+            // Selecting a case is the source of truth for student + counselor
+            // — same pattern as picking an incident in Cases.
+            if (els.bookStudentNumber) els.bookStudentNumber.value = option.dataset.student || '';
+            if (els.bookCounselor) els.bookCounselor.value = option.dataset.counselor || '';
+            setCaseLock(true);
+        });
 
         const checkAvailability = async () => {
             const counselorId = els.bookCounselor?.value;
@@ -275,6 +309,14 @@
 
     function closeBookModal() {
         els.bookModal?.classList.remove('apt-modal-overlay--open');
+    }
+
+    function setCaseLock(locked) {
+        if (els.bookStudentNumber) els.bookStudentNumber.readOnly = locked;
+        // Counselor is a <select> — readOnly doesn't apply to selects, and
+        // `disabled` would exclude it from FormData on submit, so lock it
+        // visually with a CSS class instead (value still submits normally).
+        els.bookCounselor?.classList.toggle('apt-locked', locked);
     }
 
     /* ---------------------------------------------------------

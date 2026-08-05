@@ -303,6 +303,12 @@
     flex-direction: column;
     overflow: hidden;
 }
+.case-modal > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
 .case-modal__header {
     flex-shrink: 0;
     padding: 16px 20px;

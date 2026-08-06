@@ -38,33 +38,23 @@ $conn     = $database->getConnection();
 <div class="summary-cards-grid">
 
     <div class="summary-card card-accent-primary">
-        <div class="card-icon-wrap">🎓</div>
         <div class="card-value"><?= number_format($totalStudents) ?></div>
         <div class="card-label">Total Enrolled Students</div>
-        <span class="card-badge badge-ok">Active</span>
     </div>
 
     <div class="summary-card card-accent-secondary">
-        <div class="card-icon-wrap">📋</div>
         <div class="card-value"><?= number_format($pendingApplicants) ?></div>
         <div class="card-label">Pending Applicants</div>
-        <span class="card-badge <?= $pendingApplicants > 0 ? 'badge-warn' : 'badge-ok' ?>">
-            <?= $pendingApplicants > 0 ? 'Needs Review' : 'All Clear' ?>
-        </span>
     </div>
 
     <div class="summary-card card-accent-muted">
-        <div class="card-icon-wrap">👥</div>
         <div class="card-value"><?= number_format($activeEmployees) ?></div>
         <div class="card-label">Active Employees</div>
-        <span class="card-badge badge-info">Staff</span>
     </div>
 
-    <div class="summary-card card-accent-danger">
-        <div class="card-icon-wrap">🏥</div>
+    <div class="summary-card card-accent-primary">
         <div class="card-value"><?= number_format($todayClinic) ?></div>
         <div class="card-label">Clinic Visits Today</div>
-        <span class="card-badge badge-info">Today</span>
     </div>
 
 </div>
@@ -74,39 +64,23 @@ $conn     = $database->getConnection();
 <div class="summary-cards-grid">
 
     <div class="summary-card card-accent-primary">
-        <div class="card-icon-wrap">📄</div>
         <div class="card-value"><?= number_format($pendingReports) ?></div>
         <div class="card-label">Pending Reports</div>
-        <span class="card-badge <?= $pendingReports > 0 ? 'badge-warn' : 'badge-ok' ?>">
-            <?= $pendingReports > 0 ? 'Awaiting Review' : 'All Reviewed' ?>
-        </span>
     </div>
 
     <div class="summary-card card-accent-secondary">
-        <div class="card-icon-wrap">✅</div>
         <div class="card-value"><?= number_format($pendingApprovals) ?></div>
         <div class="card-label">Pending Approvals</div>
-        <span class="card-badge <?= $pendingApprovals > 0 ? 'badge-warn' : 'badge-ok' ?>">
-            <?= $pendingApprovals > 0 ? 'Action Needed' : 'All Clear' ?>
-        </span>
     </div>
 
     <div class="summary-card card-accent-muted">
-        <div class="card-icon-wrap">⚠️</div>
         <div class="card-value"><?= number_format($openIssues) ?></div>
         <div class="card-label">Open Department Issues</div>
-        <span class="card-badge <?= $openIssues > 0 ? 'badge-alert' : 'badge-ok' ?>">
-            <?= $openIssues > 0 ? 'Unresolved' : 'No Issues' ?>
-        </span>
     </div>
 
-    <div class="summary-card card-accent-danger">
-        <div class="card-icon-wrap">📚</div>
+    <div class="summary-card card-accent-primary">
         <div class="card-value"><?= number_format($overdueBooks) ?></div>
         <div class="card-label">Overdue Library Books</div>
-        <span class="card-badge <?= $overdueBooks > 0 ? 'badge-alert' : 'badge-ok' ?>">
-            <?= $overdueBooks > 0 ? 'Overdue' : 'All Returned' ?>
-        </span>
     </div>
 
 </div>

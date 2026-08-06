@@ -1,241 +1,214 @@
-    .announcements-list {
-        display: grid;
-        gap: 24px;
-        margin-top: 24px;
-        background-color: var(--color3);
-        border: 1px solid var(--color4);
-        padding: 1rem;
-        border-radius: 8px;
-    }
+/* ============================================================
+   School Directress — Communications & Announcements
+   Matches the Guidance Module's card/form language.
+   (.module-header is handled by the global stylesheet — not included here.)
+   ============================================================ */
 
-    .comm-controls {
-        display: grid;
-        gap: 18px;
-        align-items: start;
-        margin-top: 16px;
-    }
-
-    .comm-form {
-        background: var(--color3);
-        border: 1px solid var(--color4);
-        padding: 14px;
-        border-radius: 8px;
-    }
-
-    .comm-form h3 {
-        margin: 0 0 10px;
-        color: var(--color2);
-        font-size: 1.15rem;
-    }
-
-    .form-group {
-        margin-bottom: 12px;
-    }
-
-    .form-group.small {
-        margin-bottom: 0;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 6px;
-        color: var(--color2);
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-
-    input[type="text"],
-    textarea,
-    input[type="date"] {
-        width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid var(--color4);
-        background: var(--color3);
-        color: var(--color2);
-        transition: box-shadow .12s ease, border-color .12s ease;
-    }
-
-    input[type="text"]:focus,
-    textarea:focus,
-    input[type="date"]:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(81,70,183,0.06);
-        border-color: var(--color7);
-    }
-
-    .form-row {
-        display: flex;
-        gap: 12px;
-        align-items: end;
-    }
-
-    .btn-save {
-        background: var(--color1);
-        color: var(--color3);
-        padding: 8px 12px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    .btn-cancel {
-        background: transparent;
-        color: var(--color2);
-        padding: 8px 12px;
-        border: 1px solid var(--color4);
-        border-radius: 6px;
-        cursor: pointer;
-    }
-
-    .comm-list h3 {
-        margin: 0 0 8px;
-        color: var(--color2);
-        font-size: 1.15rem;
-    }
-
-    .ann-image::file-selector-button {
-        background: var(--color1);
-        color: var(--color3);
-        padding: 6px 10px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    .ann-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: var(--color3);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .ann-table th,
-    .ann-table td {
-        padding: 12px 14px;
-        border-bottom: 1px solid var(--color4);
-        text-align: left;
-        font-size: 0.95rem;
-    }
-
-    .ann-table thead th {
-        font-weight: 700;
-        color: var(--color2);
-    }
-
-    .ann-table td.actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .btn-edit {
-        padding: 6px 8px;
-        border-radius: 6px;
-        background: var(--color1);
-        color: var(--color3);
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-delete {
-        padding: 6px 8px;
-        border-radius: 6px;
-        background: transparent;
-        color: var(--color1);
-        border: 1px solid var(--color4);
-        cursor: pointer;
-    }
-
-    .muted {
-        color: var(--color5);
-    }
-
-    @media (max-width: 880px) {
-        .comm-controls {
-            grid-template-columns: 1fr;
-        }
-
-        .form-row {
-            flex-direction: column;
-            align-items: stretch;
-        }
-    } 
-
-    .announcements-list h2 {
-    margin: 0 0 16px;
-    color: var(--color2);
-    font-size: 1.2rem;
-    font-weight: 700;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--color4);
+.module-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
 }
 
-.announcement-card {
+/* ── Post Announcement (form card) ─────────────── */
+.comm-controls {
     background: var(--color3);
-    border: 1px solid var(--color4);
+    border: 1px solid var(--color9);
+    border-radius: 10px;
+    padding: 1.4rem 1.6rem;
+}
+
+.comm-form h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color2);
+    margin: 0 0 1.1rem 0;
+}
+
+.form-group {
+    margin-bottom: 1.1rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color2);
+    margin-bottom: 0.4rem;
+}
+
+.form-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.25rem;
+    margin-bottom: 0;
+}
+
+.form-group.small {
+    margin-bottom: 0;
+}
+
+/* Date input */
+.form-group input[type="date"] {
+    border: 1px solid var(--color9);
+    border-radius: 7px;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.82rem;
+    color: var(--color2);
+    background: var(--color3);
+    min-width: 190px;
+}
+
+.form-group input[type="date"]:focus {
+    outline: none;
+    border-color: var(--color1);
+    box-shadow: 0 0 0 3px rgba(32, 0, 130, 0.08);
+}
+
+/* File input — styled to look like Guidance's bordered upload field */
+.ann-image {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--color9);
+    border-radius: 7px;
+    padding: 0.45rem;
+    font-size: 0.8rem;
+    color: var(--color5);
+    background: var(--color3);
+}
+
+.ann-image::file-selector-button {
+    background: var(--color1);
+    color: var(--color3);
+    font-size: 0.76rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-right: 0.7rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.ann-image::file-selector-button:hover {
+    background: var(--color7);
+}
+
+/* ── Buttons ────────────────────────────────────── */
+.btn-save,
+.btn-cancel {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.6rem 1.1rem;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-save {
+    background: var(--color1);
+    color: var(--color3);
+    border: none;
+}
+
+.btn-save:hover {
+    background: var(--color7);
+}
+
+.btn-cancel {
+    background: var(--color3);
+    color: var(--color5);
+    border: 1px solid var(--color9);
+    margin-left: 0.6rem;
+}
+
+.btn-cancel:hover {
+    border-color: var(--color5);
+    color: var(--color2);
+}
+
+/* ── Announcements List ─────────────────────────── */
+.announcements-list {
+    background: var(--color3);
+    border: 1px solid var(--color9);
+    border-radius: 10px;
+    padding: 1.4rem 1.6rem;
+}
+
+.announcements-list h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color2);
+    margin: 0 0 1.1rem 0;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--color9);
+}
+
+.muted {
+    font-size: 0.82rem;
+    color: var(--color5);
+    text-align: center;
+    padding: 1.2rem 0;
+    margin: 0;
+}
+
+/* ── Announcement Card ──────────────────────────── */
+.announcement-card {
+    border: 1px solid var(--color9);
     border-radius: 8px;
     overflow: hidden;
-    transition: box-shadow 0.15s ease;
+    margin-bottom: 1.25rem;
 }
 
-.announcement-card:hover {
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+.announcement-card:last-child {
+    margin-bottom: 0;
 }
 
 .announcement-image {
     width: 100%;
-    max-height: 280px;
-    overflow: hidden;
+    line-height: 0;
+    background: var(--bg, #f4f4f7);
 }
 
 .announcement-image img {
     width: 100%;
-    height: 100%;
-    object-fit: fill;
+    height: auto;
     display: block;
 }
 
 .announcement-content {
-    padding: 14px 16px;
+    padding: 0.85rem 1.1rem;
 }
 
 .announcement-header {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-}
-
-.announcement-header h4 {
-    margin: 0;
-    color: var(--color2);
-    font-size: 1.05rem;
-    font-weight: 700;
 }
 
 .announcement-meta {
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
     align-items: center;
+    gap: 0.4rem;
 }
 
-.meta-author,
 .meta-date {
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     color: var(--color5);
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-.announcement-body p {
-    margin: 0;
-    color: var(--color2);
-    font-size: 0.95rem;
-    line-height: 1.6;
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 700px) {
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .btn-cancel {
+        margin-left: 0;
+    }
 }

@@ -73,10 +73,10 @@ form.addEventListener('submit', async function (e) {
     setLoading(true);
 
     try {
-        const response = await fetch('/auth/login.php', {
-            method: 'POST',
-            body: new FormData(form)
-        });
+        const response = await fetch('auth/login.php', {   // no leading slash
+        method: 'POST',
+        body: new FormData(form)
+    });
 
         // Guard against non-JSON responses (e.g. PHP errors)
         const text = await response.text();

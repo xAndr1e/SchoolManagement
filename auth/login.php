@@ -74,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['employee_id']     = $user['employee_id'];
         $_SESSION['role']            = $user['role'];
         $_SESSION['role_name']       = $user['role_name'];
-        $_SESSION['department_id']   = $user['department'];        // 👈 fixed
-        $_SESSION['department_name'] = $user['department_name'];   // 👈 fixed
+        $_SESSION['department_id']   = $user['department'];        
+        $_SESSION['department_name'] = $user['department_name'];  
 
         $redirectMap = [
         1 => 'modules/school-directress/index.php',
@@ -87,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         7 => 'modules/monitoring/index.php',
         8 => 'modules/guidance/index.php',
         9 => 'modules/college-coor/index.php',
+        10 => 'modules/recruitment/index.php',
     ];
 
         $role = (int) $user['role'];

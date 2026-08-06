@@ -17,6 +17,7 @@
 @import url('pages/communications-announcements.css');
 @import url('pages/report-submission-management.css');
 @import url('pages/concerns-issue-tracking.css');
+@import url('pages/student-monitoring.css');
 
 /*Base CSS*/
 @import url('base/variables.css');

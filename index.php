@@ -19,6 +19,7 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'timeout') {
 <body>
     <div class="login-container">
         <div class="login-contents">
+            <h1>SMS Login</h1>
             <div class="school-logo">
                 <img src="assets/bcp-logo.png" alt="School Logo">
             </div>

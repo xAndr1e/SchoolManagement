@@ -8,6 +8,8 @@
   use App\Models\Concern;
   use App\Models\Department;
   use App\Models\Employee;
+  use App\Models\SchoolYear;
+  use App\Models\Semester;
   use Exception;
 
   class IssueTrackingController extends Controller
@@ -19,8 +21,16 @@
 
         $departments = Department::all();
         $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear(); 
       
-        $this->render('settings/concerns', ['user' => $user,'departments' => $departments ]);
+        $this->render('settings/concerns',
+         [
+            'user' => $user,
+            'departments' => $departments,
+            'semester' => $semester,
+            'schoolYear' => $schoolYear
+        ]);
 
     }
 

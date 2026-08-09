@@ -5,7 +5,6 @@ use App\Core\Middleware\MiddlewareRegistry;
 use FastRoute;
 use FastRoute\RouteCollector;
 use App\Controllers\ErrorController;
-
 class Router 
 {   
 

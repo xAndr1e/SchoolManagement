@@ -4,11 +4,8 @@
    const selectAll = document.getElementById('select-all');
    const tbody = document.querySelector('tbody');
    const deleteBtn = document.getElementById('delete-btn');
-   const addStrandBtn = document.getElementById('addStrand');
+   const addReportApproval = document.getElementById('addReportApproval');
 
-   const addStrandModal = new bootstrap.Modal(document.getElementById('addStrandModal'));
-   const showCourseModal = new bootstrap.Modal(document.getElementById('showCourseModal'));
-   const editStrandModal =  new bootstrap.Modal(document.getElementById('editStrandModal'))
 
 
 
@@ -51,27 +48,6 @@
     });
 
 
-
-    document.getElementById('pdf').addEventListener('click',()=>{
-
-        const order = document.getElementById("order").value;
-         getPdf(order);
-
-    });
-
-    document.getElementById('excel').addEventListener('click',()=>{
-
-       const order = document.getElementById("order").value;
-       getExcel(order);
-
-    });
-
-    document.getElementById('csv').addEventListener('click',()=>{
-
-       const order = document.getElementById("order").value;
-       getCsv(order);
-
-    });
 
 
 
@@ -136,7 +112,7 @@
             }).then((result) => {
             if (result.isConfirmed) {
 
-                fetch(`${BASE_URL}/strand/delete`, {
+                fetch(`${BASE_URL}/reports-approval/delete`, {
                     method: 'POST',
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({ ids })
@@ -172,18 +148,18 @@
 
     // show  
 
-    addStrandBtn.addEventListener('click',function(){
+    addReportApproval.addEventListener('click',function(){
 
-        addStrandModal.show();
-    
+       let addApprovalModal = new bootstrap.Modal(document.getElementById('addApprovalModal'));
+        addApprovalModal.show();
     });
 
 
     // submit button connect to form
 
-    document.getElementById('addStrandSubmit').addEventListener('click', function() {
+    document.getElementById('addReportApprovalSubmit').addEventListener('click', function() {
 
-    document.getElementById('strandForm').requestSubmit();
+    document.getElementById('addReportApprovalForm').requestSubmit();
        
     });
 
@@ -192,7 +168,7 @@
 
     document.getElementById('closeBtn').addEventListener('click',function(){
 
-    resetForm('strandForm');
+    resetForm('addReportApprovalForm');
 
     });
 
@@ -237,194 +213,153 @@
    
     // form action
 
-    document.getElementById('strandForm').addEventListener('submit', function(e) {
+   document.getElementById('addReportApprovalForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
 
-        const formData = new FormData(this);
+    const formData = new FormData(this);
 
-        fetch(this.action, { 
-            method: 'POST',    
-            body: formData,
-        })
-        .then(res => res.json())
-        .then(data => {
-
-               
+    fetch(this.action, { 
+        method: 'POST',    
+        body: formData,
+    })
+    .then(res => res.json())
+    .then(data => {
+        // Clear previous errors
         document.querySelectorAll('.error').forEach(el => el.innerText = '');
-
-        document.querySelectorAll('.form-control').forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-
-
+        document.querySelectorAll('.form-control').forEach(input => input.classList.remove('is-invalid'));
         document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
 
         if (data.status === 'error') {
             for (let field in data.errors) {
-
                 const input = document.getElementById(field);
                 const feedback = document.getElementById('error-' + field);
                 
-                input.classList.add('is-invalid');        
-                feedback.innerText = data.errors[field]; 
+                if (input) input.classList.add('is-invalid');        
+                if (feedback) feedback.innerText = data.errors[field]; 
             }
-
         } else if (data.status === 'success') {
+            this.reset();
 
-            const form = document.getElementById('strandForm'); 
-            
-            form.reset();
             document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
             document.querySelectorAll('.form-control').forEach(el => el.classList.remove('is-invalid'));
 
             getData(currentOrder, currentLimit, currentPage);
 
-            addStrandModal.hide();
+            const addReportApprovalModal = bootstrap.Modal.getInstance(document.getElementById('addApprovalModal'));
+            addReportApprovalModal.hide();
 
             Swal.fire({
                 title: "Success!",
                 text: data.message,
                 icon: "success"
+            });
+        }
+    })
+    .catch(err => console.log(err));
+});
+
+    // updating the toggles in status 
+
+        tbody.addEventListener('change', function(e) {
+        if(e.target.classList.contains('status-toggle')) {
+
+            
+            const allSameToggles = tbody.querySelectorAll('.status-toggle');
+
+            if(e.target.checked){
+
+            const checkedToggleId = e.target.dataset.id;
+
+
+            
+          Swal.fire({
+            title: "Are you sure?",
+            text: "This will permanently modify important data. Do you wish to proceed?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: `Yes, I understand`,
+            }).then((result) => {
+            if (result.isConfirmed) {
+            
+              fetch(`${BASE_URL}/school-year/${checkedToggleId}/update`, 
+                    {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ checkedToggleId })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                         allSameToggles.forEach(checkbox => {
+                            if(checkbox != e.target){
+                            checkbox.checked = false; 
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                    
+                }else{
+                     e.target.checked = false;
+                }
              });
 
+            }
         }
-
-        })
-        .catch(err => console.log(err));
     });
 
+   document.getElementById("studentsTableBody").addEventListener("click", function(e) {
 
-      // ---- logic for view modal -----
+    if (e.target.classList.contains("approved")) {
 
-    // show the view modal
+        const reportId = e.target.dataset.id;
 
-    document.getElementById("studentsTableBody").addEventListener("click", function(e) {
-
-    if (e.target.classList.contains("view-btn")) {
-
-        const studentId = e.target.dataset.id;
-
-        fetch(`${BASE_URL}/strand/${studentId}`)
+        fetch(`${BASE_URL}/reports-approval/${reportId}/approved`, {
+            method: "POST"
+        })
         .then(response => response.json())
-         .then(result => {
-          
-            document.getElementById('showModalTitle').textContent = result.code;
-            document.getElementById('show_strand_code').value = result.code;
-            document.getElementById('show_strand_name').textContent = result.name;
+        .then(result => {
 
-             showCourseModal.show();
+               let currentOrder = 'DESC';
+                let currentLimit = 10;
+                let currentPage = 1;
+                getData(currentOrder, currentLimit, currentPage);
 
 
-         });
+        });
 
     }
-    });
 
+        if (e.target.classList.contains("reject")) {
 
-    // ---- logic for edit and update modal -----
+            const reportId = e.target.dataset.id;
 
-    document.getElementById("studentsTableBody").addEventListener("click", function(e) {
-
-         if (e.target.classList.contains("edit-btn")) {
-
-            const studentId = e.target.dataset.id;
-
-             fetch(`${BASE_URL}/strand/${studentId}/edit`)
-            .then(response => response.json())
-            .then(result => {
-            
-            // prepare the form action with the id 
-
-            let form = document.getElementById('editStrandForm');
-            form.action = `${BASE_URL}/strand/${studentId}/update`;
-            
-            document.getElementById('edit_strand_code').value = result.code;
-            document.getElementById('edit_strand_name').value = result.name;
-
-            editStrandModal.show();
-
-         });
-
-         }
-    });
-
-    // editCourseSubmit
-
-
-    document.getElementById('editStrandSubmit').addEventListener('click', function() {
-
-    document.getElementById('editStrandForm').requestSubmit();
-       
-    });
-
-    // reset the edit modal form when close 
-
-    document.getElementById('editCloseBtn').addEventListener('click',function(){
-
-        resetForm('editStrandForm');
-
-    });
-
-
-    // edit form action
-
-    document.getElementById('editStrandForm').addEventListener('submit', function(e) {
-       e.preventDefault(); 
-
-        const formData = new FormData(this);
-
-        fetch(this.action, { 
-            method: 'POST',    
-            body: formData,
+            fetch(`${BASE_URL}/reports-approval/${reportId}/reject`, {
+            method: "POST"
         })
-        .then(res => res.json())
-        .then(data => {
-               
-        document.querySelectorAll('.error').forEach(el => el.innerText = '');
+        .then(response => response.json())
+        .then(result => {
 
-        document.querySelectorAll('.form-control').forEach(input => {
-            input.classList.remove('is-invalid');
+               let currentOrder = 'DESC';
+                let currentLimit = 10;
+                let currentPage = 1;
+                getData(currentOrder, currentLimit, currentPage);
+
+
         });
 
-
-        document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-
-        if (data.status === 'error') {
-            for (let field in data.errors) {
-
-                const input = document.getElementById(field);
-                const feedback = document.getElementById('error-' + field);
-                
-                input.classList.add('is-invalid');        
-                feedback.innerText = data.errors[field]; 
-
-            }
-
-           
-
-        } else if (data.status === 'success') {
-
-            const form = document.getElementById('editStrandForm'); 
-            form.reset();
-            document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-            document.querySelectorAll('.form-control').forEach(el => el.classList.remove('is-invalid'));
-
-            getData(currentOrder, currentLimit, currentPage);
-
-            editStrandModal.hide();
-
-            Swal.fire({
-                title: "Success!",
-                text: data.message,
-                icon: "success"
-             });
+            
         }
 
-        })
-        .catch(err => console.log(err));
     });
-
-
+ 
 
     });
 
@@ -468,7 +403,7 @@
         // take this if you dont want redirection confirmation 
 
         window.open(
-        `${BASE_URL}/strand/pdf?order=${order}&search=${encodeURIComponent(search)}`,
+        `${BASE_URL}/school-year/pdf?order=${order}&search=${encodeURIComponent(search)}`,
         "_blank"
         );
     }
@@ -477,14 +412,14 @@
     function getExcel(order)
     {
         const search = document.getElementById("search").value;
-        window.location.href = `${BASE_URL}/strand/excel?range=${order}&search=${encodeURIComponent(search)}`;
+        window.location.href = `${BASE_URL}/school-year/excel?range=${order}&search=${encodeURIComponent(search)}`;
     }
 
 
     function getCsv(order)
     {
         const search = document.getElementById("search").value;
-        window.location.href = `${BASE_URL}/strand/csv?order=${order}&search=${encodeURIComponent(search)}`;
+        window.location.href = `${BASE_URL}/school-year/csv?order=${order}&search=${encodeURIComponent(search)}`;
     }
 
 
@@ -497,34 +432,27 @@
     const search = document.getElementById("search").value;
     const tbody = document.getElementById("studentsTableBody");
 
-    fetch(`${BASE_URL}/strand/all?order=${order}&limit=${limit}&page=${page}&search=${encodeURIComponent(search)}`)
+    fetch(`${BASE_URL}/allDocumentRequest?order=${order}&limit=${limit}&page=${page}&search=${encodeURIComponent(search)}`)
         .then(response => response.json())
         .then(result => {
 
             tbody.innerHTML = "";
 
             if (result.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center">No result found</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center">No approvals found.</td></tr>`;
                 return;
             }
 
-            result.data.forEach((strand,index) => {
+            result.data.forEach((request)=> {
                 tbody.innerHTML += `
                     <tr class="activity-row">
 
-                     <td><input type="checkbox" class="activity-checkbox" value="${strand.id}"></td>
-                        <td>${index + 1 }</td>
-                        <td>${strand.code}</td>
-                        <td>${strand.name} </td>
-
-                        <td>
-                            <button class="btn btn-sm btn-secondary view-btn" data-id="${strand.id}">
-                                View
-                            </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="${strand.id}">
-                                Edit
-                            </button>
-                        </td>
+                     <td><input type="checkbox" class="activity-checkbox" value="${request.id}"></td>
+                        <td>${request.request_number}</td>
+                        <td>${request.document_type}</td>
+                         <td>${request.purpose}</td>
+                         <td>${request.copies}</td>
+                       <td>${getAction(request)}</td>
                         
                     </tr>
                 `;
@@ -564,7 +492,7 @@ function renderPagination(current, last) {
         
         btn.addEventListener("click", function() {
 
-            const status = document.getElementById("range").value;
+            const status = document.getElementById("order").value;
             const limit = document.getElementById("limit").value;
 
             getData(status, limit, i);
@@ -574,7 +502,6 @@ function renderPagination(current, last) {
         container.appendChild(btn);
     }
 
-    
 }
 
 
@@ -598,6 +525,33 @@ function renderResultInfo(result) {
 }
 
 
+function getAction(request)
+{
+
+    switch(request.status)
+    {
+       case 'pending':
+
+         return `<button class="btn btn-primary btn-sm approved" data-id="${request.id}">
+            Approve
+            </button>
+            <button class="btn btn-danger btn-sm reject" data-id="${request.id}">
+            Reject
+            </button>`
+
+            break;
+            case 'verified':
+
+             return `<button class="btn btn-primary btn-sm approved" data-id="${request.id}">
+                            View
+                        </button>
+                        <button class="btn btn-danger btn-sm reject" data-id="${request.id}">
+                            Start Processing
+                        </button>`
+
+            break;
+    }
+}
 
 
 

@@ -9,6 +9,8 @@ use App\Helper\Response;
 use App\Models\Approval;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\SchoolYear;
+use App\Models\Semester;
 use Exception;
 
  class ReportApprovalController extends Controller
@@ -18,9 +20,17 @@ use Exception;
     {   
 
         $departments = Department::all();
-        $user = Employee::find('1003'); 
+        $user = Employee::find('1003');
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear(); 
       
-        $this->render('reports/report_approval', ['departments' => $departments,'user' => $user]);
+        $this->render('reports/report_approval', 
+         [
+            'departments' => $departments,
+            'user' => $user,
+            'semester' => $semester,
+            'schoolYear' => $schoolYear
+        ]);
 
     }
 
@@ -43,7 +53,7 @@ use Exception;
             $description = trim($_POST['report_description'] ?? '');
             $submit_by = 1003; 
 
-            $filePath = null; 
+        $filePath = null; 
 
     
         if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {

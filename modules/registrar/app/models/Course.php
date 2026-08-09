@@ -45,7 +45,7 @@ class Course extends Model {
     }
 
   
-    $countSql = "SELECT COUNT(*) as total FROM {$this->tableName} $where ORDER BY name $order ";
+    $countSql = "SELECT COUNT(*) as total FROM {$this->tableName} $where ORDER BY id $order ";
     $countStmt = $this->pdo->prepare($countSql);
 
     foreach ($params as $key => $value) {
@@ -56,7 +56,7 @@ class Course extends Model {
     $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Base query
-    $dataSql = "SELECT * FROM {$this->tableName} $where ORDER BY name $order";
+    $dataSql = "SELECT * FROM {$this->tableName} $where ORDER BY id $order";
 
     if ($paginate) {
         $dataSql .= " LIMIT :limit OFFSET :offset";

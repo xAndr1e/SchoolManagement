@@ -7,6 +7,8 @@ use App\Core\Controller;
 use App\Helper\Logger;
 use App\Models\Course;
 use App\Models\Employee;
+use App\Models\SchoolYear;
+use App\Models\Semester;
 use Dompdf\Dompdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
@@ -21,8 +23,15 @@ class CourseController extends Controller {
     {
 
         $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();
       
-        $this->render('/acad/course', ['user' => $user]);
+        $this->render('/acad/course',
+         [
+            'user' => $user,
+            'semester' => $semester,
+            'schoolYear' => $schoolYear
+        ]);
 
     }
 
@@ -40,7 +49,7 @@ class CourseController extends Controller {
         
         header('Content-Type: application/json');
         $course = Course::find($id);
-        echo json_encode($course );       
+        echo json_encode($course);       
 
     }
 
@@ -218,9 +227,15 @@ class CourseController extends Controller {
         $course_code = trim($_POST['course_code'] ?? '');
         $course_name = trim($_POST['course_name'] ?? '');
         $course_year = trim($_POST['course_year'] ?? '');
+        $course_description = trim($_POST['course_description'] ?? '');
 
         if ($course_code === '') {
         $errors['course_code'] = 'Course Code is required.';
+        }
+
+        if($course_description === '')
+        {
+         $errors['course_description'] = 'Course Code is required.';
         }
 
         if ($course_name === '') {
@@ -239,7 +254,8 @@ class CourseController extends Controller {
 
             'code' => $course_code,
             'name' => $course_name,
-            'years' => $course_year 
+            'years' => $course_year,
+            'description' => $course_description
         ]);
 
         

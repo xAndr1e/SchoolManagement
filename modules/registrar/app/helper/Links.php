@@ -7,11 +7,12 @@
         public static function goTo($uri)
         {   
 
-            if($uri === '/' || $uri === 'base'){
-                return BASE_URL;
-            }else{
-                return BASE_URL.$uri;
-            }
+            if ($uri === '/' || $uri === 'base') {
+            header('Location: ' . BASE_URL);
+        } else {
+            header('Location: ' . BASE_URL.$uri);
+        }
+        exit;
 
         }
 

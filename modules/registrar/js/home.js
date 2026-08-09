@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const calendarEl = document.getElementById('homeCalendar');
 
-    
+  // enrolled students
+
   fetch(`${BASE_URL}/students/count`)
   .then(response => response.json())
   .then(result => {
@@ -18,6 +19,52 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  // subject offered 
+
+   fetch(`${BASE_URL}/students/subCount`)
+  .then(response => response.json())
+  .then(result => {
+    const obj = { val: 0 }; 
+
+    gsap.to(obj, {
+      val: result.totalSubject, 
+      duration: 2,                   
+      ease: "power1.out",
+      roundProps: "val",             
+      onUpdate: () => {
+        document.getElementById("subject-offered").textContent = obj.val.toLocaleString();
+      }
+    });
+
+    
+  });
+
+
+  // enrollee count
+
+
+   fetch(`${BASE_URL}/students/enrolleeCount`)
+  .then(response => response.json())
+  .then(result => {
+    const obj = { val: 0 }; 
+
+    gsap.to(obj, {
+      val: result.totalEnrollee, 
+      duration: 2,                   
+      ease: "power1.out",
+      roundProps: "val",             
+      onUpdate: () => {
+        document.getElementById("enrollee").textContent = obj.val.toLocaleString();
+      }
+    });
+
+    
+  });
+   
+
+
+  
 
   const progress = { value: 0 };
 
@@ -157,3 +204,6 @@ let activityChart = new Chart(ctx, {
   
  });
 
+
+
+ 

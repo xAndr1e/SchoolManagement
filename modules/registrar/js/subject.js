@@ -533,9 +533,7 @@
                             <button class="btn btn-sm btn-secondary view-btn" data-id="${subject.id}">
                                 View
                             </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="${subject.id}">
-                                Edit
-                            </button>
+                           
                         </td>
                         
                     </tr>
@@ -576,7 +574,7 @@ function renderPagination(current, last) {
         
         btn.addEventListener("click", function() {
 
-            const status = document.getElementById("range").value;
+            const status = document.getElementById("order").value;
             const limit = document.getElementById("limit").value;
 
             getData(status, limit, i);

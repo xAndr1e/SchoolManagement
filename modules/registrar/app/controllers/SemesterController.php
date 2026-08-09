@@ -19,10 +19,16 @@
     {
 
         $school_year = SchoolYear::all();
+        $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();
 
-         $user = Employee::find('1003'); 
       
-        $this->render('/acad/semester', ['user' => $user,'school_year' => $school_year]);
+        $this->render('/acad/semester', ['user' => $user,
+        'school_year' => $school_year,
+        'semester' => $semester,
+        'schoolYear' => $schoolYear
+      ]);
 
     }
 
@@ -242,11 +248,15 @@
         
          Semester::updateStatus();
 
+         
+
          Semester::update($id,[
 
             'is_active' => true,
 
          ]);
+
+
 
         echo json_encode([
             'status' => 'success',

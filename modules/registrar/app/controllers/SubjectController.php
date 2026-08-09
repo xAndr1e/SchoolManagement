@@ -6,6 +6,8 @@ use App\Core\Controller;
 use App\Helper\Logger;
 use App\Helper\Response;
 use App\Models\Employee;
+use App\Models\SchoolYear;
+use App\Models\Semester;
 use App\Models\Subject;
 
 
@@ -15,10 +17,16 @@ class SubjectController extends Controller
     public function index()
     {
 
-      
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();      
         $user = Employee::find('1003'); 
         
-        $this->render('/acad/subject', ['user' => $user]);
+        $this->render('/acad/subject',
+         [
+             'user' => $user,
+             'semester' => $semester,
+             'schoolYear' => $schoolYear
+          ]);
 
     }
 
@@ -73,7 +81,7 @@ class SubjectController extends Controller
 
         Subject::create([
 
-            'code' => strtoupper($subject_code),
+            'code' => $subject_code,
             'name' => $subject_name,
             'units' => $subject_unit,
             'lecture_hours' => $subject_lecture,
@@ -89,7 +97,7 @@ class SubjectController extends Controller
 
         echo json_encode([
             'status' => 'success',
-            'message' => 'Strand created successfully.'
+            'message' => 'Teacher created successfully.'
         ]);
 
     }

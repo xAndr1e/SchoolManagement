@@ -8,14 +8,45 @@
     class Student extends Model
     {
         
-        public $tableName = 'rgr_students';
-        public $primaryKey = 'student_number';
+        public $tableName = 'enr_students';
+        public $primaryKey = 'student_id';
+
+
+        protected function generateStudentNumber()
+        {
+    
+            $year = date('Y');
+
+            $stmt = $this->pdo->prepare("
+                SELECT student_number
+                FROM {$this->tableName}
+                WHERE student_number LIKE :year
+                ORDER BY student_number DESC
+                LIMIT 1
+            ");
+
+            $stmt->execute([
+                ':year' => $year . '-%'
+            ]);
+
+            $last = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$last) {
+                return $year . '-000001';
+            }
+
+            $parts = explode('-', $last['student_number']);
+            $next = (int)$parts[1] + 1;
+
+            return $year . '-' . str_pad($next, 6, '0', STR_PAD_LEFT);
+
+        }
 
 
    
         protected function countActiveStudents() {
 
-            $stmt = $this->pdo->query("SELECT COUNT(*) as totalActiveStudent FROM $this->tableName where academic_status = 'active' ");
+            $stmt = $this->pdo->query("SELECT COUNT(*) as totalActiveStudent FROM $this->tableName where student_status = 'active' ");
             return $stmt->fetch(PDO::FETCH_ASSOC);
         }
 
@@ -60,20 +91,28 @@
     $status = isset($_GET['status']) ? $_GET['status'] : 'all';
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+    $order = isset($_GET['order']) ? $_GET['order'] : 'desc';
+
+     $order = in_array($order, ['asc', 'desc']) 
+            ? strtoupper($order) 
+            : 'DESC';
+
     $where = " WHERE 1=1 ";
     $params = [];
 
     if (!empty($status) && strtolower($status) !== 'all') {
-        $where .= " AND academic_status = :status";
+        $where .= " AND stud.enrollment_status = :status";
         $params[':status'] = $status;
     }
 
     if (!empty($search)) {
         $where .= " AND (
-            student_number LIKE :search OR
-            first_name LIKE :search OR
-            last_name LIKE :search OR
-            course LIKE :search
+            stud.student_number LIKE :search OR
+            app.first_name LIKE :search OR
+            app.surname LIKE :search OR
+            app.email LIKE :search OR
+            co.code LIKE :search OR
+            co.name LIKE :search
         )";
         $params[':search'] = "%{$search}%";
     }
@@ -88,9 +127,11 @@
     $school_year = $schoolYearStmt->fetch(PDO::FETCH_ASSOC)['school_year'];
 
 
-
     // Count total
-    $countSql = "SELECT COUNT(*) as total FROM {$this->tableName} $where";
+    $countSql = "SELECT COUNT(*) as total  FROM {$this->tableName} stud
+    JOIN enr_applicants app ON app.applicant_id = stud.applicant_id
+    JOIN rgr_courses co ON co.id = stud.course_id
+    $where ORDER BY id $order ";
     $countStmt = $this->pdo->prepare($countSql);
 
     foreach ($params as $key => $value) {
@@ -101,7 +142,14 @@
     $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Base query
-    $dataSql = "SELECT * FROM {$this->tableName} $where";
+    $dataSql = "SELECT 
+    stud.*,
+    app.*,
+    co.code as course_code,
+    co.name as course_name
+    FROM {$this->tableName} stud
+    JOIN enr_applicants app ON app.applicant_id = stud.applicant_id
+    JOIN rgr_courses co ON co.id = stud.course_id $where ORDER BY id $order ";
 
     if ($paginate) {
         $dataSql .= " LIMIT :limit OFFSET :offset";

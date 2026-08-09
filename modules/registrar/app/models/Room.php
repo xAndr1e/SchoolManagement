@@ -1,20 +1,21 @@
 <?php 
 
 
-namespace App\Models;
+ namespace App\Models;
 
-use App\Core\Model;
-use PDO;
+ use App\Core\Model;
+ use PDO;
 
-class Strand extends Model
-{
+ class Room extends Model 
+ {
 
-     public $tableName = 'rgr_strands';
-     public $primaryKey = 'id';
+    public $tableName = 'rgr_rooms';
+    public $primaryKey = 'id';
 
 
-  protected function allStrands($paginate = true)
-  {
+     protected function allRoom($paginate=true)
+    {
+
     $perPage = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
     $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
     if ($page < 1) $page = 1;
@@ -35,8 +36,7 @@ class Strand extends Model
 
     if (!empty($search)) {
         $where .= " AND (
-            name LIKE :search OR
-            code LIKE :search
+            name LIKE :search 
         )";
         $params[':search'] = "%{$search}%";
     }
@@ -83,17 +83,22 @@ class Strand extends Model
         'current_page' => $page,
         'last_page' => ceil($total / $perPage)
     ];
-        
-
-     }
-     
 
 
-    public static function __callStatic($name, $arguments)
-    {
-            $instance = new self();     
-            return $instance->$name(...$arguments);
+
     }
 
 
-}
+
+
+    
+    public static function __callStatic($name, $arguments)
+    {
+        $instance = new self();     
+        return $instance->$name(...$arguments);
+    }
+
+
+
+
+ }

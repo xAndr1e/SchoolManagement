@@ -144,7 +144,7 @@
             tbody.innerHTML = "";
 
             if (result.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center">No students found</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center">No students found</td></tr>`;
                 return;
             }
 
@@ -152,13 +152,34 @@
                 tbody.innerHTML += `
                     <tr class="student-row">
                         <td>${student.student_number}</td>
-                        <td>${student.first_name} ${student.last_name}</td>
-                        <td>${student.course}</td>
-                        <td>${student.academic_status}</td>
+                        <td>${student.first_name} ${student.surname}</td>
+                        <td>${student.course_code}</td>
+                        <td>${student.year_level}</td>
+                        <td>${student.enrollment_status}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary view-btn" data-id="${student.student_number}">
-                                View
-                            </button>
+                            
+                             <div class="dropdown">
+        <button class="btn btn-sm btn-primary dropdown-toggle"
+               data-bs-toggle="dropdown"
+               data-bs-strategy="fixed">
+            Actions
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item" href="${BASE_URL}/students/show/${student.student_id}">
+                View Details
+            </a>
+            </li>
+
+            <li>
+                <a class="dropdown-item" onclick="getPdf(${student.student_id}); return false;" target="_blank">
+                    Export to PDF
+                </a>
+            </li>
+        </ul>
+    </div>
+                            
                         </td>
                     </tr>
                 `;

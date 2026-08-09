@@ -13,6 +13,23 @@ class Subject extends Model
      public $primaryKey = 'id';
 
 
+
+     protected function numberOfSubjects()
+     {
+ 
+        $sql = "SELECT 
+               COUNT(*) as totalSubject
+               FROM $this->tableName
+              ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetch();
+
+     }
+
+
      protected function allSubject($paginate=true)
      {
 
@@ -43,7 +60,7 @@ class Subject extends Model
     }
 
   
-    $countSql = "SELECT COUNT(*) as total FROM {$this->tableName} $where ORDER BY name $order ";
+    $countSql = "SELECT COUNT(*) as total FROM {$this->tableName} $where ORDER BY id $order ";
     $countStmt = $this->pdo->prepare($countSql);
 
     foreach ($params as $key => $value) {
@@ -54,7 +71,7 @@ class Subject extends Model
     $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
     // Base query
-    $dataSql = "SELECT * FROM {$this->tableName} $where ORDER BY name $order";
+    $dataSql = "SELECT * FROM {$this->tableName} $where ORDER BY id $order";
 
     if ($paginate) {
         $dataSql .= " LIMIT :limit OFFSET :offset";

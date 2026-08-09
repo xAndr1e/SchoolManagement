@@ -13,8 +13,67 @@
     public $tableName = 'rgr_semesters';
     public $primaryKey = 'id';
 
+
+    protected function activeSemester()
+    {
+
+        $sql = "SELECT 
+              name
+              FROM $this->tableName 
+              WHERE is_active = 1
+        ";
+    
+         $stmt = $this->pdo->prepare($sql);
+         $stmt->execute();
+         return $stmt->fetch();
+
+    }
+
+      protected function activeSemesterId()
+    {
+
+        $sql = "SELECT 
+              id
+              FROM $this->tableName 
+              WHERE is_active = 1
+        ";
+    
+         $stmt = $this->pdo->prepare($sql);
+         $stmt->execute();
+         return $stmt->fetch();
+
+    }
+
+     protected function activateDefaultSemester(int $id)
+    {
+        $schoolYearId = $id;
+ 
+        $sql = " UPDATE $this->tableName
+               SET is_active = 1
+               WHERE school_year_id = :schoolYearId
+               AND name = '1st Semester';
+
+        "; 
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':schoolYearId', $schoolYearId, PDO::PARAM_INT);
+        $stmt->execute();
+
+    }
+
     protected function allSemester($paginate = true)
     {
+
+
+    // getting the active school year
+    $activeStmt = $this->pdo->prepare("
+    SELECT id
+    FROM rgr_school_years 
+    WHERE is_active = 1 
+    LIMIT 1
+    ");
+    $activeStmt->execute();
+    $active = $activeStmt->fetch(PDO::FETCH_ASSOC);
 
         
     $perPage = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
@@ -25,6 +84,10 @@
 
     $order = isset($_GET['order']) ? $_GET['order'] : 'desc';
 
+    $schoolYearId = !empty($_GET['school_year_id'])
+    ? $_GET['school_year_id']
+    : ($active['id'] ?? null);
+
     $order = in_array($order, ['asc', 'desc']) 
             ? strtoupper($order) 
             : 'DESC';
@@ -33,6 +96,11 @@
 
     $where = " WHERE 1=1 ";
     $params = [];
+    
+     if (!empty($schoolYearId)) {
+        $where .= " AND s.school_year_id = :school_year_id";
+        $params[':school_year_id'] = $schoolYearId;
+    }
 
 
     if (!empty($search)) {

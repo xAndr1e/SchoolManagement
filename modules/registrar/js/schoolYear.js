@@ -1,12 +1,14 @@
   
   document.addEventListener('DOMContentLoaded', function() {
     
+
    const selectAll = document.getElementById('select-all');
    const tbody = document.querySelector('tbody');
    const deleteBtn = document.getElementById('delete-btn');
    const addSchoolYearBtn = document.getElementById('addSchoolYearBtn');
 
    const addSchoolYearModal = new bootstrap.Modal(document.getElementById('addSchoolYearModal'));
+
 
 
 
@@ -278,6 +280,8 @@
 
             addSchoolYearModal.hide();
 
+            updateSchoolYear(schoolYearLabel);
+
             Swal.fire({
                 title: "Success!",
                 text: data.message,
@@ -316,6 +320,8 @@
             confirmButtonText: `Yes, I understand`,
             }).then((result) => {
             if (result.isConfirmed) {
+
+                
             
               fetch(`${BASE_URL}/school-year/${checkedToggleId}/update`, 
                     {
@@ -330,6 +336,9 @@
                         return response.json();
                     })
                     .then(result => {
+
+                         updateSchoolYear();
+
                          allSameToggles.forEach(checkbox => {
                             if(checkbox != e.target){
                             checkbox.checked = false; 
@@ -339,6 +348,8 @@
                     .catch(error => {
                         console.error('Error:', error);
                     });
+
+               
                     
                 }else{
                      e.target.checked = false;
@@ -522,6 +533,20 @@ function renderResultInfo(result) {
 
 
 
+
+
+function updateSchoolYear()
+{
+    
+      fetch(`${BASE_URL}/school-year/active`)
+        .then(response => response.json())
+        .then(result => {
+            schoolYearLabel.textContent = result.name ;
+
+        });
+
+  
+}
 
 
 

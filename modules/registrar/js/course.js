@@ -8,8 +8,7 @@
 
    const addCourseModal = new bootstrap.Modal(document.getElementById('addCourseModal'));
    const showCourseModal = new bootstrap.Modal(document.getElementById('showCourseModal'));
-   const editCourseModal =  new bootstrap.Modal(document.getElementById('editCourseModal'))
-
+   
 
 
     let currentOrder = 'desc';
@@ -312,7 +311,8 @@
             document.getElementById('show_course_code').value = result.code;
             document.getElementById('show_course_year').value = result.years;
             document.getElementById('show_course_name').textContent = result.name;
-
+            document.getElementById('show_description').textContent = result.description;
+            
              showCourseModal.show();
 
 
@@ -322,110 +322,11 @@
     });
 
 
-    // ---- logic for edit and update modal -----
-
-    document.getElementById("studentsTableBody").addEventListener("click", function(e) {
-
-         if (e.target.classList.contains("edit-btn")) {
-
-            const studentId = e.target.dataset.id;
-
-             fetch(`${BASE_URL}/course/${studentId}/edit`)
-            .then(response => response.json())
-            .then(result => {
-            
-            // prepare the form action with the id 
-
-            let form = document.getElementById('editCourseForm');
-            form.action = `${BASE_URL}/course/${studentId}/update`;
-            
-            document.getElementById('edit_course_code').value = result.code;
-            document.getElementById('edit_course_year').value = result.years;
-            document.getElementById('edit_course_name').value = result.name;
-
-            editCourseModal.show();
-
-         });
-
-         }
-    });
-
-    // editCourseSubmit
+  
+   
 
 
-    document.getElementById('editCourseSubmit').addEventListener('click', function() {
-
-    document.getElementById('editCourseForm').requestSubmit();
-       
-    });
-
-    // reset the edit modal form when close 
-
-    document.getElementById('editCloseBtn').addEventListener('click',function(){
-
-    resetForm('editCourseForm');
-
-    });
-
-
-    // edit form action
-
-    document.getElementById('editCourseForm').addEventListener('submit', function(e) {
-       e.preventDefault(); 
-
-        const formData = new FormData(this);
-
-        fetch(this.action, { 
-            method: 'POST',    
-            body: formData,
-        })
-        .then(res => res.json())
-        .then(data => {
-               
-        document.querySelectorAll('.error').forEach(el => el.innerText = '');
-
-        document.querySelectorAll('.form-control').forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-
-
-        document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-
-        if (data.status === 'error') {
-            for (let field in data.errors) {
-
-                const input = document.getElementById(field);
-                const feedback = document.getElementById('error-' + field);
-                
-                input.classList.add('is-invalid');        
-                feedback.innerText = data.errors[field]; 
-
-            }
-
-           
-
-        } else if (data.status === 'success') {
-
-            const form = document.getElementById('editCourseForm'); 
-            
-            form.reset();
-            document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-            document.querySelectorAll('.form-control').forEach(el => el.classList.remove('is-invalid'));
-
-            getData(currentOrder, currentLimit, currentPage);
-
-            editCourseModal.hide();
-
-            Swal.fire({
-                title: "Success!",
-                text: data.message,
-                icon: "success"
-             });
-        }
-
-        })
-        .catch(err => console.log(err));
-    });
+  
 
 
 
@@ -528,9 +429,7 @@
                             <button class="btn btn-sm btn-secondary view-btn" data-id="${course.id}">
                                 View
                             </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="${course.id}">
-                                Edit
-                            </button>
+                        
                         </td>
                         
                     </tr>
@@ -571,7 +470,7 @@ function renderPagination(current, last) {
         
         btn.addEventListener("click", function() {
 
-            const status = document.getElementById("range").value;
+            const status = document.getElementById("order").value;
             const limit = document.getElementById("limit").value;
 
             getData(status, limit, i);

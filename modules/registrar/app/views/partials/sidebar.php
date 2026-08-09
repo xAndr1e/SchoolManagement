@@ -39,8 +39,9 @@
            <li><hr class="dropdown-divider"></li>
 
            <li>
-            <a class="dropdown-item text-danger" href="#">
-                Logout
+            
+             <a class="dropdown-item text-danger" href="sms/auth/logout.php" >
+                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
             </a>
           </li>
          </ul>
@@ -50,12 +51,14 @@
        
 
         </div>
+        
         <div class="sidebar-header">
             <div class="user-avatar">UA</div>
             <h1><?=  $user['first_name']." ".$user['last_name'] ?? 'Username' ?> </h1>
             <p class="user-id"><?=  $user['employee_id'] ?? 'SAMPLEID123456789' ?> </p>
         </div>
 
+        
 
         <div class="accordion" id="sidebarMenu">
 
@@ -66,6 +69,8 @@
             <li><a href="<?php echo BASE_URL ?>" class="menu-link <?php echo CURRENT_URI  === "template2" ? 'active' : '' ?> " id="dashboard">Dashboard</a></li>
         </ul>
 
+
+
         <!-- student management -->
 
         <hr>
@@ -75,6 +80,7 @@
             <i class="fa-solid fa-chevron-down"></i>
             </a>
         </h2>
+
 
         <div id="studentMenu" class="collapse <?php echo in_array(CURRENT_URI, ['students','enrollees','subject-loading','class-offering','curriculum','curriculum-subject']) || str_contains(CURRENT_URI,'section-schedule')  || str_contains(CURRENT_URI,'class-offering') ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
         <ul>

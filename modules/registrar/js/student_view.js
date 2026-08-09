@@ -1,18 +1,19 @@
 const editBtn = document.getElementById('editBtn');
 
 
+
 editBtn.addEventListener('click',function(){
+
+    const editStudentInfoModal = new bootstrap.Modal(document.getElementById('editStudentInfo'));
  
-    console.log('test');
+    editStudentInfoModal.show();
 
 });
 
 
-console.log(applicantId);
+
 
 loadDocuments(applicantId);
-
-
 
 
 function loadDocuments(applicantId) {

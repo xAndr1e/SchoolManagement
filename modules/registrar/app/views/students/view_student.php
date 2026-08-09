@@ -32,7 +32,7 @@
 
                 <div>
                     <button class="btn btn-success btn-sm" id="editBtn">
-                        Edit
+                        Update
                     </button>
 
                     <button class="btn btn-secondary btn-sm" id="printPdf">
@@ -305,6 +305,680 @@
 </div>
 
 </div>
+</main>
+
+
+
+<!-- EDIT STUDENT INFO MODAL -->
+<div class="modal fade"
+     id="editStudentInfo"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false"
+     tabindex="-1"
+     aria-labelledby="editModalTitle"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+
+        <!-- FORM IS NOW THE MODAL CONTENT -->
+        <form id="editStudentForm"
+              action=""
+              method="POST"
+              class="modal-content shadow-lg border-0 rounded-3 needs-validation"
+              novalidate>
+
+            <input type="hidden" name="action" value="update_student">
+            <input type="hidden"
+                   name="applicant_id"
+                   id="edit_applicant_id"
+                   value="<?= htmlspecialchars($student['id'] ?? '') ?>">
+
+            <!-- HEADER -->
+            <div class="modal-header bg-primary text-white">
+
+                <div>
+                    <h5 class="modal-title mb-0" id="editModalTitle">
+                        Edit Student Information
+                    </h5>
+
+                    <small class="opacity-75">
+                        Update personal, academic, and contact details
+                    </small>
+                </div>
+
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <!-- SCROLLABLE BODY -->
+            <div class="modal-body p-4">
+
+                <!-- ACADEMIC DETAILS -->
+                <div class="mb-4">
+
+                    <h6 class="text-muted text-uppercase small mb-2 fw-bold">
+                        Academic Details
+                    </h6>
+
+                    <div class="p-3 bg-light rounded border">
+
+                        <div class="row g-3 mb-2">
+
+                            <div class="col-md-4">
+                                <label for="edit_admission_type"
+                                       class="form-label small text-muted mb-1">
+                                    Admission Type
+                                </label>
+
+                                <select class="form-select form-select-sm"
+                                        id="edit_admission_type"
+                                        name="admission_type"
+                                        required>
+
+                                    <option value="freshmen"
+                                        <?= ($student['admission_type'] ?? '') === 'freshmen' ? 'selected' : '' ?>>
+                                        Freshmen
+                                    </option>
+
+                                    <option value="transferee"
+                                        <?= ($student['admission_type'] ?? '') === 'transferee' ? 'selected' : '' ?>>
+                                        Transferee
+                                    </option>
+
+                                    <option value="returnee"
+                                        <?= ($student['admission_type'] ?? '') === 'returnee' ? 'selected' : '' ?>>
+                                        Returnee
+                                    </option>
+
+                                    <option value="senior_high"
+                                        <?= ($student['admission_type'] ?? '') === 'senior_high' ? 'selected' : '' ?>>
+                                        Senior High
+                                    </option>
+
+                                </select>
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_working_student"
+                                       class="form-label small text-muted mb-1">
+                                    Working Student?
+                                </label>
+
+                                <select class="form-select form-select-sm"
+                                        id="edit_working_student"
+                                        name="working_student"
+                                        required>
+
+                                    <option value="No"
+                                        <?= ($student['working_student'] ?? '') === 'No' ? 'selected' : '' ?>>
+                                        No
+                                    </option>
+
+                                    <option value="Yes"
+                                        <?= ($student['working_student'] ?? '') === 'Yes' ? 'selected' : '' ?>>
+                                        Yes
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_school_last_attended"
+                                       class="form-label small text-muted mb-1">
+                                    School Last Attended
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_school_last_attended"
+                                       name="school_last_attended"
+                                       value="<?= htmlspecialchars($student['school_last_attended'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row g-3">
+
+                            <div class="col-md-4">
+
+                                <label for="edit_year_graduated"
+                                       class="form-label small text-muted mb-1">
+                                    Year Graduated
+                                </label>
+
+                                <input type="number"
+                                       class="form-control form-control-sm"
+                                       id="edit_year_graduated"
+                                       name="year_graduated"
+                                       value="<?= htmlspecialchars($student['year_graduated'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_course_id"
+                                       class="form-label small text-muted mb-1">
+                                    Course ID
+                                </label>
+
+                                <input type="number"
+                                       class="form-control form-control-sm"
+                                       id="edit_course_id"
+                                       name="course_id"
+                                       value="<?= htmlspecialchars($student['course_id'] ?? '') ?>">
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_how_hear"
+                                       class="form-label small text-muted mb-1">
+                                    How Did You Hear About Us?
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_how_hear"
+                                       name="how_hear"
+                                       value="<?= htmlspecialchars($student['how_hear'] ?? '') ?>">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PERSONAL INFORMATION -->
+                <div class="mb-4">
+
+                    <h6 class="text-muted text-uppercase small mb-2 fw-bold">
+                        Personal Information
+                    </h6>
+
+                    <div class="p-3 border rounded">
+
+                        <div class="row g-3 mb-2">
+
+                            <div class="col-md-3">
+                                <label for="edit_surname"
+                                       class="form-label small text-muted mb-1">
+                                    Surname
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_surname"
+                                       name="surname"
+                                       value="<?= htmlspecialchars($student['surname'] ?? '') ?>"
+                                       required>
+                            </div>
+
+
+                            <div class="col-md-3">
+                                <label for="edit_first_name"
+                                       class="form-label small text-muted mb-1">
+                                    First Name
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_first_name"
+                                       name="first_name"
+                                       value="<?= htmlspecialchars($student['first_name'] ?? '') ?>"
+                                       required>
+                            </div>
+
+
+                            <div class="col-md-3">
+                                <label for="edit_middle_name"
+                                       class="form-label small text-muted mb-1">
+                                    Middle Name
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_middle_name"
+                                       name="middle_name"
+                                       value="<?= htmlspecialchars($student['middle_name'] ?? '') ?>">
+                            </div>
+
+
+                            <div class="col-md-3">
+                                <label for="edit_suffix"
+                                       class="form-label small text-muted mb-1">
+                                    Suffix
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_suffix"
+                                       name="suffix"
+                                       value="<?= htmlspecialchars($student['suffix'] ?? '') ?>">
+                            </div>
+
+                        </div>
+
+
+                        <div class="row g-3 mb-2">
+
+                            <div class="col-md-3">
+
+                                <label for="edit_sex"
+                                       class="form-label small text-muted mb-1">
+                                    Sex
+                                </label>
+
+                                <select class="form-select form-select-sm"
+                                        id="edit_sex"
+                                        name="sex"
+                                        required>
+
+                                    <option value="Male"
+                                        <?= ($student['sex'] ?? '') === 'Male' ? 'selected' : '' ?>>
+                                        Male
+                                    </option>
+
+                                    <option value="Female"
+                                        <?= ($student['sex'] ?? '') === 'Female' ? 'selected' : '' ?>>
+                                        Female
+                                    </option>
+
+                                    <option value="Other"
+                                        <?= ($student['sex'] ?? '') === 'Other' ? 'selected' : '' ?>>
+                                        Other
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-3">
+
+                                <label for="edit_date_of_birth"
+                                       class="form-label small text-muted mb-1">
+                                    Date of Birth
+                                </label>
+
+                                <input type="date"
+                                       class="form-control form-control-sm"
+                                       id="edit_date_of_birth"
+                                       name="date_of_birth"
+                                       value="<?= htmlspecialchars($student['date_of_birth'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-2">
+
+                                <label for="edit_age"
+                                       class="form-label small text-muted mb-1">
+                                    Age
+                                </label>
+
+                                <input type="number"
+                                       class="form-control form-control-sm bg-light"
+                                       id="edit_age"
+                                       name="age"
+                                       value="<?= htmlspecialchars($student['age'] ?? '') ?>"
+                                       readonly>
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_place_of_birth"
+                                       class="form-label small text-muted mb-1">
+                                    Place of Birth
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_place_of_birth"
+                                       name="place_of_birth"
+                                       value="<?= htmlspecialchars($student['place_of_birth'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+
+                                <label for="edit_civil_status"
+                                       class="form-label small text-muted mb-1">
+                                    Civil Status
+                                </label>
+
+                                <select class="form-select form-select-sm"
+                                        id="edit_civil_status"
+                                        name="civil_status"
+                                        required>
+
+                                    <option value="Single"
+                                        <?= ($student['civil_status'] ?? '') === 'Single' ? 'selected' : '' ?>>
+                                        Single
+                                    </option>
+
+                                    <option value="Married"
+                                        <?= ($student['civil_status'] ?? '') === 'Married' ? 'selected' : '' ?>>
+                                        Married
+                                    </option>
+
+                                    <option value="Divorced"
+                                        <?= ($student['civil_status'] ?? '') === 'Divorced' ? 'selected' : '' ?>>
+                                        Divorced
+                                    </option>
+
+                                    <option value="Widowed"
+                                        <?= ($student['civil_status'] ?? '') === 'Widowed' ? 'selected' : '' ?>>
+                                        Widowed
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="edit_religion"
+                                       class="form-label small text-muted mb-1">
+                                    Religion
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_religion"
+                                       name="religion"
+                                       value="<?= htmlspecialchars($student['religion'] ?? '') ?>">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- CONTACT & ADDRESS INFORMATION -->
+                <div class="mb-4">
+
+                    <h6 class="text-muted text-uppercase small mb-2 fw-bold">
+                        Contact & Address Information
+                    </h6>
+
+                    <div class="p-3 border rounded">
+
+                        <div class="row g-3 mb-2">
+
+                            <div class="col-md-4">
+
+                                <label for="edit_email"
+                                       class="form-label small text-muted mb-1">
+                                    Email Address
+                                </label>
+
+                                <input type="email"
+                                       class="form-control form-control-sm"
+                                       id="edit_email"
+                                       name="email"
+                                       value="<?= htmlspecialchars($student['email'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_contact_number"
+                                       class="form-label small text-muted mb-1">
+                                    Contact Number
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_contact_number"
+                                       name="contact_number"
+                                       value="<?= htmlspecialchars($student['contact_number'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-2">
+
+                                <label for="edit_facebook"
+                                       class="form-label small text-muted mb-1">
+                                    Facebook
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_facebook"
+                                       name="facebook"
+                                       value="<?= htmlspecialchars($student['facebook'] ?? '') ?>">
+
+                            </div>
+
+
+                            <div class="col-md-2">
+
+                                <label for="edit_messenger"
+                                       class="form-label small text-muted mb-1">
+                                    Messenger
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_messenger"
+                                       name="messenger"
+                                       value="<?= htmlspecialchars($student['messenger'] ?? '') ?>">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row g-3 mb-2">
+
+                            <div class="col-md-4">
+
+                                <label for="edit_address_barangay"
+                                       class="form-label small text-muted mb-1">
+                                    Barangay
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_address_barangay"
+                                       name="address_barangay"
+                                       value="<?= htmlspecialchars($student['address_barangay'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_address_city"
+                                       class="form-label small text-muted mb-1">
+                                    City/Municipality
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_address_city"
+                                       name="address_city"
+                                       value="<?= htmlspecialchars($student['address_city'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-4">
+
+                                <label for="edit_address_province"
+                                       class="form-label small text-muted mb-1">
+                                    Province
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_address_province"
+                                       name="address_province"
+                                       value="<?= htmlspecialchars($student['address_province'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row g-3">
+
+                            <div class="col-md-12">
+
+                                <label for="edit_address_complete"
+                                       class="form-label small text-muted mb-1">
+                                    Complete Street Address
+                                </label>
+
+                                <textarea class="form-control form-control-sm"
+                                          id="edit_address_complete"
+                                          name="address_complete"
+                                          rows="2"><?= htmlspecialchars($student['address_complete'] ?? '') ?></textarea>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PARENT / GUARDIAN DETAILS -->
+                <div class="mb-4">
+
+                    <h6 class="text-muted text-uppercase small mb-2 fw-bold">
+                        Parent / Guardian Details
+                    </h6>
+
+                    <div class="p-3 border rounded">
+
+                        <div class="row g-3 mb-2">
+
+                            <div class="col-md-6">
+
+                                <label for="edit_parent_full_name"
+                                       class="form-label small text-muted mb-1">
+                                    Full Name
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_parent_full_name"
+                                       name="parent_full_name"
+                                       value="<?= htmlspecialchars($student['parent_full_name'] ?? '') ?>"
+                                       required>
+
+                            </div>
+
+
+                            <div class="col-md-6">
+
+                                <label for="edit_parent_contact"
+                                       class="form-label small text-muted mb-1">
+                                    Contact Number
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_parent_contact"
+                                       name="parent_contact"
+                                       value="<?= htmlspecialchars($student['parent_contact'] ?? '') ?>">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="row g-3">
+
+                            <div class="col-md-12">
+
+                                <label for="edit_parent_address"
+                                       class="form-label small text-muted mb-1">
+                                    Parent Address
+                                </label>
+
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="edit_parent_address"
+                                       name="parent_address"
+                                       value="<?= htmlspecialchars($student['parent_address'] ?? '') ?>">
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- FOOTER -->
+            <div class="modal-footer d-flex justify-content-between bg-white border-top">
+
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary">
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
 
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

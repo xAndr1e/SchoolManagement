@@ -39,7 +39,6 @@ $roles = $roleClass->getRoles();
         <div id="employee-list" class="tab-content active">
             <div class="form-section">
                     <div class="form-section-header">
-                        <h3>Employee List</h3>
                         <div class="employee-filters">
                             <select id="filter-department">
                                 <option value="">All Departments</option>

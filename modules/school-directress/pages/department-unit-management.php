@@ -29,9 +29,6 @@ $departmentsWithDetails = $department->getDepartmentsWithDetails();
         <div class="tab-content active" id="departments">
             <div class="table-responsive">
                 <div class="form-section">
-                    <div class="form-section-header">
-                        <h3>Department List</h3>
-                    </div>
                     <table class="department-table">
                         <thead>
                             <tr>

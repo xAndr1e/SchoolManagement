@@ -1,3 +1,5 @@
+  
+ 
  document.addEventListener('DOMContentLoaded', function () {
 
     const editBtn = document.getElementById('editBtn');
@@ -12,10 +14,12 @@
 
    });
 
+  
+
+  loadDocuments(student_id);
 
 
 
-   loadDocuments(applicantId);
 
     if (!form) {
         return;
@@ -65,7 +69,6 @@
                 location.reload();
             }); 
 
-
             }else{
 
                  Swal.fire({
@@ -92,7 +95,7 @@
 
 
 
-function loadDocuments(applicantId) {
+function loadDocuments(student_id) {
     const tbody = document.getElementById("students-documents-table-body");
     const countBadge = document.getElementById("doc-count-badge");
 
@@ -106,7 +109,7 @@ function loadDocuments(applicantId) {
         </tr>
     `;
 
-    fetch(`${BASE_URL}/enrollees/${applicantId}/allDocs`)
+    fetch(`${BASE_URL}/enrollees/${student_id}/allDocs`)
         .then(response => {
             if (!response.ok) throw new Error("Failed to load records");
             return response.json();

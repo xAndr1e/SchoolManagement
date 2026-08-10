@@ -31,8 +31,12 @@
                 </div>
 
                 <div>
-                    <button class="btn btn-success btn-sm" id="editBtn">
-                        Update
+                    <button class="btn btn-primary btn-sm" id="editBtn">
+                        Update Student Information
+                    </button>
+
+                     <button class="btn btn-success btn-sm" id="editBtn">
+                        Insert Required Documents
                     </button>
 
                     <button class="btn btn-secondary btn-sm" id="printPdf">
@@ -989,7 +993,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script> const BASE_URL = "<?php echo BASE_URL ?>" </script>
 <script>
-     const applicantId = <?= $applicant_id ?>;
+     const student_id = <?= $student_id ?>;
 </script>
 <script src="<?= BASE_URL ?>/js/student_view.js"></script>
 

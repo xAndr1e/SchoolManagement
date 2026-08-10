@@ -53,6 +53,7 @@ class StudentController extends Controller {
         $this->render('/students/view_student',
         [
             'user' => $user,
+            'student_id' => $enrollee['student_id'],
             'semester' => $semester,
             'schoolYear' => $schoolYear,
             'applicant_id' => $enrollee['applicant_id'],

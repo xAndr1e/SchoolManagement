@@ -14,6 +14,54 @@
        public $primaryKey = 'student_requirement_id';
 
 
+       protected function getAllDocumentAlsoSubmitted(int $id)
+        
+       
+       {
+               $sql = "
+                        SELECT
+                  r.requirement_id,
+                  r.requirement_name,
+                  r.requirement_category,
+                  r.is_mandatory,
+
+                  sr.student_requirement_id,
+                  sr.is_submitted,
+                  sr.submitted_date,
+                  sr.notes
+
+               FROM enr_requirements r
+
+               INNER JOIN enr_students s
+                  ON s.student_id = :student_id
+
+               INNER JOIN enr_applicants a
+                  ON a.applicant_id = s.applicant_id
+
+               LEFT JOIN $this->tableName sr
+                  ON sr.requirement_id = r.requirement_id
+                  AND sr.student_id = s.student_id
+
+               WHERE r.requirement_category = a.admission_type
+
+               ORDER BY r.requirement_id ASC
+            ";
+
+            $stmt = $this->pdo->prepare($sql);
+
+            $stmt->bindValue(
+               ':student_id',
+               $id,
+               PDO::PARAM_INT
+            );
+
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+          }
+
+                                             
      protected function getAllDocuments(int $id)
    {
     $sql = "SELECT 

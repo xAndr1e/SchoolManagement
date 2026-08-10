@@ -8,6 +8,7 @@ use App\Helper\Logger;
 use App\Models\Course;
 use App\Models\Employee;
 use App\Models\Enrollee;
+use App\Models\EnrolleeDocuments;
 use App\Models\SchoolYear;
 use App\Models\Semester;
 use App\Models\Student;
@@ -15,8 +16,6 @@ use Dompdf\Dompdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
-
-
 
 
 class StudentController extends Controller {
@@ -93,6 +92,8 @@ class StudentController extends Controller {
      
 
     }
+
+    
 
     public function studentData()
     {
@@ -178,6 +179,36 @@ class StudentController extends Controller {
         ]);
 
     
+
+    }
+
+
+    public function insertStudentDocument()
+    {
+
+         header('Content-Type: application/json');
+
+         
+        $student_id = trim($_POST['student_id'] ?? '');
+        $requirement_id = trim($_POST['requirement_id'] ?? '');
+        $requirement_notes = trim($_POST['requirement_notes'] ?? '');
+        
+
+        EnrolleeDocuments::create([
+ 
+            'student_id' => $student_id,
+            'requirement_id' => $requirement_id,
+            'is_submitted' => 1,
+            'submitted_date' => date('Y-m-d'),
+            'notes' => $requirement_notes
+
+        ]);
+
+         echo json_encode([
+            'status' => 'success',
+            'message' => 'Student Document inserted successfully.'
+        ]);
+
 
     }
 

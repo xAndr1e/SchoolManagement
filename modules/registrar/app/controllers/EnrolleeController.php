@@ -332,9 +332,12 @@ use Dompdf\Dompdf;
 
     }
 
-
-      
-
+   
+        public function getAllDocumentAlsoSubmitted(int $id)
+    {
+         $docs = EnrolleeDocuments::getAllDocumentAlsoSubmitted($id);
+         Response::json($docs);
+    }
 
 
     public function getAllDocuments(int $id)

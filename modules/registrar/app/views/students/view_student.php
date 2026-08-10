@@ -35,8 +35,8 @@
                         Update Student Information
                     </button>
 
-                     <button class="btn btn-success btn-sm" id="editBtn">
-                        Insert Required Documents
+                     <button class="btn btn-success btn-sm" id="insertDocuments">
+                        Insert Student Requirements 
                     </button>
 
                     <button class="btn btn-secondary btn-sm" id="printPdf">
@@ -983,8 +983,155 @@
 
 </div>
 
+<!-- REQUIRED DOCUMENT INSERT -->
+<div class="modal fade" id="insertDocumentModal" tabindex="-1" aria-labelledby="exampleModalLabel" data-bs-backdrop="static"
+     data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
 
+<div class="modal-header bg-success text-white">
 
+    <h5 class="modal-title" id="exampleModalLabel">
+        Insert Student Requirements
+    </h5>
+
+    <button type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close">
+    </button>
+
+</div>
+
+<form id="insertStudentDocumentForm"
+      method="POST"
+      enctype="multipart/form-data">
+
+    <div class="modal-body">
+
+        <input type="hidden"
+               name="student_id"
+               id="student_id"
+               value="<?= htmlspecialchars($student_id ?? '') ?>">
+
+        <!-- Requirement -->
+        <div class="mb-3">
+
+            <label for="requirement_id" class="form-label">
+                Requirement
+            </label>
+
+            <select
+                class="form-select"
+                id="requirement_id"
+                name="requirement_id"
+                required>
+
+                <option value="" selected disabled>
+                    Select requirement
+                </option>
+
+            </select>
+
+        </div>
+
+        <!-- File -->
+        <div class="mb-3">
+
+            <label for="requirement_file" class="form-label">
+                Upload Document
+            </label>
+
+            <input
+                type="file"
+                class="form-control"
+                id="requirement_file"
+                name="requirement_file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                required>
+
+            <div class="form-text">
+                Accepted formats: PDF, JPG, JPEG, PNG.
+            </div>
+
+        </div>
+
+        <!-- Notes -->
+        <div class="mb-3">
+
+            <label for="requirement_notes" class="form-label">
+                Notes
+            </label>
+
+            <textarea
+                class="form-control"
+                id="requirement_notes"
+                name="requirement_notes"
+                rows="2"
+                placeholder="Optional notes..."></textarea>
+
+        </div>
+
+        <hr>
+
+        <!-- Requirements List -->
+        <div class="mb-3">
+
+            <h6 class="fw-semibold mb-1">
+                Requirements List
+            </h6>
+
+            <small class="text-muted">
+                List of required documents
+            </small>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-hover align-middle">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>Requirement</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Submitted Date</th>
+                    </tr>
+                </thead>
+
+                <tbody id="studentRequirementsTable">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+
+        <button type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
+            Cancel
+        </button>
+
+        <button type="submit"
+                class="btn btn-primary">
+            Save
+        </button>
+
+    </div>
+
+</form>
+
+        </div>
+    </div>
+</div>
+
+</div>
 
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

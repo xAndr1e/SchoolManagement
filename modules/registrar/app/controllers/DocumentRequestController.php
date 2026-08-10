@@ -36,11 +36,12 @@ use App\Models\Employee;
     public function allDocumentRequest()
     {
  
-      $document = DocumentRequest::allDocumentRequest();
-      Response::json($document);
+          $document = DocumentRequest::allDocumentRequest();
+          Response::json($document);
 
     }
 
+ 
 
 
 

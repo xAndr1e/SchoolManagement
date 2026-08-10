@@ -53,6 +53,7 @@ use App\Models\Semester;
     $r->get('/students/csv',[StudentController::class,'studentCSV']);
     $r->get('/students/show/{id:\d+}',[StudentController::class,'show']);
     $r->post('/students/update',[StudentController::class,'update']);
+    $r->post('/students/document/store',[StudentController::class,'insertStudentDocument']);
     
 
 
@@ -186,12 +187,13 @@ use App\Models\Semester;
     $r->get('/enrollees/all',[EnrolleeController::class,'allEnrollee']);
     $r->get('/enrollees/{id:\d+}/show',[EnrolleeController::class,'show']);
     $r->get('/enrollees/{id:\d+}/allDocs',[EnrolleeController::class,'getAllDocuments']);
+    $r->get('/enrollees/{id:\d+}/Docs',[EnrolleeController::class,'getAllDocumentAlsoSubmitted']);
     $r->post('/enrollees/{id:\d+}/update',[EnrolleeController::class,'updateDocumentVerified']);
     $r->get('/enrollee/{id:\d+}/pdf',[EnrolleeController::class,'enrolleePdf']);
     $r->post('/enrollee/{id:\d+}/approve',[EnrolleeController::class,'enrolleeApprove']);
     $r->post('/enrollee/{id:\d+}/decline',[EnrolleeController::class,'enrolleeDecline']);
 
-
+  
 // setions 
  
     $r->get('/section',[SectionController::class,'index']);

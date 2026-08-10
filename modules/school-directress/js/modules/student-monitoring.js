@@ -1,8 +1,4 @@
 (function () {
-    // ⚠️ Verify this matches the router's page key exactly — the Incidents
-    // module uses 'incident' (singular) despite plural filenames, so don't
-    // assume this one is 'student-monitoring' without checking Page.php.
-    const PAGE_KEY  = 'student-monitoring';
     const PAGE_SIZE = 10;
 
     let els = {};
@@ -185,8 +181,5 @@
     // Inline onclick="" handlers in the markup call this directly
     window.smToggle = toggle;
 
-    document.addEventListener('DOMContentLoaded', init);
-    document.addEventListener('page:loaded', function (e) {
-        if (e.detail && e.detail.page === PAGE_KEY) init();
-    });
+    document.addEventListener('page:loaded', init);
 })();

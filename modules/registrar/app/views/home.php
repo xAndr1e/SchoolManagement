@@ -108,13 +108,30 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6" id="card-6">
-                <div class="card border-0 border-start border-Dark border-4 shadow-sm h-100 py-2">
+
+             <div class="col-xl-3 col-md-6" id="card-6">
+                <div class="card border-0 border-start border-danger border-4 shadow-sm h-100 py-2">
                     <div class="card-body">
                         <div class="row align-items-center no-gutters">
                             <div class="col me-2">
-                                <div class="text-xs fw-bold text-Dark text-uppercase mb-1">Active Students</div>
-                                <div class="h5 mb-0 fw-bold text-gray-800" id="activeStudents">12</div>
+                                <div class="text-xs fw-bold text-danger text-uppercase mb-1">Curriculums</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800" id="totalStudents">12</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-people-fill fs-2 text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <div class="col-xl-3 col-md-6" id="card-6">
+                <div class="card border-0 border-start border-danger border-4 shadow-sm h-100 py-2">
+                    <div class="card-body">
+                        <div class="row align-items-center no-gutters">
+                            <div class="col me-2">
+                                <div class="text-xs fw-bold text-danger text-uppercase mb-1">Offered Programs</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800" id="totalStudents">12</div>
                             </div>
                             <div class="col-auto">
                                 <i class="bi bi-people-fill fs-2 text-gray-300"></i>

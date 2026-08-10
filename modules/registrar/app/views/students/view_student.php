@@ -321,7 +321,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 
         <!-- FORM IS NOW THE MODAL CONTENT -->
-        <form id="editStudentForm"
+        <form id="updateStudentForm"
               action=""
               method="POST"
               class="modal-content shadow-lg border-0 rounded-3 needs-validation"
@@ -331,7 +331,7 @@
             <input type="hidden"
                    name="applicant_id"
                    id="edit_applicant_id"
-                   value="<?= htmlspecialchars($student['id'] ?? '') ?>">
+                   value="<?= htmlspecialchars(string: $applicant_id ?? '') ?>">
 
             <!-- HEADER -->
             <div class="modal-header bg-primary text-white">
@@ -381,22 +381,22 @@
                                         required>
 
                                     <option value="freshmen"
-                                        <?= ($student['admission_type'] ?? '') === 'freshmen' ? 'selected' : '' ?>>
+                                        <?= ($admission_type ?? '') === 'freshmen' ? 'selected' : '' ?>>
                                         Freshmen
                                     </option>
 
                                     <option value="transferee"
-                                        <?= ($student['admission_type'] ?? '') === 'transferee' ? 'selected' : '' ?>>
+                                        <?= ($admission_type ?? '') === 'transferee' ? 'selected' : '' ?>>
                                         Transferee
                                     </option>
 
                                     <option value="returnee"
-                                        <?= ($student['admission_type'] ?? '') === 'returnee' ? 'selected' : '' ?>>
+                                        <?= ($admission_type ?? '') === 'returnee' ? 'selected' : '' ?>>
                                         Returnee
                                     </option>
 
-                                    <option value="senior_high"
-                                        <?= ($student['admission_type'] ?? '') === 'senior_high' ? 'selected' : '' ?>>
+                                    <option value="senior"
+                                        <?= ($admission_type ?? '') === 'senior' ? 'selected' : '' ?>>
                                         Senior High
                                     </option>
 
@@ -417,12 +417,12 @@
                                         required>
 
                                     <option value="No"
-                                        <?= ($student['working_student'] ?? '') === 'No' ? 'selected' : '' ?>>
+                                        <?= ($applicant_working_student ?? '') === 'No' ? 'selected' : '' ?>>
                                         No
                                     </option>
 
                                     <option value="Yes"
-                                        <?= ($student['working_student'] ?? '') === 'Yes' ? 'selected' : '' ?>>
+                                        <?= ($applicant_working_student ?? '') === 'Yes' ? 'selected' : '' ?>>
                                         Yes
                                     </option>
 
@@ -442,7 +442,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_school_last_attended"
                                        name="school_last_attended"
-                                       value="<?= htmlspecialchars($student['school_last_attended'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_last_school ?? '') ?>"
                                        required>
 
                             </div>
@@ -463,25 +463,27 @@
                                        class="form-control form-control-sm"
                                        id="edit_year_graduated"
                                        name="year_graduated"
-                                       value="<?= htmlspecialchars($student['year_graduated'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_year_graduated ?? '') ?>"
                                        required>
 
                             </div>
 
 
                             <div class="col-md-4">
-
-                                <label for="edit_course_id"
-                                       class="form-label small text-muted mb-1">
-                                    Course ID
+                                <label for="edit_course_id" class="form-label small text-muted mb-1">
+                                    Course
                                 </label>
-
-                                <input type="number"
-                                       class="form-control form-control-sm"
-                                       id="edit_course_id"
-                                       name="course_id"
-                                       value="<?= htmlspecialchars($student['course_id'] ?? '') ?>">
-
+                                <select class="form-select form-select-sm" 
+                                        id="edit_course_id" 
+                                        name="course_id">
+                                    <option value="">Select Course</option>
+                                    <?php foreach ($all_courses as $course): ?>
+                                        <option value="<?= $course['id'] ?>" 
+                                            <?= (isset($course['id']) && $applicant_course_id == $course['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($course['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
 
@@ -496,7 +498,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_how_hear"
                                        name="how_hear"
-                                       value="<?= htmlspecialchars($student['how_hear'] ?? '') ?>">
+                                       value="<?= htmlspecialchars( $applicant_how_hear ?? '') ?>">
 
                             </div>
 
@@ -528,7 +530,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_surname"
                                        name="surname"
-                                       value="<?= htmlspecialchars($student['surname'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_surname ?? '') ?>"
                                        required>
                             </div>
 
@@ -543,7 +545,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_first_name"
                                        name="first_name"
-                                       value="<?= htmlspecialchars($student['first_name'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_first_name ?? '') ?>"
                                        required>
                             </div>
 
@@ -558,7 +560,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_middle_name"
                                        name="middle_name"
-                                       value="<?= htmlspecialchars($student['middle_name'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_middle_name ?? '') ?>">
                             </div>
 
 
@@ -572,7 +574,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_suffix"
                                        name="suffix"
-                                       value="<?= htmlspecialchars($student['suffix'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_suffix ?? '') ?>">
                             </div>
 
                         </div>
@@ -593,17 +595,17 @@
                                         required>
 
                                     <option value="Male"
-                                        <?= ($student['sex'] ?? '') === 'Male' ? 'selected' : '' ?>>
+                                        <?= ($applicant_sex ?? '') === 'Male' ? 'selected' : '' ?>>
                                         Male
                                     </option>
 
                                     <option value="Female"
-                                        <?= ($student['sex'] ?? '') === 'Female' ? 'selected' : '' ?>>
+                                        <?= ($applicant_sex ?? '') === 'Female' ? 'selected' : '' ?>>
                                         Female
                                     </option>
 
                                     <option value="Other"
-                                        <?= ($student['sex'] ?? '') === 'Other' ? 'selected' : '' ?>>
+                                        <?= ($applicant_sex ?? '') === 'Other' ? 'selected' : '' ?>>
                                         Other
                                     </option>
 
@@ -623,7 +625,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_date_of_birth"
                                        name="date_of_birth"
-                                       value="<?= htmlspecialchars($student['date_of_birth'] ?? '') ?>"
+                                       value="<?= !empty($applicant_dob) ? date('Y-m-d', strtotime($applicant_dob)) : '' ?>"
                                        required>
 
                             </div>
@@ -640,7 +642,7 @@
                                        class="form-control form-control-sm bg-light"
                                        id="edit_age"
                                        name="age"
-                                       value="<?= htmlspecialchars($student['age'] ?? '') ?>"
+                                       value="<?= !empty($applicant_dob) ? date_diff(date_create($applicant_dob), date_create('today'))->y : '' ?>"
                                        readonly>
 
                             </div>
@@ -657,7 +659,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_place_of_birth"
                                        name="place_of_birth"
-                                       value="<?= htmlspecialchars($student['place_of_birth'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_place_of_birth ?? '') ?>"
                                        required>
 
                             </div>
@@ -680,22 +682,22 @@
                                         required>
 
                                     <option value="Single"
-                                        <?= ($student['civil_status'] ?? '') === 'Single' ? 'selected' : '' ?>>
+                                        <?= ($applicant_civil_status ?? '') === 'Single' ? 'selected' : '' ?>>
                                         Single
                                     </option>
 
                                     <option value="Married"
-                                        <?= ($student['civil_status'] ?? '') === 'Married' ? 'selected' : '' ?>>
+                                        <?= ($applicant_civil_status ?? '') === 'Married' ? 'selected' : '' ?>>
                                         Married
                                     </option>
 
                                     <option value="Divorced"
-                                        <?= ($student['civil_status'] ?? '') === 'Divorced' ? 'selected' : '' ?>>
+                                        <?= ($applicant_civil_status ?? '') === 'Divorced' ? 'selected' : '' ?>>
                                         Divorced
                                     </option>
 
                                     <option value="Widowed"
-                                        <?= ($student['civil_status'] ?? '') === 'Widowed' ? 'selected' : '' ?>>
+                                        <?= ($applicant_civil_status ?? '') === 'Widowed' ? 'selected' : '' ?>>
                                         Widowed
                                     </option>
 
@@ -715,7 +717,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_religion"
                                        name="religion"
-                                       value="<?= htmlspecialchars($student['religion'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_religion ?? '') ?>">
 
                             </div>
 
@@ -748,7 +750,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_email"
                                        name="email"
-                                       value="<?= htmlspecialchars($student['email'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_email ?? '') ?>"
                                        required>
 
                             </div>
@@ -765,7 +767,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_contact_number"
                                        name="contact_number"
-                                       value="<?= htmlspecialchars($student['contact_number'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_contact_number ?? '') ?>"
                                        required>
 
                             </div>
@@ -782,7 +784,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_facebook"
                                        name="facebook"
-                                       value="<?= htmlspecialchars($student['facebook'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_facebook ?? '') ?>">
 
                             </div>
 
@@ -798,7 +800,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_messenger"
                                        name="messenger"
-                                       value="<?= htmlspecialchars($student['messenger'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_messenger ?? '') ?>">
 
                             </div>
 
@@ -818,7 +820,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_address_barangay"
                                        name="address_barangay"
-                                       value="<?= htmlspecialchars($student['address_barangay'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_barangay ?? '') ?>"
                                        required>
 
                             </div>
@@ -835,7 +837,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_address_city"
                                        name="address_city"
-                                       value="<?= htmlspecialchars($student['address_city'] ?? '') ?>"
+                                       value="<?= $applicant_city ?? '' ?>"
                                        required>
 
                             </div>
@@ -852,7 +854,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_address_province"
                                        name="address_province"
-                                       value="<?= htmlspecialchars($student['address_province'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_province ?? '') ?>"
                                        required>
 
                             </div>
@@ -872,7 +874,7 @@
                                 <textarea class="form-control form-control-sm"
                                           id="edit_address_complete"
                                           name="address_complete"
-                                          rows="2"><?= htmlspecialchars($student['address_complete'] ?? '') ?></textarea>
+                                          rows="2"><?= htmlspecialchars($applicant_address_complete ?? '') ?></textarea>
 
                             </div>
 
@@ -905,7 +907,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_parent_full_name"
                                        name="parent_full_name"
-                                       value="<?= htmlspecialchars($student['parent_full_name'] ?? '') ?>"
+                                       value="<?= htmlspecialchars($applicant_parent_name ?? '') ?>"
                                        required>
 
                             </div>
@@ -922,7 +924,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_parent_contact"
                                        name="parent_contact"
-                                       value="<?= htmlspecialchars($student['parent_contact'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_parent_contact ?? '') ?>">
 
                             </div>
 
@@ -942,7 +944,7 @@
                                        class="form-control form-control-sm"
                                        id="edit_parent_address"
                                        name="parent_address"
-                                       value="<?= htmlspecialchars($student['parent_address'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($applicant_parent_address ?? '') ?>">
 
                             </div>
 

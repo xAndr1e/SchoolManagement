@@ -127,10 +127,10 @@
              <i class="fa-solid fa-chevron-down"></i>
             </a>
         </h2>
-         <div id="schoolReports" class="collapse <?php echo in_array(CURRENT_URI, ['reports','file','reports-approval','reports-submit']) ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
+         <div id="schoolReports" class="collapse <?php echo in_array(CURRENT_URI, ['reports','file','reports-approval','reports-submit','requested']) ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
         <ul>
              <li><a href="<?php echo BASE_URL?>/reports" class="menu-link <?php echo CURRENT_URI  === "reports" ? 'active' : '' ?>" id="reports">Reports</a></li>
-              <li><a href="<?php echo BASE_URL?>/documents-request" class="menu-link <?php echo CURRENT_URI  === "documents-request" ? 'active' : '' ?>" id="file">Documents Requests</a></li> 
+              <li><a href="<?php echo BASE_URL?>/requested" class="menu-link <?php echo CURRENT_URI  === "requested" ? 'active' : '' ?>" id="file">Documents Requests</a></li> 
               <li><a href="<?php echo BASE_URL?>/reports-approval" class="menu-link <?php echo CURRENT_URI  === "reports-approval" ? 'active' : '' ?>" id="reports-approval">Approval & Decision Support</a></li>
                <li><a href="<?php echo BASE_URL?>/reports-submit" class="menu-link <?php echo CURRENT_URI  === "reports-submit" ? 'active' : '' ?>" id="reports-submit">Report Submission Management</a></li>
         </ul>

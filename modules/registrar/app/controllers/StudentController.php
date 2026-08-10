@@ -48,19 +48,20 @@ class StudentController extends Controller {
         $enrollee = Student::find($id);
         $applicant = Enrollee::find($enrollee['applicant_id']);
         $course = Course::find($applicant['course_id']);
-
-   
+        $allCourses = Course::all();
 
         $this->render('/students/view_student',
         [
             'user' => $user,
             'semester' => $semester,
             'schoolYear' => $schoolYear,
-            'applicant_id' => $enrollee['student_id'],
+            'applicant_id' => $enrollee['applicant_id'],
             'applicant_number' => $enrollee['student_number'],
+            'applicant_working_student' => $applicant['working_student'],
             'applicant_surname' => $applicant['surname'],
             'applicant_first_name' => $applicant['first_name'],
             'applicant_middle_name' => $applicant['middle_name'],
+            'applicant_religion' => $applicant['religion'],
             'applicant_suffix' => $applicant['suffix'],
             'applicant_sex' => $applicant['sex'],
             'applicant_dob' => date("F d, Y", strtotime($applicant['date_of_birth'])),
@@ -68,6 +69,8 @@ class StudentController extends Controller {
             'applicant_civil_status' => $applicant['civil_status'],
             'applicant_email' => $applicant['email'],
             'applicant_contact_number' => $applicant['contact_number'],
+            'applicant_facebook' => $applicant['facebook'],
+            'applicant_messenger' => $applicant['messenger'],
             'applicant_barangay' => ucFirst($applicant['address_barangay']),
             'applicant_city' => ucFirst($applicant['address_city']),
             'applicant_province' => ucFirst($applicant['address_province']),
@@ -77,12 +80,13 @@ class StudentController extends Controller {
             'applicant_submission_date' => date("F d, Y", strtotime($applicant['submitted_at'])),
             'applicant_parent_name' => $applicant['parent_full_name'],
             'applicant_parent_contact' => $applicant['parent_contact'],
+            'applicant_how_hear' => $applicant['how_hear'],
             'appplicant_parent_address' => ucFirst($applicant['parent_address']),
+            'applicant_course_id' => $course['id'],
             'applicant_course_code' => $course['code'],
             'applicant_course_name' => $course['name'],
-            'admission_type' => $applicant['admission_type']
-           
-
+            'admission_type' => $applicant['admission_type'],
+            'all_courses' => $allCourses
          ]);
 
      
@@ -98,6 +102,81 @@ class StudentController extends Controller {
 
 
         echo json_encode($active_count);
+
+    }
+
+
+    public function update()
+    {
+
+        header('Content-Type: application/json');
+    
+        $applicant_id = trim($_POST['applicant_id'] ?? '');
+        $admission_type = trim($_POST['admission_type'] ?? '');
+        $working_student = trim($_POST['working_student'] ?? '');
+        $school_last_attended = trim($_POST['school_last_attended'] ?? '');
+        $year_graduated = trim($_POST['year_graduated'] ?? '');
+        $course_id = trim($_POST['course_id'] ?? '');
+        $how_hear = trim($_POST['how_hear'] ?? '');
+        $surname = trim($_POST['surname'] ?? '');
+        $first_name = trim($_POST['first_name'] ?? '');
+        $middle_name = trim($_POST['middle_name'] ?? '');
+        $suffix = trim($_POST['suffix'] ?? '');
+        $sex = trim($_POST['sex'] ?? '');
+        $date_of_birth = trim($_POST['date_of_birth'] ?? '');
+        $age = trim($_POST['age'] ?? '');
+        $place_of_birth = trim($_POST['place_of_birth'] ?? '');
+        $civil_status = trim($_POST['civil_status'] ?? '');
+        $religion = trim($_POST['religion'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $contact_number = trim($_POST['contact_number'] ?? '');
+        $facebook = trim($_POST['facebook'] ?? '');
+        $messenger = trim($_POST['messenger'] ?? '');
+        $address_complete = trim($_POST['address_complete'] ?? '');
+        $address_barangay = trim($_POST['address_barangay'] ?? '');
+        $address_city = trim($_POST['address_city'] ?? '');
+        $address_province = trim($_POST['address_province'] ?? '');
+        $parent_full_name = trim($_POST['parent_full_name'] ?? '');
+        $parent_contact = trim($_POST['parent_contact'] ?? '');
+        $parent_address = trim($_POST['parent_address'] ?? '');
+    
+        Enrollee::update($applicant_id, [
+
+            'surname' => $surname,
+            'first_name' => $first_name,
+            'middle_name' => $middle_name,
+            'suffix' => $suffix,
+            'admission_type' => $admission_type,
+            'working_student' => $working_student,
+            'sex' => $sex,
+            'address_barangay' => $address_barangay,
+            'address_city' => $address_city,
+            'address_province' => $address_province,
+            'address_complete' => $address_complete,
+            'school_last_attended' => $school_last_attended,
+            'year_graduated' => $year_graduated,
+            'how_hear' => $how_hear,
+            'email' => $email,
+            'date_of_birth' => $date_of_birth,
+            'place_of_birth' => $place_of_birth,
+            'age' => $age,
+            'civil_status' => $civil_status,
+            'religion' => $religion,
+            'contact_number' => $contact_number,
+            'facebook' => $facebook,
+            'messenger' => $messenger,
+            'parent_full_name' => $parent_full_name,
+            'parent_contact' => $parent_contact,
+            'parent_address' => $parent_address,
+            'course_id' => $course_id
+        ]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Student Information updated successfully.'
+        ]);
+
+    
 
     }
 

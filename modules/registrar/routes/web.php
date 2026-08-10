@@ -51,7 +51,9 @@ use App\Models\Semester;
     $r->get('/students/pdf',[StudentController::class,'studentPDF']);
     $r->get('/students/excel',[StudentController::class,'studentExcel']);
     $r->get('/students/csv',[StudentController::class,'studentCSV']);
-     $r->get('/students/show/{id:\d+}',[StudentController::class,'show']);
+    $r->get('/students/show/{id:\d+}',[StudentController::class,'show']);
+    $r->post('/students/update',[StudentController::class,'update']);
+    
 
 
 // settings 

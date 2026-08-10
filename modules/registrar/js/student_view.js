@@ -1,19 +1,95 @@
-const editBtn = document.getElementById('editBtn');
+ document.addEventListener('DOMContentLoaded', function () {
+
+    const editBtn = document.getElementById('editBtn');
+    const form = document.getElementById('updateStudentForm');
 
 
-
-editBtn.addEventListener('click',function(){
+    editBtn.addEventListener('click',function(){
 
     const editStudentInfoModal = new bootstrap.Modal(document.getElementById('editStudentInfo'));
  
     editStudentInfoModal.show();
 
-});
+   });
 
 
 
 
-loadDocuments(applicantId);
+   loadDocuments(applicantId);
+
+    if (!form) {
+        return;
+    }
+
+    
+
+    form.addEventListener('submit', async function (e) {
+
+        e.preventDefault();
+
+        if (!form.checkValidity()) {
+            e.stopPropagation();
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        try {
+
+            const response = await fetch(`${BASE_URL}/students/update`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if(result.status == 'success')
+            {
+
+                
+              const modalElement = document.getElementById('editStudentInfo');
+               const modal = bootstrap.Modal.getInstance(modalElement);
+
+                if (modal) {
+                    modal.hide();
+                }
+
+                Swal.fire({
+                icon: 'success',
+                title: 'Updated!',
+                text: result.message,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d6efd'
+            }).then(() => {
+                location.reload();
+            }); 
+
+
+            }else{
+
+                 Swal.fire({
+                icon: 'error',
+                title: 'Update Failed',
+                text: 'Unable to update student information.',
+                confirmButtonColor: '#dc3545'
+            });
+            }
+
+        } catch (error) {
+
+            console.error('Update student error:', error);
+
+            alert(error.message || 'Something went wrong.');
+
+        }
+
+    });
+
+   });
+
+
+
 
 
 function loadDocuments(applicantId) {

@@ -199,6 +199,194 @@
     </div>
 </div>
 
+<!-- RECENT ENROLLEES -->
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+
+        <!-- Header -->
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-primary">
+                Recent Enrollees
+            </h6>
+
+            <a href="<?= BASE_URL ?>/enrollees"
+               class="btn btn-sm btn-outline-primary">
+                View All
+            </a>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4">Student No.</th>
+                            <th>Name</th>
+                            <th>Program</th>
+                            <th>Year Level</th>
+                            <th>Date Enrolled</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="recentEnrollees">
+
+                        <!-- Example Data -->
+                        <tr>
+                            <td class="px-4 fw-semibold">
+                                2026-000123
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10
+                                                text-primary rounded-circle
+                                                d-flex align-items-center
+                                                justify-content-center me-2"
+                                         style="width: 36px; height: 36px;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+
+                                    <div>
+                                        <div class="fw-semibold">
+                                            Juan Dela Cruz
+                                        </div>
+                                        <small class="text-muted">
+                                            juan.delacruz@email.com
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                BS Information Systems
+                            </td>
+
+                            <td>
+                                4th Year
+                            </td>
+
+                            <td>
+                                August 11, 2026
+                            </td>
+
+                            <td>
+                                <span class="badge bg-success">
+                                    Enrolled
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="px-4 fw-semibold">
+                                2026-000122
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10
+                                                text-primary rounded-circle
+                                                d-flex align-items-center
+                                                justify-content-center me-2"
+                                         style="width: 36px; height: 36px;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+
+                                    <div>
+                                        <div class="fw-semibold">
+                                            Maria Santos
+                                        </div>
+                                        <small class="text-muted">
+                                            maria.santos@email.com
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                BS Information Technology
+                            </td>
+
+                            <td>
+                                3rd Year
+                            </td>
+
+                            <td>
+                                August 10, 2026
+                            </td>
+
+                            <td>
+                                <span class="badge bg-success">
+                                    Enrolled
+                                </span>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="px-4 fw-semibold">
+                                2026-000121
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10
+                                                text-primary rounded-circle
+                                                d-flex align-items-center
+                                                justify-content-center me-2"
+                                         style="width: 36px; height: 36px;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+
+                                    <div>
+                                        <div class="fw-semibold">
+                                            Pedro Reyes
+                                        </div>
+                                        <small class="text-muted">
+                                            pedro.reyes@email.com
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                BS Computer Science
+                            </td>
+
+                            <td>
+                                2nd Year
+                            </td>
+
+                            <td>
+                                August 10, 2026
+                            </td>
+
+                            <td>
+                                <span class="badge bg-success">
+                                    Enrolled
+                                </span>
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+</div>
+
+
+
   
 
     </div> 

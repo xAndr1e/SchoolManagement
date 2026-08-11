@@ -54,7 +54,7 @@ use App\Models\Semester;
     $r->get('/students/show/{id:\d+}',[StudentController::class,'show']);
     $r->post('/students/update',[StudentController::class,'update']);
     $r->post('/students/document/store',[StudentController::class,'insertStudentDocument']);
-    
+    $r->get('/students/{id:\d+}/getCOR',[CorController::class,'generateCor']);    
 
 
 // settings 
@@ -261,6 +261,9 @@ use App\Models\Semester;
 // COR 
 
   $r->get('/COR',[CorController::class,'index']);
+  $r->get('/COR/{id:\d+}/pdf',[CorController::class,'CorPDF']);
+
+  
 
 
 // TOR 

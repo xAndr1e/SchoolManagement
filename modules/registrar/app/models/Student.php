@@ -12,6 +12,56 @@
         public $primaryKey = 'student_id';
 
 
+      protected function generateCor(int $id)
+{
+    $sql = "
+        SELECT 
+            ea.surname,
+            ea.first_name,
+            rc.name AS course_name,
+            ccs.start_time,
+            ccs.end_time,
+            csec.section_code,
+            ccs.day_of_week,
+            een.academic_standing,
+            rs.code AS subject_code,
+            rs.name AS subject_name
+
+        FROM $this->tableName es
+
+        JOIN enr_applicants ea 
+            ON ea.applicant_id = es.applicant_id
+
+        JOIN enr_enrollments een 
+            ON een.student_id = es.student_id
+
+        JOIN cc_sections csec 
+            ON csec.id = een.section_id
+
+        JOIN rgr_courses rc 
+            ON rc.id = csec.program_id
+
+        JOIN cc_schedule ccs 
+            ON ccs.id = een.schedule_id
+
+        JOIN cc_faculty_load ccf 
+            ON ccf.id = ccs.faculty_load_id
+
+        JOIN rgr_subjects rs 
+            ON rs.id = ccs.subject_id
+
+        WHERE es.student_id = :studentId
+    ";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    $stmt->execute([
+        ':studentId' => $id
+    ]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
         protected function generateStudentNumber()
         {
     

@@ -7,10 +7,12 @@
  class Enrollment extends Model
  {
 
-    public $tableName = 'rgr_enrollments';
-    public $primaryKey= 'id'; 
+    public $tableName = 'enr_enrollments';
+    public $primaryKey= 'enrollment_id'; 
 
 
+
+    
 
      public static function __callStatic($name, $arguments)
     {

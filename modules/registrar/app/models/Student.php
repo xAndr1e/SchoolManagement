@@ -96,7 +96,7 @@
    
         protected function countActiveStudents() {
 
-            $stmt = $this->pdo->query("SELECT COUNT(*) as totalActiveStudent FROM $this->tableName where student_status = 'active' ");
+            $stmt = $this->pdo->query("SELECT COUNT(*) as totalActiveStudent FROM $this->tableName where enrollment_status = 'enrolled' ");
             return $stmt->fetch(PDO::FETCH_ASSOC);
         }
 

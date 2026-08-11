@@ -43,6 +43,11 @@ use App\Models\Semester;
     $r->get('/students/count',[HomeController::class,'countNumber']);
     $r->get('/students/subCount',[HomeController::class,'countSubjectNumber']);
     $r->get('/students/enrolleeCount',[HomeController::class,'countEnrolleeNumber']);
+    $r->get('/students/CountCOR',[HomeController::class,'countAllCorRequest']);
+    $r->get('/students/CountTOR',[HomeController::class,'countAllTorRequest']);
+    $r->get('/students/CountCurriculum',[HomeController::class,'countAllCurriculum']);
+    $r->get('/students/CountCourse',[HomeController::class,'countAllCourses']);
+    
 
 // students 
 
@@ -262,6 +267,7 @@ use App\Models\Semester;
 
   $r->get('/COR',[CorController::class,'index']);
   $r->get('/COR/{id:\d+}/pdf',[CorController::class,'CorPDF']);
+  
 
   
 
@@ -276,6 +282,8 @@ use App\Models\Semester;
 $r->get('/requested',[DocumentRequestController::class,'index']);
 $r->get('/allDocumentRequest',[DocumentRequestController::class,'allDocumentRequest']);
 $r->get('/allDocument/{id:\d+}',[DocumentRequestController::class,'getAllDocuments']);
+
+
 
 
 

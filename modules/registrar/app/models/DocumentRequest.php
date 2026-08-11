@@ -10,6 +10,37 @@
  
     public $tableName = 'rgr_document_requests';
     public $primaryKey = 'id';
+
+
+
+    protected function countAllTorRequest()
+    {
+        $sql = "SELECT COUNT(*) AS total_pending_tor
+        FROM $this->tableName                                                                                                                             
+        WHERE document_type = 'TOR'
+        AND status = 'pending'";
+
+          $stmt = $this->pdo->prepare($sql);
+
+        $stmt->execute();
+
+         return $stmt->fetch(PDO::FETCH_ASSOC);
+
+    }
+
+    protected function countAllCorRequest()
+    {
+         $sql = "SELECT COUNT(*) AS total_pending_cor
+        FROM $this->tableName                                                                                                                             
+        WHERE document_type = 'COR'
+        AND status = 'pending'";
+
+          $stmt = $this->pdo->prepare($sql);
+
+        $stmt->execute();
+
+         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
    
  
     protected function allDocumentRequest($paginate = true)

@@ -14,6 +14,20 @@ class Course extends Model {
     public $primaryKey = 'id';
 
 
+    protected function countAllCourses()
+{
+    $sql = "
+        SELECT COUNT(*) AS total_courses
+        FROM $this->tableName
+    ";
+
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute();
+
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+
 
     protected function allCourses($paginate = true)
     {

@@ -50,10 +50,10 @@
                         <div class="row align-items-center no-gutters">
                             <div class="col me-2">
                                 <div class="text-xs fw-bold text-info text-uppercase mb-1">COR Requests</div>
-                                <div class="h5 mb-0 fw-bold text-gray-800" id="enrollee">12</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800" id="corRequests">12</div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-file-alt fa-2x text-gray-300" id="corRequests"></i>
+                                <i class="fas fa-file-alt fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -110,12 +110,12 @@
 
 
              <div class="col-xl-3 col-md-6" id="card-6">
-                <div class="card border-0 border-start border-danger border-4 shadow-sm h-100 py-2">
+                <div class="card border-0 border-start border-primary border-4 shadow-sm h-100 py-2">
                     <div class="card-body">
                         <div class="row align-items-center no-gutters">
                             <div class="col me-2">
-                                <div class="text-xs fw-bold text-danger text-uppercase mb-1">Curriculums</div>
-                                <div class="h5 mb-0 fw-bold text-gray-800" id="totalStudents">12</div>
+                                <div class="text-xs fw-bold text-primary text-uppercase mb-1">Curriculums</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800" id="curriculums">12</div>
                             </div>
                             <div class="col-auto">
                                 <i class="bi bi-people-fill fs-2 text-gray-300"></i>
@@ -131,7 +131,7 @@
                         <div class="row align-items-center no-gutters">
                             <div class="col me-2">
                                 <div class="text-xs fw-bold text-danger text-uppercase mb-1">Offered Programs</div>
-                                <div class="h5 mb-0 fw-bold text-gray-800" id="totalStudents">12</div>
+                                <div class="h5 mb-0 fw-bold text-gray-800" id="offeredPrograms">12</div>
                             </div>
                             <div class="col-auto">
                                 <i class="bi bi-people-fill fs-2 text-gray-300"></i>
@@ -236,141 +236,11 @@
 
                     <tbody id="recentEnrollees">
 
-                        <!-- Example Data -->
-                        <tr>
-                            <td class="px-4 fw-semibold">
-                                2026-000123
-                            </td>
-
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10
-                                                text-primary rounded-circle
-                                                d-flex align-items-center
-                                                justify-content-center me-2"
-                                         style="width: 36px; height: 36px;">
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
-
-                                    <div>
-                                        <div class="fw-semibold">
-                                            Juan Dela Cruz
-                                        </div>
-                                        <small class="text-muted">
-                                            juan.delacruz@email.com
-                                        </small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>
-                                BS Information Systems
-                            </td>
-
-                            <td>
-                                4th Year
-                            </td>
-
-                            <td>
-                                August 11, 2026
-                            </td>
-
-                            <td>
-                                <span class="badge bg-success">
-                                    Enrolled
-                                </span>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="px-4 fw-semibold">
-                                2026-000122
-                            </td>
-
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10
-                                                text-primary rounded-circle
-                                                d-flex align-items-center
-                                                justify-content-center me-2"
-                                         style="width: 36px; height: 36px;">
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
-
-                                    <div>
-                                        <div class="fw-semibold">
-                                            Maria Santos
-                                        </div>
-                                        <small class="text-muted">
-                                            maria.santos@email.com
-                                        </small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>
-                                BS Information Technology
-                            </td>
-
-                            <td>
-                                3rd Year
-                            </td>
-
-                            <td>
-                                August 10, 2026
-                            </td>
-
-                            <td>
-                                <span class="badge bg-success">
-                                    Enrolled
-                                </span>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="px-4 fw-semibold">
-                                2026-000121
-                            </td>
-
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10
-                                                text-primary rounded-circle
-                                                d-flex align-items-center
-                                                justify-content-center me-2"
-                                         style="width: 36px; height: 36px;">
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
-
-                                    <div>
-                                        <div class="fw-semibold">
-                                            Pedro Reyes
-                                        </div>
-                                        <small class="text-muted">
-                                            pedro.reyes@email.com
-                                        </small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>
-                                BS Computer Science
-                            </td>
-
-                            <td>
-                                2nd Year
-                            </td>
-
-                            <td>
-                                August 10, 2026
-                            </td>
-
-                            <td>
-                                <span class="badge bg-success">
-                                    Enrolled
-                                </span>
-                            </td>
-                        </tr>
+                         <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    Loading enrollees...
+                                </td>
+                            </tr>
 
                     </tbody>
 

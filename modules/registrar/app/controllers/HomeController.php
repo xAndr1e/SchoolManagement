@@ -4,6 +4,9 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Helper\Response;
+use App\Models\Course;
+use App\Models\Curriculum;
+use App\Models\DocumentRequest;
 use App\Models\Employee;
 use App\Models\Enrollee;
 use App\Models\SchoolYear;
@@ -61,6 +64,34 @@ use App\Models\Subject;
         $enrollee_count = Enrollee::numberOfEnrollee();
         Response::json($enrollee_count);
 
+    }
+
+    public function countAllTorRequest()
+    {
+         $torRequestCount = DocumentRequest::countAllTorRequest();
+         Response::json($torRequestCount);
+    }
+
+    public function countAllCorRequest()
+    {
+        
+        $corRequestCount = DocumentRequest::countAllCorRequest();
+         Response::json($corRequestCount);
+    }
+
+
+    public function countAllCurriculum()
+    {
+        
+         $curriculum = Curriculum::countAllActiveCurriculums();
+         Response::json($curriculum);
+    }
+
+       public function countAllCourses()
+    {
+        
+         $courses = Course::countAllCourses();
+         Response::json($courses);
     }
 
 

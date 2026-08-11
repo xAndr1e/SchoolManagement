@@ -13,6 +13,21 @@
        public $primaryKey = 'id';
 
 
+    protected function countAllActiveCurriculums()
+    {
+         $sql = "
+                SELECT COUNT(*) AS total_active_curriculums
+                FROM $this->tableName
+                WHERE is_active = 1
+            ";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+
     protected function allCurriculumByCourse(int $id)
     {
         $curriculum = $id;

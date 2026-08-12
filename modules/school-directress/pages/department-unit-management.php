@@ -27,6 +27,9 @@ $departmentsWithDetails = $department->getDepartmentsWithDetails();
             <div class="dept-card">
                 <div class="dept-table-wrapper">
                     <table class="dept-table">
+            <div class="table-responsive">
+                <div class="form-section">
+                    <table class="department-table">
                         <thead>
                             <tr>
                                 <th>Department Name</th>

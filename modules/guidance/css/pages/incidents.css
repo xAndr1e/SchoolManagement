@@ -39,7 +39,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--color9);
+    background: var(--color3);
+    border: 1px solid var(--color4);
     border-radius: 7px;
     padding: 6px 10px;
     flex: 1 1 160px;
@@ -81,11 +82,11 @@
 .incdnt-table { width: 100%; border-collapse: collapse; }
 .incdnt-table thead th {
     text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .03em;
-    color: var(--color5); background: var(--color9); padding: 12px 16px; border-bottom: 1px solid var(--color4);
+    color: var(--color5); background: var(--color3); padding: 12px 16px; border-bottom: 1px solid var(--color9);
 }
 .incdnt-table tbody td { padding: 12px 16px; font-size: 14px; color: var(--color2); border-bottom: 1px solid var(--color9); vertical-align: middle; }
 .incdnt-table tbody tr { cursor: pointer; }
-.incdnt-table tbody tr:hover { background: var(--color9); }
+.incdnt-table tbody tr:hover { background: var(--color3); }
 .incdnt-table__empty { text-align: center; padding: 40px 16px; color: var(--color5); font-size: 14px; }
 
 .incdnt-student-name { font-weight: 600; color: var(--color2); }

@@ -14,40 +14,59 @@ $departments = $issues->getDepartments();
 <div class="module-content">
     <div class="concerns-controls">
         <div class="concern-form">
-            <h3>Log Concern</h3>
-            <form id="concern-log-form" data-skip>
-                <div class="form-group">
-                    <label for="concern-title">Title</label>
-                    <input id="concern-title" name="title" type="text" placeholder="Short summary of the concern">
-                </div>
+    <h3>Log Concern</h3>
 
-                <div class="form-group">
-                    <label for="concern-file">Attachment <span style="font-weight:400; color:var(--muted);">(optional)</span></label>
-                    <input class="file-btn" id="concern-file" name="file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
-                    <span id="file-error" style="display:none; color:red; font-size:0.85rem;"></span>
-                </div>
+    <form id="concern-form">
+        <!-- Your existing form fields -->
 
-                <div class="form-actions">
-                    <button type="submit" class="btn-log">Log Concern</button>
-                    <button type="reset" class="btn-cancel">Clear</button>
-                </div>
-            </form>
+        <div class="form-group">
+            <label for="concern-file">
+                Attachment
+                <span style="font-weight:400; color:var(--color5);">(optional)</span>
+            </label>
+
+            <input
+                class="file-btn"
+                id="concern-file"
+                name="file"
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+            >
+
+            <span
+                id="file-error"
+                style="display:none; color:red; font-size:0.85rem;"
+            ></span>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-log">Log Concern</button>
+            <button type="reset" class="btn-cancel">Clear</button>
+        </div>
+    </form>
+</div>
+
+    <div class="concerns-list-head">
+        <h3>Issue List</h3>
+
+        <div class="concerns-filters">
+            <select id="concern-filter">
+                <option value="all">All</option>
+                <option value="open">Open</option>
+                <option value="resolved">Resolved</option>
+            </select>
+
+            <input
+                class="concern-search"
+                id="concern-search"
+                type="search"
+                placeholder="Search by title or submitter"
+            >
         </div>
     </div>
 
-    <div class="concerns-list table-responsive">
-        <div class="concerns-list-head">
-            <h3>Issue List</h3>
-            <div class="concerns-filters">
-                <select id="concern-filter">
-                    <option value="all">All</option>
-                    <option value="open">Open</option>
-                    <option value="resolved">Resolved</option>
-                </select>
-                <input class="concern-search" id="concern-search" type="search" placeholder="Search by title or submitter">
-            </div>
-        </div>
-
+<div class="concerns-list">
+    <div class="concern-table-wrapper">
         <table class="concern-table">
             <thead>
                 <tr>
@@ -61,8 +80,11 @@ $departments = $issues->getDepartments();
                     <th>Actions</th>
                 </tr>
             </thead>
+
             <tbody>
-                <tr><td colspan="8" class="muted">Loading…</td></tr>
+                <tr>
+                    <td colspan="8" class="muted">Loading…</td>
+                </tr>
             </tbody>
         </table>
     </div>

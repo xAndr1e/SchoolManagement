@@ -9,6 +9,7 @@ use App\Controllers\DocumentController;
 use App\Controllers\DocumentRequestController;
 use App\Controllers\EnrolleeController;
 use App\Controllers\EnrollmentController;
+use App\Controllers\GradeController;
 use App\Controllers\HomeController;
 use App\Controllers\IssueTrackingController;
 use App\Controllers\NotificationController;
@@ -282,6 +283,12 @@ use App\Models\Semester;
 $r->get('/requested',[DocumentRequestController::class,'index']);
 $r->get('/allDocumentRequest',[DocumentRequestController::class,'allDocumentRequest']);
 $r->get('/allDocument/{id:\d+}',[DocumentRequestController::class,'getAllDocuments']);
+
+
+// grades 
+
+$r->get('/grades',[GradeController::class,'index']);
+
 
 
 

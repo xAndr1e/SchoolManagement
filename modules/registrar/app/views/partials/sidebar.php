@@ -82,7 +82,7 @@
         </h2>
 
 
-        <div id="studentMenu" class="collapse <?php echo in_array(CURRENT_URI, ['students','enrollees','subject-loading','class-offering','curriculum','curriculum-subject']) || str_contains(CURRENT_URI,'section-schedule')  || str_contains(CURRENT_URI,'class-offering') ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
+        <div id="studentMenu" class="collapse <?php echo in_array(CURRENT_URI, ['students','enrollees','subject-loading','class-offering','curriculum','curriculum-subject','grades','COR','TOR','enrollment']) || str_contains(CURRENT_URI,'section-schedule')  || str_contains(CURRENT_URI,'class-offering') ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
         <ul>
              <li><a href="<?php echo BASE_URL?>/students" class="menu-link <?php echo CURRENT_URI  === "students" ? 'active' : '' ?>" id="student">Students</a></li>
              <li><a href="<?php echo BASE_URL?>/enrollees" class="menu-link d-none <?php echo CURRENT_URI  === "enrollees" ? 'active' : '' ?>" id="Enrollees">Enrollees (New Students)</a></li>
@@ -92,7 +92,7 @@
              <li><a href="<?php echo BASE_URL?>/enrollment" class="menu-link <?php echo CURRENT_URI  === "enrollment" ? 'active' : '' ?>" id="Enrollment">Enrollment Records</a></li>
              <li><a href="<?php echo BASE_URL?>/COR" class="menu-link <?php echo CURRENT_URI  === "COR" ? 'active' : '' ?>" id="Enrollees">COR</a></li>
              <li><a href="<?php echo BASE_URL?>/TOR" class="menu-link <?php echo CURRENT_URI  === "TOR" ? 'active' : '' ?>" id="Enrollees">TOR</a></li>
-             <li><a href="<?php echo BASE_URL?>/Grades" class="menu-link <?php echo CURRENT_URI  === "Grades" ? 'active' : '' ?>" id="Enrollees">Grades</a></li>
+             <li><a href="<?php echo BASE_URL?>/grades" class="menu-link <?php echo CURRENT_URI  === "grades" ? 'active' : '' ?>" id="Enrollees">Grades</a></li>
         </ul>
         </div>
 

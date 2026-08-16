@@ -16,7 +16,7 @@
     $studentName = '';
 
     if ($info) {
-        $studentName = $info['first_name'] . ' ' . $info['surname'];
+        $studentName = $info['student_first_name'] . ' ' . $info['student_last_name'];
     }
 ?>
 
@@ -411,13 +411,8 @@
                 </td>
 
 
-                <td width="15%" class="label">
-                    Section:
-                </td>
+              
 
-                <td width="35%">
-                    <?= htmlspecialchars($info['section_code']) ?>
-                </td>
 
             </tr>
 
@@ -467,6 +462,14 @@
                         Subject Code
                     </th>
 
+                    <th width="15%">
+                        Section
+                    </th>
+
+                    <th width="15%">
+                        Instructor
+                    </th>
+
                     <th width="35%">
                         Subject Description
                     </th>
@@ -479,9 +482,6 @@
                         Time
                     </th>
 
-                    <th width="15%" style="text-align: center;">
-                        Status
-                    </th>
 
                 </tr>
 
@@ -524,6 +524,37 @@
                     </td>
 
 
+                     <!-- Instructor CODE -->
+
+                    <td>
+
+                    
+                            <?= htmlspecialchars(
+                                $subject['first_name']
+                            ) ?>
+
+                              <?= htmlspecialchars(
+                                $subject['last_name']
+                            ) ?>
+                       
+
+                    </td>
+
+
+                       <!-- SECTION CODE -->
+
+                    <td>
+
+                            <?= htmlspecialchars(
+                                $subject['section_code']
+                            ) ?>
+                        
+
+                    </td>
+
+
+
+
                     <!-- SUBJECT NAME -->
 
                     <td>
@@ -559,16 +590,7 @@
                     </td>
 
 
-                    <!-- STATUS -->
-
-                    <td align="center">
-
-                        <strong>
-                            Enrolled
-                        </strong>
-
-                    </td>
-
+                   
                 </tr>
 
 
@@ -580,7 +602,7 @@
                 <tr class="total-row">
 
                     <td
-                        colspan="4"
+                        colspan="5"
                         align="right"
                     >
 

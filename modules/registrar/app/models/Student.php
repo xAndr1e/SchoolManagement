@@ -16,8 +16,8 @@
 {
     $sql = "
         SELECT 
-            ea.surname,
-            ea.first_name,
+            ea.surname AS student_last_name,
+            ea.first_name AS student_first_name,
             rc.name AS course_name,
             ccs.start_time,
             ccs.end_time,
@@ -25,7 +25,8 @@
             ccs.day_of_week,
             een.academic_standing,
             rs.code AS subject_code,
-            rs.name AS subject_name
+            rs.name AS subject_name,
+            ccfac.*
 
         FROM $this->tableName es
 
@@ -46,6 +47,9 @@
 
         JOIN cc_faculty_load ccf 
             ON ccf.id = ccs.faculty_load_id
+
+        JOIN cc_faculty ccfac 
+             ON ccfac.id = ccf.faculty_id
 
         JOIN rgr_subjects rs 
             ON rs.id = ccs.subject_id

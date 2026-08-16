@@ -270,7 +270,6 @@ use App\Models\Semester;
   $r->get('/COR/{id:\d+}/pdf',[CorController::class,'CorPDF']);
   
 
-  
 
 
 // TOR 
@@ -288,9 +287,6 @@ $r->get('/allDocument/{id:\d+}',[DocumentRequestController::class,'getAllDocumen
 // grades 
 
 $r->get('/grades',[GradeController::class,'index']);
-
-
-
 
 
 

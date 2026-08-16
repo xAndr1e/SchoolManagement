@@ -36,7 +36,7 @@
                     </button>
 
                      <button class="btn btn-success btn-sm" id="insertDocuments">
-                        Insert Student Requirements 
+                        Manage Requirements
                     </button>
 
                     <button class="btn btn-secondary btn-sm" id="printPdf">
@@ -92,6 +92,15 @@
                     </button>
                 </li>
 
+                 <li class="nav-item">
+                    <button
+                        class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#enroll">
+                        Enrollment
+                    </button>
+                </li>
+
                 <li class="nav-item">
                     <button
                         class="nav-link"
@@ -110,170 +119,24 @@
             <div class="tab-content">
 
                 <!-- Personal -->
-                <div class="tab-pane fade show active" id="personal">
-
-                    <h5 class="mt-3 fw-bold">PERSONAL INFORMATION</h5>
-
-                    <div class="row mt-4">
-
-                        <div class="col-md-3 mb-3">
-                            <strong>First Name</strong>
-                            <p><?= $applicant_first_name ?? '' ?></p>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <strong>Last Name</strong>
-                            <p><?= $applicant_surname ?? '' ?></p>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <strong>Middle Name</strong>
-                            <p><?= $applicant_middle_name ?? 'N/A' ?></p>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <strong>Suffix</strong>
-                            <p><?= !empty($applicant_suffix) ? $applicant_suffix : '-' ?></p>
-                        </div>
-
-
-                        <div class="col-md-3 mb-3">
-                            <strong>Birth Date</strong>
-                            <p><?= $applicant_dob ?? '' ?></p>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <strong>Sex</strong>
-                            <p><?= $applicant_sex ?? '' ?></p>
-                        </div>
-
-                         <div class="col-md-3 mb-3">
-                            <strong>Place of Birth</strong>
-                            <p><?= $applicant_place_of_birth ?? '' ?></p>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <strong>Civil Status</strong>
-                            <p><?= $applicant_civil_status ?? '' ?></p>
-                        </div>
-
-                        
-
-                    </div>
-
-                </div>
-
+                 
+                 <?php include VIEW_PATH . '/overviews/personal.php'; ?>
+              
                 <!-- Contact -->
-                <div class="tab-pane fade" id="contact">
-
-                <h5 class="mt-3 fw-bold">CONTACT INFORMATION</h5>
-
-                <div class="row mt-4">
-
-                    <div class="col-md-3 mb-3">
-                            <strong>Email</strong>
-                            <p><?= $applicant_email ?? '' ?></p>
-                     </div>
-
-                      <div class="col-md-3 mb-3">
-                            <strong>Mobile No.</strong>
-                            <p><?= $applicant_contact_number ?? '' ?></p>
-                     </div>
-
-                </div>
-
-                <h5 class="mt-3 fw-bold">ADDRESS</h5>
-
-                 <div class="row mt-4">
-
-                    <div class="col-md-3 mb-3">
-                            <strong>Barangay</strong>
-                            <p><?= $applicant_barangay ?? '' ?></p>
-                     </div>
-
-                      <div class="col-md-3 mb-3">
-                            <strong>City</strong>
-                            <p><?= $applicant_city ?? '' ?></p>
-                     </div>
-
-                       <div class="col-md-3 mb-3">
-                            <strong>Province</strong>
-                            <p><?= $applicant_province ?? '' ?></p>
-                     </div>
-
-                       <div class="col-md-3 mb-3">
-                            <strong>Complete Address</strong>
-                            <p><?= $applicant_address_complete ?? '' ?></p>
-                     </div>
-
-                </div>
-                  
-                </div>
+                
+                <?php include VIEW_PATH . '/overviews/contact.php'; ?>
 
                 <!-- Academic -->
 
-                
+                 <?php include VIEW_PATH . '/overviews/academic.php'; ?>
 
-                <div class="tab-pane fade" id="academic">
+                 <!-- Enrollment -->
 
-                <h5 class="mt-3 fw-bold">ACADEMIC INFORMATION</h5>
-
-                <div class="row mt-4">
-
-                <div class="col-md-3 mb-3">
-                            <strong>Course Applied</strong>
-                            <p><?=  $applicant_course_code ? " $applicant_course_name ($applicant_course_code) "  : 'None' ?></p>
-                </div>
-
-                <div class="col-md-3 mb-3">
-                            <strong>School Last Attended</strong>
-                            <p><?= $applicant_last_school ?? '' ?></p>
-                </div>
-
-                 <div class="col-md-3 mb-3">
-                            <strong>Year Graduated</strong>
-                            <p><?= $applicant_year_graduated ?? '' ?></p>
-                </div>
-
-                 <div class="col-md-3 mb-3">
-                            <strong>Submitted At</strong>
-                            <p><?= $applicant_submission_date ?? '' ?></p>
-                </div>
-
-                </div>
-                
-                </div>
-
+                  <?php include VIEW_PATH . '/overviews/enrollment.php'; ?>
+                 
                 <!-- parent or guardian information -->
 
-                 <div class="tab-pane fade" id="parent">
-
-                 <h5 class="mt-3 fw-bold">PARENT/GUARDIAN INFORMATION</h5>
-
-                  <div class="row mt-4">
-
-                    <div class="col-md-3 mb-3">
-                            <strong>Parent Name</strong>
-                            <p><?= $applicant_parent_name ?? '' ?></p>
-                   </div>
-
-                      <div class="col-md-3 mb-3">
-                            <strong>Parent Contact</strong>
-                            <p><?= $applicant_parent_contact ?? '' ?></p>
-                   </div>
-
-                      <div class="col-md-3 mb-3">
-                            <strong>Parent Address</strong>
-                            <p><?= $appplicant_parent_address ?? '' ?></p>
-                   </div>
-
-                  </div>
-
-               
-
-                 
-
-                 </div>
+               <?php include VIEW_PATH . '/overviews/parent.php'; ?>
 
                 <!-- Documents -->
                 <div class="tab-pane fade" id="documents">

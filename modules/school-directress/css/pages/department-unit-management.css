@@ -58,19 +58,12 @@
 }
 
 .dept-table-wrapper {
-   Matches the same tab/table/form language as User Management.
-   (.module-header is handled by the global stylesheet — not included here.)
+    border: 1px solid var(--color9);
+    border-radius: 8px;
+    overflow: hidden;
+    overflow-x: auto;
+}
 
-   NOTE: the old CSS had a bare `input, textarea, select { width:100%; }`
-   rule — that kind of unscoped rule is exactly what stretched the
-   Student Monitoring dropdowns full-width earlier. Rules below are
-   scoped to specific containers (.form-section, .department-table, etc.)
-   instead of bare element selectors, so nothing leaks onto other pages.
-   ============================================================ */
-
-/* ── Tabs (identical pattern to User Management — intentionally
-   duplicated with the same values so either file can be dropped
-   without the other; harmless if both load together) ─────────── */
 .tab-container {
     background: var(--color3);
     border: 1px solid var(--color9);
@@ -258,7 +251,6 @@
     font-size: 0.72rem;
 }
 
-.dept-form-actions {
 .department-table {
     width: 100%;
     border-collapse: collapse;
@@ -378,7 +370,6 @@
     padding: 0.65rem 1.3rem;
     border: none;
     border-radius: 7px;
-.btn-save {
     background: var(--color1);
     color: var(--color3);
     font-size: 0.82rem;
@@ -386,6 +377,7 @@
     cursor: pointer;
     transition: background 0.15s ease;
 }
+
 
 .dept-btn-save:hover {
     background: var(--color7);
@@ -446,7 +438,7 @@
 }
 
 .btn-cancel {
-    background: var(--color3);
+    background: var(--color1);
     color: var(--color5);
     font-size: 0.82rem;
     font-weight: 600;
@@ -518,6 +510,8 @@
     .dept-btn-cancel {
         width: 100%;
     }
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 700px) {
     .tab-list {

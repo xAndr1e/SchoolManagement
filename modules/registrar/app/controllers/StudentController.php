@@ -5,7 +5,10 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Helper\Logger;
+use App\Helper\Response;
 use App\Models\Course;
+use App\Models\Curriculum;
+use App\Models\CurriculumSubject;
 use App\Models\Employee;
 use App\Models\Enrollee;
 use App\Models\EnrolleeDocuments;
@@ -19,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Csv;
 
 
 class StudentController extends Controller {
+
 
 
     public function index()
@@ -36,31 +40,58 @@ class StudentController extends Controller {
     
     }
 
+    public function allCurriculumSubjectsUsingId($id)
+    {
+        $test = CurriculumSubject::allCurriculumSubjectsUsingId($id,false);
+        Response::json($test);
+    }
+
+
      public function show(int $id)
     {
   
 
         $user = Employee::find('1003'); 
         $semester = Semester::activeSemester();
-        $schoolYear = SchoolYear::activeSchoolYear();
+        $schoolYear = SchoolYear::activeSchoolYear();       
+    
 
         $enrollee = Student::find($id);
+        $totalUnits = Curriculum::showTotalCurriculumInCourse($id);
+        $curriculum = Curriculum::showActiveCurriculumInCourse($id);
         $applicant = Enrollee::find($enrollee['applicant_id']);
         $course = Course::find($applicant['course_id']);
+        $curriculum_subject = CurriculumSubject::allCurriculumSubjectsUsingId($enrollee['student_id'],false);
         $allCourses = Course::all();
+
+
+        $groupedCurriculum = [];
+
+        foreach ($curriculum_subject as $subject) {
+
+            $year = $subject['year_level'];
+            $semesterName = $subject['semester'];
+
+            $groupedCurriculum[$year][$semesterName][] = $subject;
+        }
 
         $this->render('/students/view_student',
         [
             'user' => $user,
+            'curriculum' => $curriculum,
+            'curriculum_subject' => $curriculum_subject,
+            'groupedCurriculum' => $groupedCurriculum,
+            'totalUnits' => $totalUnits['total_units'] ?? 0,
+            'student_year' => $enrollee['year_level'],
             'student_id' => $enrollee['student_id'],
             'semester' => $semester,
-            'schoolYear' => $schoolYear,
+            'schoolYear' => $schoolYear['name'],
             'applicant_id' => $enrollee['applicant_id'],
             'applicant_number' => $enrollee['student_number'],
             'applicant_working_student' => $applicant['working_student'],
-            'applicant_surname' => $applicant['surname'],
-            'applicant_first_name' => $applicant['first_name'],
-            'applicant_middle_name' => $applicant['middle_name'],
+            'applicant_surname' => ucfirst($applicant['surname']),
+            'applicant_first_name' => ucfirst($applicant['first_name']),
+            'applicant_middle_name' => ucfirst($applicant['middle_name']),
             'applicant_religion' => $applicant['religion'],
             'applicant_suffix' => $applicant['suffix'],
             'applicant_sex' => $applicant['sex'],
@@ -75,7 +106,7 @@ class StudentController extends Controller {
             'applicant_city' => ucFirst($applicant['address_city']),
             'applicant_province' => ucFirst($applicant['address_province']),
             'applicant_address_complete' => ucFirst($applicant['address_complete']),
-            'applicant_last_school' => ucFirst($applicant['school_last_attended']),
+            'applicant_last_school' => ucwords($applicant['school_last_attended']),
             'applicant_year_graduated' => $applicant['year_graduated'],
             'applicant_submission_date' => date("F d, Y", strtotime($applicant['submitted_at'])),
             'applicant_parent_name' => $applicant['parent_full_name'],

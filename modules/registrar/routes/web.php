@@ -314,6 +314,8 @@ $r->get('/grades',[GradeController::class,'index']);
 // testing 
 
 
+$r->get('/test/{id:\d+}',[StudentController::class,'allCurriculumSubjectsUsingId']);
+
 
 
 

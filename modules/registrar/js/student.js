@@ -154,8 +154,23 @@
                         <td>${student.student_number}</td>
                         <td>${student.first_name} ${student.surname}</td>
                         <td>${student.course_code}</td>
-                        <td>${student.year_level}</td>
-                        <td>${student.enrollment_status}</td>
+                        <td> ${(() => {
+                            switch (parseInt(student.year_level)) {
+                                case 1:
+                                    return '1st Year';
+                                case 2:
+                                    return '2nd Year';
+                                case 3:
+                                    return '3rd Year';
+                                case 4:
+                                    return '4th Year';
+                                case 5:
+                                    return '5th Year';
+                                default:
+                                    return 'Unknown';
+                            }
+                        })()} </td>
+                        <td>${student.enrollment_status.charAt(0).toUpperCase() + student.enrollment_status.slice(1)}</td>
                         <td>
                             
                              <div class="dropdown">

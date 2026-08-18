@@ -2,6 +2,8 @@
 
     <div class="row g-4 pt-3">
 
+ 
+
 
         <div class="col-xl-9">
 
@@ -69,11 +71,11 @@
                                     </div>
 
                                     <div class="fw-semibold">
-                                        BS Information Systems
+                                        <?= $applicant_course_name  ?> 
                                     </div>
 
                                     <small class="text-muted">
-                                        BSIS
+                                       <?= $applicant_course_code  ?>
                                     </small>
 
                                 </div>
@@ -109,7 +111,7 @@
                                     </div>
 
                                     <div class="fw-semibold">
-                                        2026 Curriculum
+                                      <?= $curriculum['curriculum_name'] ?>
                                     </div>
 
                                 </div>
@@ -145,7 +147,22 @@
                                     </div>
 
                                     <div class="fw-semibold">
-                                        1st Year
+                                       <?php switch($student_year) {
+
+                                        case '1':
+                                             echo '1st Year';
+                                             break;
+                                            case '2':
+                                                echo '2nd Year';
+                                                break;
+                                                case '3':
+                                                    echo '3rd Year';
+                                                    break;
+                                                    case '4':
+                                                        echo '4th Year';
+                                                        break;
+                                         } 
+                                         ?>
                                     </div>
 
                                 </div>
@@ -181,7 +198,7 @@
                                     </div>
 
                                     <div class="fw-semibold">
-                                        Freshman
+                                       <?= ucfirst($admission_type)  ?>
                                     </div>
 
                                 </div>
@@ -256,7 +273,7 @@
                                     </div>
 
                                     <div class="fw-semibold">
-                                        2026-2027
+                                        <?= $schoolYear ?>
                                     </div>
 
                                 </div>
@@ -296,11 +313,11 @@
                             </div>
 
                             <div class="fw-semibold">
-                                BS Information Systems
+                                <?= $applicant_course_name  ?>
                             </div>
 
                             <small class="text-muted">
-                                BSIS
+                                <?= $applicant_course_code  ?>
                             </small>
 
                         </div>
@@ -315,7 +332,7 @@
                             </div>
 
                             <div class="fw-semibold">
-                                XYZ National High School
+                                <?= $applicant_last_school ?>
                             </div>
 
                         </div>
@@ -330,7 +347,7 @@
                             </div>
 
                             <div class="fw-semibold">
-                                2026
+                                <?= $applicant_year_graduated ?>
                             </div>
 
                         </div>
@@ -345,12 +362,9 @@
                             </div>
 
                             <div class="fw-semibold">
-                                August 10, 2026
+                                <?= $applicant_submission_date  ?>
                             </div>
 
-                            <small class="text-muted">
-                                10:32 AM
-                            </small>
 
                         </div>
 
@@ -373,179 +387,386 @@
                 </h6>
 
                 <span class="small text-muted">
-                    24 / 120 units completed
+                0 / <?= $totalUnits  ?> units completed
                 </span>
 
             </div>
 
 
-            <div class="card border shadow-none">
+           <div class="card border shadow-none">
 
-                <div class="card-body p-4">
+    <div class="card-body p-4">
 
-                    <!-- Progress -->
+        <?php
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate curriculum progress
+        |--------------------------------------------------------------------------
+        */
 
-                    <div class="progress mb-4"
-                         style="height: 8px;">
+        $totalCurriculumUnits = 0;
+        $completedUnits = 0;
 
-                        <div
-                            class="progress-bar"
-                            style="width:20%;">
+        foreach ($groupedCurriculum as $yearLevel => $semesters) {
+
+            foreach ($semesters as $semesterName => $subjects) {
+
+                foreach ($subjects as $subject) {
+
+                    $totalCurriculumUnits += (float) $subject['subject_units'];
+
+                    /*
+                     * Later, when you have grades:
+                     *
+                     * if ($subject['status'] === 'Completed') {
+                     *     $completedUnits += $subject['subject_units'];
+                     * }
+                     */
+                }
+            }
+        }
+
+        $progress = $totalCurriculumUnits > 0
+            ? ($completedUnits / $totalCurriculumUnits) * 100
+            : 0;
+        ?>
+
+
+        <!-- ========================================= -->
+        <!-- CURRICULUM PROGRESS -->
+        <!-- ========================================= -->
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+
+            <span class="small text-muted">
+                Curriculum Progress
+            </span>
+
+            <span class="small fw-semibold">
+                <?= number_format($progress, 0) ?>%
+            </span>
+
+        </div>
+
+        <div class="progress mb-4"
+             style="height: 8px;">
+
+            <div
+                class="progress-bar"
+                style="width: <?= $progress ?>%;">
+            </div>
+
+        </div>
+
+
+        <!-- ========================================= -->
+        <!-- CURRICULUM -->
+        <!-- ========================================= -->
+
+        <?php if (!empty($groupedCurriculum)): ?>
+
+            <?php foreach ($groupedCurriculum as $yearLevel => $semesters): ?>
+
+                <!-- YEAR -->
+
+                <div class="d-flex align-items-center mb-3 mt-4">
+
+                    <div class="bg-primary rounded-circle
+                                d-flex align-items-center
+                                justify-content-center me-2"
+                         style="width:32px;height:32px;">
+
+                        <span class="text-white small fw-bold">
+                            <?= $yearLevel ?>
+                        </span>
+
+                    </div>
+
+                    <h6 class="fw-bold mb-0">
+
+                        <?= match ((int) $yearLevel) {
+                            1 => '1st Year',
+                            2 => '2nd Year',
+                            3 => '3rd Year',
+                            4 => '4th Year',
+                            default => $yearLevel . 'th Year'
+                        } ?>
+
+                    </h6>
+
+                </div>
+
+
+                <?php foreach ($semesters as $semesterName => $subjects): ?>
+
+                    <!-- SEMESTER -->
+
+                    <div class="border rounded mb-4">
+
+                        <div class="bg-light px-3 py-2
+                                    border-bottom">
+
+                            <div class="d-flex
+                                        justify-content-between
+                                        align-items-center">
+
+                                <strong class="small">
+
+                                    <?= htmlspecialchars(
+                                        $semesterName
+                                    ) ?>
+
+                                </strong>
+
+                                <span class="small text-muted">
+
+                                    <?= count($subjects) ?>
+                                    subjects
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- SUBJECT TABLE -->
+
+                        <div class="table-responsive">
+
+                            <table class="table table-hover
+                                          align-middle mb-0">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th class="px-3">
+                                            Code
+                                        </th>
+
+                                        <th>
+                                            Subject
+                                        </th>
+
+                                        <th class="text-center">
+                                            Units
+                                        </th>
+
+                                        <th class="text-center">
+                                            Grade
+                                        </th>
+
+                                        <th class="text-center">
+                                            Status
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody>
+
+                                    <?php
+                                    $semesterUnits = 0;
+                                    ?>
+
+                                    <?php foreach ($subjects as $subject): ?>
+
+                                        <?php
+                                        $semesterUnits +=
+                                            (float) $subject['subject_units'];
+
+                                        /*
+                                         * These don't exist yet
+                                         * in your curriculum query,
+                                         * so we use defaults.
+                                         */
+                                        $grade = $subject['grade'] ?? null;
+                                        $status = $subject['status'] ?? 'Not Taken';
+                                        ?>
+
+
+                                        <tr>
+
+                                            <!-- CODE -->
+
+                                            <td class="px-3 fw-semibold">
+
+                                                <?= htmlspecialchars(
+                                                    $subject['subject_code']
+                                                ) ?>
+
+                                            </td>
+
+
+                                            <!-- SUBJECT -->
+
+                                            <td>
+
+                                                <div class="fw-medium">
+
+                                                    <?= htmlspecialchars(
+                                                        $subject['subject_name']
+                                                    ) ?>
+
+                                                </div>
+
+                                            </td>
+
+
+                                            <!-- UNITS -->
+
+                                            <td class="text-center">
+
+                                                <?= htmlspecialchars(
+                                                    $subject['subject_units']
+                                                ) ?>
+
+                                            </td>
+
+
+                                            <!-- GRADE -->
+
+                                            <td class="text-center">
+
+                                                <?php if ($grade !== null): ?>
+
+                                                    <strong>
+                                                        <?= htmlspecialchars(
+                                                            $grade
+                                                        ) ?>
+                                                    </strong>
+
+                                                <?php else: ?>
+
+                                                    <span class="text-muted">
+                                                        —
+                                                    </span>
+
+                                                <?php endif; ?>
+
+                                            </td>
+
+
+                                            <!-- STATUS -->
+
+                                            <td class="text-center">
+
+                                                <?php if ($status === 'Scheduled'): ?>
+
+                                                    <span class="
+                                                        badge
+                                                        bg-success-subtle
+                                                        text-success
+                                                    ">
+                                                        Enrolled
+                                                    </span>
+
+                                                <?php elseif ($status === 'In Progress'): ?>
+
+                                                    <span class="
+                                                        badge
+                                                        bg-warning-subtle
+                                                        text-warning
+                                                    ">
+                                                        In Progress
+                                                    </span>
+
+                                                <?php elseif ($status === 'Failed'): ?>
+
+                                                    <span class="
+                                                        badge
+                                                        bg-danger-subtle
+                                                        text-danger
+                                                    ">
+                                                        Failed
+                                                    </span>
+
+                                                <?php else: ?>
+
+                                                    <span class="
+                                                        badge
+                                                        bg-secondary-subtle
+                                                        text-secondary
+                                                    ">
+                                                        Not Taken
+                                                    </span>
+
+                                                <?php endif; ?>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endforeach; ?>
+
+                                </tbody>
+
+
+                                <!-- SEMESTER TOTAL -->
+
+                                <tfoot>
+
+                                    <tr class="table-light">
+
+                                        <th colspan="2"
+                                            class="text-end">
+
+                                            Semester Total
+
+                                        </th>
+
+                                        <th class="text-center">
+
+                                            <?= $semesterUnits ?>
+
+                                        </th>
+
+                                        <th colspan="2"></th>
+
+                                    </tr>
+
+                                </tfoot>
+
+                            </table>
 
                         </div>
 
                     </div>
 
+                <?php endforeach; ?>
 
-                    <!-- Subject Table -->
-
-                    <div class="table-responsive">
-
-                        <table class="table table-hover
-                                      align-middle mb-0">
-
-                            <thead class="table-light">
-
-                                <tr>
-
-                                    <th>Code</th>
-
-                                    <th>Subject</th>
-
-                                    <th>Units</th>
-
-                                    <th>Status</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody>
-
-                                <tr>
-
-                                    <td class="fw-semibold">
-                                        IS101
-                                    </td>
-
-                                    <td>
-                                        Introduction to Information Systems
-                                    </td>
-
-                                    <td>
-                                        3
-                                    </td>
-
-                                    <td>
-
-                                        <span
-                                            class="badge bg-success-subtle
-                                                   text-success">
-
-                                            Completed
-
-                                        </span>
-
-                                    </td>
-
-                                </tr>
+            <?php endforeach; ?>
 
 
-                                <tr>
+        <?php else: ?>
 
-                                    <td class="fw-semibold">
-                                        IS102
-                                    </td>
+            <!-- NO CURRICULUM -->
 
-                                    <td>
-                                        Programming 1
-                                    </td>
+            <div class="text-center py-5">
 
-                                    <td>
-                                        3
-                                    </td>
+                <i class="bi bi-journal-x
+                          fs-1 text-muted">
+                </i>
 
-                                    <td>
+                <h6 class="mt-3">
+                    No Curriculum Found
+                </h6>
 
-                                        <span
-                                            class="badge bg-success-subtle
-                                                   text-success">
-
-                                            Completed
-
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-
-                                <tr>
-
-                                    <td class="fw-semibold">
-                                        MATH101
-                                    </td>
-
-                                    <td>
-                                        College Mathematics
-                                    </td>
-
-                                    <td>
-                                        3
-                                    </td>
-
-                                    <td>
-
-                                        <span
-                                            class="badge bg-warning-subtle
-                                                   text-warning">
-
-                                            In Progress
-
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-
-                                <tr>
-
-                                    <td class="fw-semibold">
-                                        ENG101
-                                    </td>
-
-                                    <td>
-                                        Purposive Communication
-                                    </td>
-
-                                    <td>
-                                        3
-                                    </td>
-
-                                    <td>
-
-                                        <span
-                                            class="badge bg-secondary-subtle
-                                                   text-secondary">
-
-                                            Not Taken
-
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
+                <p class="text-muted small mb-0">
+                    No curriculum subjects are currently
+                    assigned to this student's course.
+                </p>
 
             </div>
+
+        <?php endif; ?>
+
+    </div>
+
+</div>
 
         </div>
 

@@ -13,6 +13,49 @@
        public $primaryKey = 'id';
 
 
+    protected function showTotalCurriculumInCourse(int $student_id)
+    {
+
+        $sql = "SELECT 
+        SUM(rs.units) AS total_units
+        FROM `enr_students` es
+        JOIN rgr_courses rc ON rc.id = es.course_id
+        JOIN rgr_curriculums rcu ON rcu.course_id = es.course_id
+        JOIN rgr_curriculum_subjects rcs ON rcs.curriculum_id = rcu.course_id
+        JOIN rgr_subjects rs ON rs.id = rcs.subject_id
+        WHERE es.student_id = :student_id
+        AND rcu.is_active = 1
+        ";
+
+        $stmt = $this->pdo->prepare(query: $sql);
+        $stmt->bindValue(':student_id',$student_id,PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+
+    }
+
+
+    protected function showActiveCurriculumInCourse(int $student_id)
+    {
+
+        $sql = "SELECT 
+            rcu.* 
+            FROM `enr_students` es
+            JOIN rgr_courses rc ON rc.id = es.course_id
+            JOIN rgr_curriculums rcu ON rcu.course_id = rc.id
+            WHERE es.student_id = :student_id
+            AND rcu.course_id = es.course_id
+            AND rcu.is_active = 1";
+
+
+            $stmt = $this->pdo->prepare(query: $sql);
+            $stmt->bindValue(':student_id',$student_id,PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+
+            }
+
+
     protected function countAllActiveCurriculums()
     {
          $sql = "

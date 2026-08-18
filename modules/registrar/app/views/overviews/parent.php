@@ -163,7 +163,7 @@
                         </div>
 
                         <div class="fw-semibold">
-                            Maria Dela Cruz
+                            <?= $applicant_parent_name  ?>
                         </div>
 
                     </div>
@@ -175,7 +175,7 @@
                         </div>
 
                         <div class="fw-semibold">
-                            0917-123-4567
+                            <?= $applicant_parent_contact ?>
                         </div>
 
                     </div>

@@ -12,6 +12,53 @@
         public $primaryKey = 'student_id';
 
 
+
+    protected function allEnrollmentHistory(int $id)
+    {
+        $sql = "
+         SELECT 
+            rsem.name AS semester,
+            rsy.name AS school_year,
+            ccsec.section_code AS section,
+            een.enrollment_status AS status,
+            COALESCE(SUM(rsec.units), 0) AS total_units
+
+        FROM enr_enrollments een
+
+        JOIN cc_schedule ccs 
+            ON ccs.id = een.schedule_id
+
+        JOIN cc_sections ccsec 
+            ON ccsec.id = een.section_id
+
+        JOIN rgr_subjects rsec 
+            ON rsec.id = ccs.subject_id
+
+        JOIN rgr_semesters rsem 
+            ON rsem.id = ccs.semester_id
+
+        JOIN rgr_school_years rsy 
+            ON rsy.id = rsem.school_year_id
+
+        WHERE een.student_id = :studentId
+
+        GROUP BY
+            rsem.name,
+            rsy.name,
+            ccsec.section_code,
+            een.enrollment_status
+
+        ORDER BY
+            rsy.name DESC;
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':studentId', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
      protected function allEnrollmentsByStudent(int $id)
     {
 

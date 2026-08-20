@@ -372,13 +372,6 @@
                         Enrollment History
                     </h6>
 
-                    <button
-                        type="button"
-                        class="btn btn-sm btn-link text-decoration-none">
-
-                        View All
-
-                    </button>
 
                 </div>
 
@@ -424,146 +417,73 @@
                                 </thead>
 
 
-                                <tbody>
+                              <tbody>
 
+            <?php if (!empty($enrollHistory)): ?>
 
-                                    <!-- Current -->
+                <?php foreach ($enrollHistory as $row): ?>
 
-                                    <tr>
+                    <?php
+                        $status = strtolower($row['status']);
 
-                                        <td class="ps-3">
-                                            2026-2027
-                                        </td>
+                        if ($status === 'enrolled') {
+                            $badgeClass = 'bg-success-subtle text-success';
+                            $statusText = 'Enrolled';
+                        } elseif ($status === 'completed') {
+                            $badgeClass = 'bg-secondary-subtle text-secondary';
+                            $statusText = 'Completed';
+                        } else {
+                            $badgeClass = 'bg-warning-subtle text-warning';
+                            $statusText = ucfirst($status);
+                        }
+                    ?>
 
-                                        <td>
-                                            1st Semester
-                                        </td>
+                    <tr>
+                        <td class="ps-3">
+                            <?= htmlspecialchars($row['school_year']) ?>
+                        </td>
 
-                                        <td>
-                                            BSIS-1A
-                                        </td>
+                        <td>
+                            <?= htmlspecialchars($row['semester']) ?>
+                        </td>
 
-                                        <td>
+                        <td>
+                            <?= htmlspecialchars($row['section']) ?>
+                        </td>
 
-                                            <span
-                                                class="badge bg-success-subtle text-success">
+                        <td>
+                            <span class="badge <?= $badgeClass ?>">
+                                <?= htmlspecialchars($statusText) ?>
+                            </span>
+                        </td>
 
-                                                Enrolled
+                        <td>
+                            <?= htmlspecialchars($row['total_units']) ?>
+                        </td>
 
-                                            </span>
+                        <td class="text-center">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-light">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
 
-                                        </td>
+                <?php endforeach; ?>
 
-                                        <td>
-                                            9
-                                        </td>
+                <?php else: ?>
 
-                                        <td class="text-center">
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No enrollment history found.
+                        </td>
+                    </tr>
 
-                                            <button
-                                                class="btn btn-sm btn-light">
+                <?php endif; ?>
 
-                                                <i class="bi bi-eye"></i>
-
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-
-                                    <!-- Previous -->
-
-                                    <tr>
-
-                                        <td class="ps-3">
-                                            2025-2026
-                                        </td>
-
-                                        <td>
-                                            2nd Semester
-                                        </td>
-
-                                        <td>
-                                            BSIS-1A
-                                        </td>
-
-                                        <td>
-
-                                            <span
-                                                class="badge bg-secondary-subtle text-secondary">
-
-                                                Completed
-
-                                            </span>
-
-                                        </td>
-
-                                        <td>
-                                            18
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <button
-                                                class="btn btn-sm btn-light">
-
-                                                <i class="bi bi-eye"></i>
-
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-
-                                    <!-- Previous -->
-
-                                    <tr>
-
-                                        <td class="ps-3">
-                                            2025-2026
-                                        </td>
-
-                                        <td>
-                                            1st Semester
-                                        </td>
-
-                                        <td>
-                                            BSIS-1A
-                                        </td>
-
-                                        <td>
-
-                                            <span
-                                                class="badge bg-secondary-subtle text-secondary">
-
-                                                Completed
-
-                                            </span>
-
-                                        </td>
-
-                                        <td>
-                                            21
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <button
-                                                class="btn btn-sm btn-light">
-
-                                                <i class="bi bi-eye"></i>
-
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-
-                                </tbody>
-
+                </tbody>
+                                                                                    
                             </table>
 
                         </div>

@@ -27,18 +27,18 @@
 
                 <div class="d-flex gap-2">
 
-                    <!-- Generate COR -->
-                    <button
-                        type="button"
-                        class="btn btn-primary">
+                
+                        <a
+                            href="<?= BASE_URL ?>/COR/<?= $student_id ?>/pdf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Generate COR
+                        </a>
 
-                        <i class="bi bi-file-earmark-text me-2"></i>
-                        Generate COR
-
-                    </button>
-
-
-                    <!-- More -->
+                
                     <button
                         type="button"
                         class="btn btn-outline-secondary">
@@ -234,191 +234,130 @@
             <!-- ENROLLED SUBJECTS -->
             <!-- ========================================= -->
 
-            <div class="mb-4">
+        <div class="mb-4">
 
-                <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-primary mb-0">
+            Enrolled Subjects
+        </h6>
 
-                    <h6 class="fw-bold text-primary mb-0">
-                        Enrolled Subjects
-                    </h6>
+        <span class="small text-muted">
+            <?= count($enrollments) ?> Subjects
+        </span>
+    </div>
 
-                    <span class="small text-muted">
-                        3 Subjects
-                    </span>
+    <div class="card border shadow-none">
+        <div class="card-body p-0">
 
-                </div>
+            <div class="table-responsive">
 
+                <table class="table table-hover align-middle mb-0">
 
-                <div class="card border shadow-none">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Code</th>
+                            <th>Subject</th>
+                            <th>Units</th>
+                            <th>Instructor</th>
+                            <th>Schedule</th>
+                            <th>Room</th>
+                        </tr>
+                    </thead>
 
-                    <div class="card-body p-0">
+                    <tbody>
 
-                        <div class="table-responsive">
+                    <?php
+                    $totalUnits = 0;
+                    ?>
 
-                            <table class="table table-hover align-middle mb-0">
+                     <?php if (!empty($enrollments)): ?>
 
-                                <thead class="table-light">
+                        <?php foreach ($enrollments as $enrollment): ?>
 
-                                    <tr>
+                            <?php $totalUnits += $enrollment['units']; ?>
 
-                                        <th class="ps-3">
-                                            Code
-                                        </th>
+                            <tr>
 
-                                        <th>
-                                            Subject
-                                        </th>
+                                <td class="ps-3 fw-semibold">
+                                    <?= htmlspecialchars($enrollment['subject_code']) ?>
+                                </td>
 
-                                        <th>
-                                            Units
-                                        </th>
+                                <td>
+                                    <?= htmlspecialchars($enrollment['subject_name']) ?>
+                                </td>
 
-                                        <th>
-                                            Instructor
-                                        </th>
+                                <td>
+                                    <?= $enrollment['units'] ?>
+                                </td>
 
-                                        <th>
-                                            Schedule
-                                        </th>
+                                <td>
+                                    <?= htmlspecialchars(
+                                        $enrollment['adviser_last_name'] . ', ' .
+                                        $enrollment['adviser_first_name']
+                                    ) ?>
+                                </td>
 
-                                        <th>
-                                            Room
-                                        </th>
+                                <td>
+                                    <?= htmlspecialchars($enrollment['day_of_week']) ?>
 
-                                    </tr>
+                                    <?= date(
+                                        'g:i A',
+                                        strtotime($enrollment['start_time'])
+                                    ) ?>
 
-                                </thead>
+                                    -
 
+                                    <?= date(
+                                        'g:i A',
+                                        strtotime($enrollment['end_time'])
+                                    ) ?>
+                                </td>
 
-                                <tbody>
+                                <td>
+                                    <?= htmlspecialchars($enrollment['room']) ?>
+                                </td>
 
+                            </tr>
 
-                                    <!-- Subject 1 -->
+                        <?php endforeach; ?>
 
-                                    <tr>
+                         <?php else: ?>
 
-                                        <td class="ps-3 fw-semibold">
-                                            IS101
-                                        </td>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No enrolled subjects found.
+                            </td>
+                        </tr>
 
-                                        <td>
-                                            Introduction to Information Systems
-                                        </td>
+                    <?php endif; ?>
 
-                                        <td>
-                                            3
-                                        </td>
+                    </tbody>
 
-                                        <td>
-                                            Reyes, Pedro L.
-                                        </td>
+                    <tfoot>
+                        <tr>
 
-                                        <td>
-                                            MW 8:00 - 9:30 AM
-                                        </td>
+                            <td colspan="2"
+                                class="text-end fw-bold">
+                                Total Units:
+                            </td>
 
-                                        <td>
-                                            IT Lab 1
-                                        </td>
+                            <td class="fw-bold">
+                                <?= $totalUnits ?>
+                            </td>
 
-                                    </tr>
+                            <td colspan="3"></td>
 
+                        </tr>
+                    </tfoot>
 
-                                    <!-- Subject 2 -->
-
-                                    <tr>
-
-                                        <td class="ps-3 fw-semibold">
-                                            IS102
-                                        </td>
-
-                                        <td>
-                                            Programming 1
-                                        </td>
-
-                                        <td>
-                                            3
-                                        </td>
-
-                                        <td>
-                                            Santos, Juan A.
-                                        </td>
-
-                                        <td>
-                                            TTh 10:00 - 11:30 AM
-                                        </td>
-
-                                        <td>
-                                            IT Lab 2
-                                        </td>
-
-                                    </tr>
-
-
-                                    <!-- Subject 3 -->
-
-                                    <tr>
-
-                                        <td class="ps-3 fw-semibold">
-                                            MATH101
-                                        </td>
-
-                                        <td>
-                                            College Mathematics
-                                        </td>
-
-                                        <td>
-                                            3
-                                        </td>
-
-                                        <td>
-                                            Cruz, Maria C.
-                                        </td>
-
-                                        <td>
-                                            F 1:00 - 4:00 PM
-                                        </td>
-
-                                        <td>
-                                            Room 204
-                                        </td>
-
-                                    </tr>
-
-
-                                </tbody>
-
-
-                                <tfoot>
-
-                                    <tr>
-
-                                        <td colspan="2"
-                                            class="text-end fw-bold">
-
-                                            Total Units:
-
-                                        </td>
-
-                                        <td class="fw-bold">
-                                            9
-                                        </td>
-
-                                        <td colspan="3"></td>
-
-                                    </tr>
-
-                                </tfoot>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
-                </div>
+                </table>
 
             </div>
+
+        </div>
+    </div>
+
+    </div>
 
 
             <!-- ========================================= -->
@@ -832,16 +771,14 @@
 
                     <!-- COR -->
 
-                    <button
-                        type="button"
-                        class="btn btn-outline-primary w-100
-                               text-start mb-2">
-
-                        <i class="bi bi-file-earmark-text me-2"></i>
-
-                        Generate COR
-
-                    </button>
+                <a 
+                    href="<?= BASE_URL ?>/COR/<?= $student_id ?>/pdf"
+                    target="_blank"
+                    class="btn btn-outline-primary w-100 text-start mb-2"
+                >
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    Generate COR
+                </a>
 
 
                     <!-- Enrollment Details -->

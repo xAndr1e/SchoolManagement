@@ -43,7 +43,7 @@ class StudentController extends Controller {
 
     public function allCurriculumSubjectsUsingId($id)
     {
-        $test = CurriculumSubject::allCurriculumSubjectsUsingId($id,false);
+        $test = Student::allEnrollmentsByStudent($id);
         Response::json($test);
     }
 
@@ -66,7 +66,7 @@ class StudentController extends Controller {
         $allCourses = Course::all();
         $section = Student::sectionById($enrollee['student_id']);
         $totalUnitPerSem = Student::totalUnitByStudentPerSemester($enrollee['student_id']);
-
+        $enrollment = Student::allEnrollmentsByStudent($enrollee['student_id']);
 
         $groupedCurriculum = [];
 
@@ -82,6 +82,7 @@ class StudentController extends Controller {
         [
             'user' => $user,
             'section' => $section,
+            'enrollments' => $enrollment,
             'curriculum' => $curriculum,
             'totalUnitPerSem' => $totalUnitPerSem['total_enrolled_units'],
             'curriculum_subject' => $curriculum_subject,

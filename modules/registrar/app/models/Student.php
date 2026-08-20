@@ -12,6 +12,41 @@
         public $primaryKey = 'student_id';
 
 
+     protected function allEnrollmentsByStudent(int $id)
+    {
+
+        $sql = "
+            SELECT 
+            rs.code AS subject_code,
+            rs.name AS subject_name,
+            rs.units AS units,
+            ccf.first_name AS adviser_first_name,
+            ccf.last_name AS adviser_last_name,
+            ccs.start_time AS start_time,
+            ccs.end_time AS end_time,
+            ccs.day_of_week AS day_of_week,
+            ccr.room_name AS room
+            FROM $this->tableName ens
+            JOIN enr_enrollments enr ON enr.student_id = ens.student_id
+            JOIN cc_schedule ccs ON ccs.id = enr.schedule_id
+            JOIN rgr_semesters rsem ON rsem.id = ccs.semester_id
+            JOIN rgr_school_years rsy ON rsy.id = rsem.school_year_id
+            JOIN rgr_subjects rs ON rs.id = ccs.subject_id
+            JOIN cc_room ccr ON ccr.id = ccs.room_id
+            JOIN cc_faculty_load ccfl ON ccfl.id = ccs.faculty_load_id
+            JOIN cc_faculty ccf ON ccf.id = ccfl.id
+            WHERE ens.student_id = :studentId
+            AND rsem.is_active = 1
+            AND rsy.is_active = 1                                                               
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':studentId', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+       
+    }
+
     protected function totalUnitByStudentPerSemester($id)
     {
         $sql = "
@@ -66,7 +101,7 @@
      }
 
 
-      protected function generateCor(int $id)
+    protected function generateCor(int $id)
     {
    $activeSemesterId = $this->activeSemester();
 
@@ -117,7 +152,7 @@
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-        protected function generateStudentNumber()
+    protected function generateStudentNumber()
         {
     
             $year = date('Y');
@@ -145,18 +180,18 @@
 
             return $year . '-' . str_pad($next, 6, '0', STR_PAD_LEFT);
 
-        }
+    }
 
 
    
-        protected function countActiveStudents() {
+    protected function countActiveStudents() {
 
             $stmt = $this->pdo->query("SELECT COUNT(*) as totalActiveStudent FROM $this->tableName where enrollment_status = 'enrolled' ");
             return $stmt->fetch(PDO::FETCH_ASSOC);
-        }
+    }
 
 
-        protected function activeStudents($perPage = 10)
+     protected function activeStudents($perPage = 10)
         {
             
             $page = isset($_GET['page']) ? (int) $_GET['page'] :  1;

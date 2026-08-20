@@ -3,6 +3,7 @@
  namespace App\Models;
 
  use App\Core\Model;
+ use PDO;
 
  class Enrollment extends Model
  {
@@ -12,6 +13,7 @@
 
 
 
+   
     
 
      public static function __callStatic($name, $arguments)

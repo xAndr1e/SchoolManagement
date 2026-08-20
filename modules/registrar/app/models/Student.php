@@ -12,9 +12,26 @@
         public $primaryKey = 'student_id';
 
 
-    protected function totalUnitByStudent($id)
+    protected function totalUnitByStudentPerSemester($id)
     {
-        
+        $sql = "
+        SELECT 
+        SUM(rsu.units) AS total_enrolled_units
+        FROM `enr_students` ens 
+        JOIN enr_enrollments enr ON enr.student_id = ens.student_id
+        JOIN cc_schedule ccs ON ccs.id = enr.schedule_id
+        JOIN rgr_subjects rsu ON rsu.id = ccs.subject_id
+        JOIN rgr_semesters rs ON rs.id = ccs.semester_id
+        JOIN rgr_school_years rsc ON rsc.id = rs.school_year_id
+        WHERE ens.student_id = :studentId
+        AND rsc.is_active = 1
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':studentId', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+
     }
 
     

@@ -216,7 +216,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    9 Units
+                                    <?= $totalUnitPerSem ?> Units
                                 </div>
 
                             </div>

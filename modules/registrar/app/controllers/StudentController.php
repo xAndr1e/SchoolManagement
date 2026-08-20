@@ -65,6 +65,7 @@ class StudentController extends Controller {
         $curriculum_subject = CurriculumSubject::allCurriculumSubjectsUsingId($enrollee['student_id'],false);
         $allCourses = Course::all();
         $section = Student::sectionById($enrollee['student_id']);
+        $totalUnitPerSem = Student::totalUnitByStudentPerSemester($enrollee['student_id']);
 
 
         $groupedCurriculum = [];
@@ -82,6 +83,7 @@ class StudentController extends Controller {
             'user' => $user,
             'section' => $section,
             'curriculum' => $curriculum,
+            'totalUnitPerSem' => $totalUnitPerSem['total_enrolled_units'],
             'curriculum_subject' => $curriculum_subject,
             'groupedCurriculum' => $groupedCurriculum,
             'totalUnits' => $totalUnits['total_units'] ?? 0,

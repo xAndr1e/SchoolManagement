@@ -99,7 +99,7 @@
                 </div>
 
 
-                <!-- Parent Address -->
+               
                 <div class="col-md-12 col-xl-4">
 
                     <div class="border rounded-3 p-3 h-100">
@@ -143,7 +143,6 @@
     </div>
 
 
-    <!-- Optional: Emergency Contact -->
     <div class="mt-4">
 
         <h6 class="fw-bold text-primary mb-3">

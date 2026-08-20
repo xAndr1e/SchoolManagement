@@ -13,6 +13,7 @@ use App\Models\Employee;
 use App\Models\Enrollee;
 use App\Models\EnrolleeDocuments;
 use App\Models\SchoolYear;
+use App\Models\Section;
 use App\Models\Semester;
 use App\Models\Student;
 use Dompdf\Dompdf;
@@ -63,6 +64,7 @@ class StudentController extends Controller {
         $course = Course::find($applicant['course_id']);
         $curriculum_subject = CurriculumSubject::allCurriculumSubjectsUsingId($enrollee['student_id'],false);
         $allCourses = Course::all();
+        $section = Student::sectionById($enrollee['student_id']);
 
 
         $groupedCurriculum = [];
@@ -78,10 +80,12 @@ class StudentController extends Controller {
         $this->render('/students/view_student',
         [
             'user' => $user,
+            'section' => $section,
             'curriculum' => $curriculum,
             'curriculum_subject' => $curriculum_subject,
             'groupedCurriculum' => $groupedCurriculum,
             'totalUnits' => $totalUnits['total_units'] ?? 0,
+            'student_enrolled_at' => date("F d, Y", strtotime($enrollee['enrolled_at'])),
             'student_year' => $enrollee['year_level'],
             'student_id' => $enrollee['student_id'],
             'semester' => $semester,

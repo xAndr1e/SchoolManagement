@@ -79,7 +79,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    2026-2027
+                                    <?= $schoolYear ?>
                                 </div>
 
                             </div>
@@ -94,7 +94,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    1st Semester
+                                    <?= $semester['name'] ?>
                                 </div>
 
                             </div>
@@ -109,7 +109,24 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    1st Year
+                                    
+                                   <?php switch($student_year) {
+
+                                        case '1':
+                                             echo '1st Year';
+                                             break;
+                                            case '2':
+                                                echo '2nd Year';
+                                                break;
+                                                case '3':
+                                                    echo '3rd Year';
+                                                    break;
+                                                    case '4':
+                                                        echo '4th Year';
+                                                        break;
+                                         } 
+                                         ?>
+
                                 </div>
 
                             </div>
@@ -124,7 +141,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    BS Information Systems
+                                     <?= $applicant_course_name  ?>
                                 </div>
 
                             </div>
@@ -139,7 +156,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    BSIS-1A
+                                <?= $section['section_code'] ?>
                                 </div>
 
                             </div>
@@ -169,7 +186,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    August 14, 2026
+                                   <?= $student_enrolled_at ?>
                                 </div>
 
                             </div>

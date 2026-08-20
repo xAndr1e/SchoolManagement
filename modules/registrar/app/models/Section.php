@@ -9,8 +9,9 @@
   class Section extends Model
   {
 
-    public $tableName = 'rgr_section';
+    public $tableName = 'cc_sections';
     public $primaryKey = 'id';
+
 
 
     protected function schoolYearSemesters()
@@ -174,9 +175,6 @@
             'last_page' => ceil($total / $perPage)
         ];
     }
-
-
-   
 
 
 

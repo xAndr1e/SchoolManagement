@@ -12,6 +12,30 @@
         public $primaryKey = 'student_id';
 
 
+    protected function totalUnitByStudent($id)
+    {
+        
+    }
+
+    
+     protected function sectionById(int $id)
+    {
+  
+        $sql = "
+            SELECT 
+            ccs.* 
+            FROM $this->tableName ens
+            JOIN cc_sections ccs ON ccs.id = ens.section_id
+            WHERE $this->primaryKey = :studentId
+         ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':studentId', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+         
+    }
+
     
      public function activeSemester()
      {

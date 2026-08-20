@@ -45,43 +45,7 @@ if (!empty($search)) {
 }
 
 
- $countSql = "
-SELECT COUNT(*) as total
-
-FROM {$this->tableName} cusu
-
-JOIN rgr_curriculums rcu 
-    ON rcu.id = cusu.curriculum_id
-
-JOIN rgr_courses rc 
-    ON rc.id = rcu.course_id
-
-JOIN enr_students ens 
-    ON ens.course_id = rc.id
-
-JOIN enr_enrollments enr 
-    ON enr.student_id = ens.student_id
-
-JOIN cc_schedule ccs 
-    ON ccs.id = enr.schedule_id
-    AND ccs.subject_id = cusu.subject_id
-
-JOIN rgr_subjects rs 
-    ON rs.id = cusu.subject_id
-
-$where
-";
-
-    $countStmt = $this->pdo->prepare($countSql);
-
-    foreach ($params as $key => $value) {
-        $countStmt->bindValue($key, $value);
-    }
-
-    $countStmt->execute();
-    $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-$dataSql = "
+ $dataSql = "
 SELECT
     cusu.id AS id,
     cusu.year_level,
@@ -93,7 +57,7 @@ SELECT
     rs.code AS subject_code,
     rs.name AS subject_name,
     rs.units AS subject_units,
-    ccs.status AS status
+    MAX(ccs.status) AS status
 
 FROM {$this->tableName} cusu
 
@@ -110,14 +74,26 @@ JOIN enr_students ens
 JOIN rgr_subjects rs
     ON rs.id = cusu.subject_id
 
-LEFT JOIN enr_enrollments enr
-    ON enr.student_id = ens.student_id
-
 LEFT JOIN cc_schedule ccs
-    ON ccs.id = enr.schedule_id
-    AND ccs.subject_id = cusu.subject_id
+    ON ccs.subject_id = cusu.subject_id
+
+LEFT JOIN enr_enrollments enr
+    ON enr.schedule_id = ccs.id
+    AND enr.student_id = ens.student_id
 
 $where
+
+GROUP BY
+    cusu.id,
+    cusu.year_level,
+    cusu.semester,
+    rcu.curriculum_name,
+    rcu.effective_year,
+    rc.code,
+    rc.name,
+    rs.code,
+    rs.name,
+    rs.units
 
 ORDER BY
     cusu.year_level ASC,

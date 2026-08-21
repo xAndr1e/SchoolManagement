@@ -13,6 +13,8 @@ class Subject extends Model
      public $primaryKey = 'id';
 
 
+     
+
 
      protected function numberOfSubjects()
      {

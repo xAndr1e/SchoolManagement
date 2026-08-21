@@ -12,6 +12,8 @@
     public $tableName = 'cc_sections';
     public $primaryKey = 'id';
 
+   
+
 
 
     protected function schoolYearSemesters()

@@ -637,8 +637,6 @@
 
       </div>
 
-      
-
 
       <button class="btn btn-primary w-100 mb-2" id="applyFilter">Apply Filter</button>
       <button class="btn btn-warning w-100" id="resetFilter">Reset Filter</button>

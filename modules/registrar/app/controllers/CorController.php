@@ -15,23 +15,6 @@
   {
 
       
-    public function index()
-    {
- 
-        $user = Employee::find('1003');
-        $semester = Semester::activeSemester();
-        $schoolYear = SchoolYear::activeSchoolYear();
-   
-       $this->render('students/Cor',[
-            
-           'user' => $user,
-           'semester' => $semester,
-            'schoolYear' => $schoolYear
-
-       ]);    
-
-
-    }
 
 
     public function generateCor($id)

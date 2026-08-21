@@ -455,6 +455,7 @@
     
     const defaultSchoolYear = schoolYearSelect.options[schoolYearSelect.selectedIndex].value;
 
+    
     // reset filter
 
     document.getElementById('resetFilter').addEventListener('click', function() {

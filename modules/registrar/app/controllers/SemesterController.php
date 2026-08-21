@@ -4,6 +4,7 @@
 
   use App\Core\Controller;
   use App\Helper\Logger;
+  use App\Helper\Response;
   use App\Models\Employee;
   use App\Models\SchoolYear;
   use App\Models\Semester;
@@ -37,6 +38,14 @@
         header('Content-Type: application/json');
         $semester = Semester::allSemester();
         echo json_encode($semester );
+    }
+
+    public function semesterSections(int $id)
+    {
+
+        $semester = Semester::semesterSections($id);
+        Response::json($semester);
+
     }
 
 

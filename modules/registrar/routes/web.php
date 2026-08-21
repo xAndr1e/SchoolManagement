@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\CalendarController;
+use App\Controllers\ClassController;
 use App\Controllers\ClassOfferingController;
 use App\Controllers\CorController;
 use App\Controllers\CourseController;
@@ -136,6 +137,8 @@ use App\Models\Semester;
 
     });
 
+    $r->get('/semester/{id:\d+}/section',[SemesterController::class,'semesterSections']);
+
 
 //tools
 
@@ -266,15 +269,9 @@ use App\Models\Semester;
 
 // COR 
 
-  $r->get('/COR',[CorController::class,'index']);
   $r->get('/COR/{id:\d+}/pdf',[CorController::class,'CorPDF']);
   
-
-
-
 // TOR 
-
- $r->get('/TOR',[TorController::class,'index']);
 
 
 // reuested documents
@@ -287,6 +284,18 @@ $r->get('/allDocument/{id:\d+}',[DocumentRequestController::class,'getAllDocumen
 // grades 
 
 $r->get('/grades',[GradeController::class,'index']);
+
+
+
+
+// class list
+
+
+$r->get('/class-list',[ClassController::class,'index']);
+$r->get('/class-list/all',[ClassController::class,'allClassList']);
+
+
+// academic records 
 
 
 

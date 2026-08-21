@@ -14,6 +14,28 @@
     public $primaryKey = 'id';
 
 
+     protected function semesterSections(int $semesterId)
+    {
+        $sql = "
+        SELECT 
+        ccsec.id,
+        ccsec.section_code
+        FROM $this->tableName rs
+        JOIN cc_schedule ccs ON ccs.semester_id = rs.id
+        JOIN cc_sections ccsec ON ccsec.id = ccs.section_id
+        WHERE rs.id = :semesterId            
+        ";
+
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':semesterId', $semesterId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    }
+
+
+
     protected function activeSemester()
     {
 

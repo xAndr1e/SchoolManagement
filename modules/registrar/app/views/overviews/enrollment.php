@@ -408,10 +408,6 @@
                                             Units
                                         </th>
 
-                                        <th class="text-center">
-                                            View
-                                        </th>
-
                                     </tr>
 
                                 </thead>
@@ -461,13 +457,6 @@
                             <?= htmlspecialchars($row['total_units']) ?>
                         </td>
 
-                        <td class="text-center">
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-light">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </td>
                     </tr>
 
                 <?php endforeach; ?>

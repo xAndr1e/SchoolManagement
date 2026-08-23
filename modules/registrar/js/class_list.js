@@ -378,17 +378,6 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
             });
         }
 
-        // ==========================================
-        // 9. GO TO SCHEDULE BUTTON
-        // ==========================================
-
-        document.getElementById("scheduleCard").href =
-            `/schedule/${schedule.schedule_id}`;
-
-
-        // ==========================================
-        // 10. SHOW MODAL
-        // ==========================================
 
         showModal.show();
 

@@ -487,15 +487,6 @@
             <!-- FOOTER -->
             <div class="modal-footer d-flex justify-content-between">
 
-                <a href="#"
-                   id="scheduleCard"
-                   class="btn btn-primary">
-
-                    <i class="bi bi-calendar3 me-1"></i>
-                    Go to Schedule
-
-                </a>
-
                 <button type="button"
                         class="btn btn-outline-secondary"
                         data-bs-dismiss="modal">

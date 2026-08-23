@@ -203,6 +203,8 @@ use App\Models\Semester;
     $r->post('/enrollee/{id:\d+}/decline',[EnrolleeController::class,'enrolleeDecline']);
 
   
+
+  
 // setions 
  
     $r->get('/section',[SectionController::class,'index']);
@@ -263,9 +265,11 @@ use App\Models\Semester;
   $r->post('/notifications/read',[NotificationController::class,'markAsReadUpdate']);
 
 
-// subject loading
+// enrollment information
 
  $r->get('/enrollment',[EnrollmentController::class,'index']);
+ 
+ $r->get('/enrollment/{id:\d+}/schedule',[EnrollmentController::class,'allEnrolledStudentsInSchedule']);
 
 // COR 
 
@@ -293,6 +297,7 @@ $r->get('/grades',[GradeController::class,'index']);
 
 $r->get('/class-list',[ClassController::class,'index']);
 $r->get('/class-list/all',[ClassController::class,'allClassList']);
+$r->get('/class-list/{id:\d+}/schedule',[ClassController::class,'sectionScheduleAfterScheduleId']);
 
 
 // academic records 

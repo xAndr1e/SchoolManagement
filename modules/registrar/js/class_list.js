@@ -13,6 +13,8 @@
    
     const filterBtn = document.getElementById('filterBtn');
     const modal = new bootstrap.Modal(document.getElementById('filterModal'));
+    const showModal = new bootstrap.Modal(document.getElementById('showClassList'));
+    const viewClassBtn = document.getElementById('viewClassBtn');
  
 
 
@@ -142,8 +144,6 @@
    });
 
     
-
-
 // form configurations
 
    schoolYearSelect.addEventListener('change', function () {
@@ -201,7 +201,204 @@
 });
 
 
+// view class
+  
 
+document.getElementById("studentsTableBody").addEventListener("click", async function(e) {
+
+    if (!e.target.classList.contains("view-btn")) {
+        return;
+    }
+
+    const scheduleId = e.target.dataset.id;
+
+    try {
+
+        // ==========================================
+        // 1. GET CLASS DETAILS USING SCHEDULE ID
+        // ==========================================
+
+        const scheduleResponse = await fetch(
+            `${BASE_URL}/class-list/${scheduleId}/schedule`
+        );
+
+        const scheduleData = await scheduleResponse.json();
+
+        console.log("Schedule:", scheduleData);
+
+        if (!scheduleData || scheduleData.length === 0) {
+            console.error("No class found.");
+            return;
+        }
+
+        const schedule = scheduleData[0];
+
+
+        // ==========================================
+        // 2. FILL COURSE INFORMATION
+        // ==========================================
+
+        document.getElementById("show_course_code").textContent =
+            schedule.course_code ?? "—";
+
+        document.getElementById("show_course_name").textContent =
+            schedule.course_name ?? "—";
+
+        document.getElementById("show_section_name").textContent =
+            schedule.section_code ?? "—";
+
+        document.getElementById("show_year_level").textContent =
+            schedule.grade_level ?? "—";
+
+
+        // ==========================================
+        // 3. FILL SUBJECT INFORMATION
+        // ==========================================
+
+        document.getElementById("show_subject_code").textContent =
+            schedule.subject_code ?? "—";
+
+        document.getElementById("show_subject_name").textContent =
+            schedule.subject_name ?? "—";
+
+        document.getElementById("show_semester").textContent =
+            schedule.semester ?? "—";
+
+        document.getElementById("show_teacher_name").textContent =
+            schedule.teacher_name ?? "—";
+
+        document.getElementById("show_units").textContent =
+            schedule.subject_units ?? "—";
+
+        document.getElementById("show_lecture_hours").textContent =
+            "—";
+
+        document.getElementById("show_laboratory_hours").textContent =
+            "—";
+
+
+        // ==========================================
+        // 4. FILL CLASS / SCHEDULE INFORMATION
+        // ==========================================
+
+        document.getElementById("show_day").textContent =
+            schedule.day_of_week ?? "—";
+
+        document.getElementById("show_start_time").textContent =
+            schedule.start_time ?? "—";
+
+        document.getElementById("show_end_time").textContent =
+            schedule.end_time ?? "—";
+
+
+        // These are not included in your current
+        // schedule SQL result
+        document.getElementById("show_room").textContent =
+             schedule.room_name ?? "—";
+
+        document.getElementById("show_room_type").textContent =
+            schedule.room_type ?? "—";
+
+        document.getElementById("show_building").textContent =
+            schedule.building ??  "—";
+
+
+        // ==========================================
+        // 5. GET ENROLLED STUDENTS
+        // ==========================================
+
+        const enrollmentResponse = await fetch(
+            `${BASE_URL}/enrollment/${scheduleId}/schedule`
+        );
+
+        const students = await enrollmentResponse.json();
+
+        console.log("Students:", students);
+
+
+        // ==========================================
+        // 6. FILL STUDENT COUNT
+        // ==========================================
+
+        document.getElementById("show_student_count").textContent =
+            `${students.length} Student${students.length !== 1 ? "s" : ""}`;
+
+
+        // ==========================================
+        // 7. FILL STUDENT TABLE
+        // ==========================================
+
+        const studentList =
+            document.getElementById("show_student_list");
+
+        studentList.innerHTML = "";
+
+        if (!students || students.length === 0) {
+
+            studentList.innerHTML = `
+                <tr>
+                    <td colspan="4"
+                        class="text-center text-muted py-4">
+                        No students found.
+                    </td>
+                </tr>
+            `;
+
+        } else {
+
+            students.forEach((student, index) => {
+
+                const fullName = [
+                    student.first_name,
+                    student.middle_name,
+                    student.surname ?? student.last_name
+                ]
+                .filter(Boolean)
+                .join(" ");
+
+                studentList.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+
+                        <td>
+                            ${student.student_number ?? "—"}
+                        </td>
+
+                        <td>
+                            ${fullName}
+                        </td>
+
+                        <td>
+                            <span class="badge bg-success">
+                                ${student.enrollment_status ?? "—"}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // ==========================================
+        // 9. GO TO SCHEDULE BUTTON
+        // ==========================================
+
+        document.getElementById("scheduleCard").href =
+            `/schedule/${schedule.schedule_id}`;
+
+
+        // ==========================================
+        // 10. SHOW MODAL
+        // ==========================================
+
+        showModal.show();
+
+    } catch (error) {
+
+        console.error("Error loading class details:", error);
+
+    }
+});
+  
 
 
     
@@ -326,11 +523,12 @@
                          <td>${classList.day_of_week}
                           ${classList.start_time} - ${classList.end_time}</td>
                           <td>${classList.room}</td>
+                          <td>${classList.adviser_code}</td>
                           <td>${classList.student_count}</td>
 
                         <td>
 
-                           <button class="btn btn-sm btn-secondary view-btn" data-id="${classList.schedule_id}">
+                           <button class="btn btn-sm btn-secondary view-btn" data-id="${classList.schedule_id}" >
                                 View
                             </button>
 

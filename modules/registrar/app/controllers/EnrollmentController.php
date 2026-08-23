@@ -3,7 +3,9 @@
  namespace App\Controllers;
 
  use App\Core\Controller;
+ use App\Helper\Response;
  use App\Models\Employee;
+ use App\Models\Enrollment;
  use App\Models\SchoolYear;
  use App\Models\Semester;
 
@@ -26,6 +28,14 @@
 
        ]);    
 
+   }
+
+   public function allEnrolledStudentsInSchedule($id)
+   {
+     
+     $enrollment = Enrollment::allEnrolledStudentsInSchedule($id);
+     Response::json($enrollment);
+    
    }
  
 

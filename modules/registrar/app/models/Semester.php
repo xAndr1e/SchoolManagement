@@ -14,6 +14,9 @@
     public $primaryKey = 'id';
 
 
+
+
+
      protected function semesterSections(int $semesterId)
     {
         $sql = "

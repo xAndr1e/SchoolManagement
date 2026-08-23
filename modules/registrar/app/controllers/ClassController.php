@@ -44,6 +44,13 @@
       Response::json($class);
 
     }
+
+
+    public function sectionScheduleAfterScheduleId($id)
+    {
+      $schedule = Schedule::sectionScheduleAfterScheduleId($id);
+      Response::json($schedule);
+    }
       
 
 

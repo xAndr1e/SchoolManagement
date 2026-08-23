@@ -11,6 +11,95 @@
      public $tableName = 'cc_schedule';
      public $primaryKey = 'id';
 
+     
+    protected function sectionScheduleAfterScheduleId($scheduleId)
+    {
+        $sql = "
+        SELECT 
+    -- Schedule
+    cs.id AS schedule_id,
+    cs.day_of_week,
+    cs.start_time,
+    cs.end_time,
+
+    
+    fl.id AS faculty_load_id,
+
+   
+    f.id AS teacher_id,
+    f.faculty_code AS teacher_code,
+    CONCAT(f.first_name, ' ', f.last_name) AS teacher_name,
+
+    
+    sec.id AS section_id,
+    sec.section_code,
+    sec.grade_level,
+
+    r.id AS room_id,
+    r.room_code,
+    r.room_name,
+    r.building,
+    r.floor,
+    r.room_type,
+    r.capacity,
+
+
+
+    c.id AS course_id,
+    c.code AS course_code,
+    c.name AS course_name,
+
+    
+    sub.id AS subject_id,
+    sub.code AS subject_code,
+    sub.name AS subject_name,
+    sub.units AS subject_units,
+
+   
+    fl.school_year_id,
+    sy.name AS school_year,
+
+    
+    fl.semester_id,
+    sem.name AS semester
+
+FROM $this->tableName cs
+
+JOIN cc_faculty_load fl
+    ON fl.id = cs.faculty_load_id
+
+JOIN cc_faculty f
+    ON f.id = fl.faculty_id
+
+JOIN cc_sections sec
+    ON sec.id = fl.section_id
+
+JOIN rgr_courses c
+    ON c.id = sec.program_id
+
+JOIN rgr_subjects sub
+    ON sub.id = fl.subject_id
+
+JOIN rgr_school_years sy
+    ON sy.id = fl.school_year_id
+    
+JOIN cc_room r
+    ON r.id = cs.room_id
+
+JOIN rgr_semesters sem
+    ON sem.id = fl.semester_id
+
+WHERE cs.id = :scheduleId;
+        ";
+
+       $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':scheduleId', $scheduleId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+    }
+
 
 
     protected function allClassList($paginate = true)
@@ -43,12 +132,6 @@
 
     $params = [];
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filters
-    |--------------------------------------------------------------------------
-    */
 
     if (!empty($school_year)) {
         $where .= " AND ccs.school_year_id = :school_year ";
@@ -126,6 +209,10 @@
 
             ccs.id AS schedule_id,
 
+            ccf.faculty_code AS adviser_code,
+            ccf.first_name AS adviser_first_name,
+            ccf.last_name AS adviser_last_name,
+
             ccsec.id AS section_id,
             ccsec.section_code AS section,
 
@@ -162,6 +249,12 @@
 
         LEFT JOIN cc_sections ccsec
             ON ccsec.id = ccs.section_id
+        
+        LEFT JOIN cc_faculty_load ccfl
+            ON ccfl.id = ccs.faculty_load_id
+        
+        LEFT JOIN cc_faculty ccf
+              ON ccf.id = ccfl.faculty_id
 
         LEFT JOIN rgr_semesters rsem
             ON rsem.id = ccs.semester_id

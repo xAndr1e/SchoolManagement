@@ -309,9 +309,9 @@ $chartDataJson = json_encode([
             
             <div class="calendar-container">
                 <div class="calendar-header">
-                    <button id="prevMonth" class="btn-nav" onclick="previousMonth()">â† Previous</button>
+                    <button id="prevMonth" class="btn-nav" onclick="previousMonth()">< Previous</button>
                     <h3 id="monthYear">March 2026</h3>
-                    <button id="nextMonth" class="btn-nav" onclick="nextMonth()">Next â†’</button>
+                    <button id="nextMonth" class="btn-nav" onclick="nextMonth()">Next ></button>
                 </div>
                 
                 <div class="calendar-grid">

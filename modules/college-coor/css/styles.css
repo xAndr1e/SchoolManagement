@@ -13,6 +13,8 @@
 @import url('./pages/dashboard-overview.css');
 @import url('./pages/events-management.css');
 @import url('./pages/academics-management.css');
+@import url('./pages/faculty-management.css');
+@import url('./pages/class-scheduling.css');
 
 
 
@@ -23,4 +25,5 @@
 @import url('base/variables.css');
 @import url('base/reset.css');
 @import url('base/global.css');
+
 

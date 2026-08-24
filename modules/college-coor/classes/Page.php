@@ -9,6 +9,7 @@ class Page {
         'dashboard-overview' => 'Dashboard Overview',
         'academics' => 'Academics Management',
         'events-management'  => 'Events Management',
+        'faculty-management' => 'Faculty Management',
         'class-scheduling'   => 'Class Scheduling',
         'report-submission' => 'Report Submission',
         'concern-submission' => 'Concern Submission',
@@ -18,7 +19,7 @@ class Page {
     /*Content Sections*/ 
     private $sections = [
         'top'             => ['dashboard-overview'],
-        'academics'  => ['academics-management', 'class-scheduling', 'events-management'],
+        'academics'  => ['faculty-management', 'academics-management', 'class-scheduling', 'events-management'],
         'requests-and-reports' => ['report-submission', 'concern-submission', 'approval-submission']
     ];
 
@@ -69,7 +70,11 @@ class Page {
         $sectionOrder = ['academics', 'requests-and-reports'];
         foreach ($sectionOrder as $section) {
             echo '<div class="separator"></div>';
-            echo '<h3>' . ucwords(str_replace('-', ' ', $section)) . '</h3>';
+            if ($section === 'academics') {
+                echo '<h3>Academic Affairs</h3>';
+            } else {
+                echo '<h3>' . ucwords(str_replace('-', ' ', $section)) . '</h3>';
+            }
             foreach ($this->sections[$section] as $p) {
                 $this->renderLink($p);
             }

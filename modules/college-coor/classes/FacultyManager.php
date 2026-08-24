@@ -1,23 +1,330 @@
 <?php
 class FacultyManager {
     private $conn;
-    public function __construct($conn) { $this->conn = $conn; }
+    public function __construct($conn) { 
+        $this->conn = $conn; 
+    }
+    
     public function getFacultyLoad() {
         $sql = "SELECT 
             f.id,
+            f.faculty_code,
             CONCAT(f.first_name, ' ', f.last_name) AS faculty_name,
             f.department,
-            COUNT(DISTINCT cs.id) AS classes_assigned,
-            COALESCE(SUM(s.units), 0) AS total_units,
+            (SELECT COUNT(DISTINCT sf.section_id)
+             FROM cc_section_faculty sf
+             INNER JOIN rgr_school_years sy ON sf.school_year_id = sy.id AND sy.is_active = 1
+             INNER JOIN rgr_semesters sem ON sf.semester_id = sem.id AND sem.is_active = 1
+             WHERE sf.faculty_id = f.id
+               AND sf.role = 'Instructor'
+               AND (sf.status = 'Active' OR sf.status IS NULL)) AS assigned_sections,
+            (SELECT COUNT(*)
+             FROM cc_faculty_load fl
+             INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+             INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+             WHERE fl.faculty_id = f.id) AS assigned_subjects,
+            (SELECT COALESCE(SUM(s.units), 0)
+             FROM cc_faculty_load fl
+             LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+             INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+             INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+             WHERE fl.faculty_id = f.id) AS teaching_units,
             15 AS max_load,
-            0 AS conflicts
+            (SELECT COALESCE(SUM(s2.units), 0)
+             FROM cc_faculty_load fl2
+             LEFT JOIN rgr_subjects s2 ON fl2.subject_id = s2.id
+             INNER JOIN rgr_school_years sy2 ON fl2.school_year_id = sy2.id AND sy2.is_active = 1
+             INNER JOIN rgr_semesters sem2 ON fl2.semester_id = sem2.id AND sem2.is_active = 1
+             WHERE fl2.faculty_id = f.id) AS total_units
         FROM cc_faculty f
-        LEFT JOIN cc_schedule cs ON f.id = cs.faculty_id
-        LEFT JOIN rgr_subjects s ON cs.subject_code = s.code
-        GROUP BY f.id, f.first_name, f.last_name, f.department
-        ORDER BY f.id";
+        ORDER BY f.first_name, f.last_name";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getFacultyLoadDetails($facultyId) {
+        $sql = "SELECT 
+            f.id,
+            f.faculty_code,
+            CONCAT(f.first_name, ' ', f.last_name) AS faculty_name,
+            f.department,
+            (SELECT COUNT(DISTINCT sf.section_id)
+             FROM cc_section_faculty sf
+             INNER JOIN rgr_school_years sy ON sf.school_year_id = sy.id AND sy.is_active = 1
+             INNER JOIN rgr_semesters sem ON sf.semester_id = sem.id AND sem.is_active = 1
+             WHERE sf.faculty_id = f.id
+               AND sf.role = 'Instructor'
+               AND (sf.status = 'Active' OR sf.status IS NULL)) AS assigned_sections,
+            (SELECT COUNT(*)
+             FROM cc_faculty_load fl
+             INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+             INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+             WHERE fl.faculty_id = f.id) AS assigned_subjects,
+            (SELECT COALESCE(SUM(s.units), 0)
+             FROM cc_faculty_load fl
+             LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+             INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+             INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+             WHERE fl.faculty_id = f.id) AS teaching_units,
+            15 AS max_load
+        FROM cc_faculty f
+        WHERE f.id = :faculty_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':faculty_id', $facultyId);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getFacultyAssignments($facultyId) {
+        $sql = "SELECT 
+            fl.id,
+            fl.section_id,
+            sec.section_code,
+            s.code AS subject_code,
+            s.name AS subject_name,
+            COALESCE(s.units, 0) AS units,
+            COALESCE(s.lecture_hours, 0) AS lecture_hours,
+            COALESCE(s.lab_hours, 0) AS lab_hours,
+            'Assigned' AS assignment_status,
+            'Not Yet Scheduled' AS schedule_status,
+            sy.name AS school_year,
+            sem.name AS semester
+        FROM cc_faculty_load fl
+        LEFT JOIN cc_sections sec ON fl.section_id = sec.id
+        LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+        INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+        INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+        WHERE fl.faculty_id = :faculty_id
+        ORDER BY sy.name DESC, sem.name DESC, sec.section_code, subject_code";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':faculty_id', $facultyId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getFacultyAssignmentsHistory($facultyId) {
+        $sql = "SELECT 
+            fl.id,
+            fl.section_id,
+            sec.section_code,
+            s.code AS subject_code,
+            s.name AS subject_name,
+            COALESCE(s.units, 0) AS units,
+            COALESCE(s.lecture_hours, 0) AS lecture_hours,
+            COALESCE(s.lab_hours, 0) AS lab_hours,
+            COALESCE(sy.name, 'Unknown School Year') AS school_year,
+            COALESCE(sem.name, 'Unknown Semester') AS semester,
+            'Inactive' AS status,
+            CASE
+                WHEN COALESCE(sy.is_active, 0) != 1 AND COALESCE(sem.is_active, 0) != 1 THEN 'School Year and Semester Inactive'
+                WHEN COALESCE(sy.is_active, 0) != 1 THEN 'School Year Inactive'
+                WHEN COALESCE(sem.is_active, 0) != 1 THEN 'Semester Inactive'
+                ELSE 'Academic Period Inactive'
+            END AS reason,
+            fl.created_at AS assignment_date
+        FROM cc_faculty_load fl
+        LEFT JOIN cc_sections sec ON fl.section_id = sec.id
+        LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+        LEFT JOIN rgr_school_years sy ON fl.school_year_id = sy.id
+        LEFT JOIN rgr_semesters sem ON fl.semester_id = sem.id
+        WHERE fl.faculty_id = :faculty_id
+          AND (COALESCE(sy.is_active, 0) != 1 OR COALESCE(sem.is_active, 0) != 1)
+        ORDER BY sy.name DESC, sem.name DESC, sec.section_code, subject_code";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':faculty_id', $facultyId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getFacultySections($facultyId) {
+        $sql = "SELECT 
+            sf.id AS assignment_id,
+            sf.section_id,
+            sf.role,
+            sf.status,
+            sf.assigned_at,
+            sf.ended_at,
+            sf.created_at,
+            sf.updated_at,
+            sec.section_code,
+            sec.grade_level,
+            sec.program_id,
+            c.code AS program_code,
+            c.name AS program_name,
+            sf.school_year_id,
+            sf.semester_id,
+            sy.name AS school_year,
+            sem.name AS semester,
+            sem.school_year_id AS semester_school_year_id,
+            CASE WHEN sem.school_year_id IS NOT NULL AND sem.school_year_id != sf.school_year_id THEN 1 ELSE 0 END AS period_mismatch
+        FROM cc_section_faculty sf
+        INNER JOIN cc_sections sec ON sf.section_id = sec.id
+        LEFT JOIN rgr_courses c ON sec.program_id = c.id
+        INNER JOIN rgr_school_years sy ON sf.school_year_id = sy.id AND sy.is_active = 1
+        INNER JOIN rgr_semesters sem ON sf.semester_id = sem.id AND sem.is_active = 1
+        WHERE sf.faculty_id = :faculty_id
+        ORDER BY sy.name DESC, sem.name DESC, sec.section_code";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':faculty_id', $facultyId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function saveAssignments($facultyId, $assignments) {
+        try {
+            $this->conn->beginTransaction();
+
+            // Prepare reusable queries
+            $sectionQuery = "SELECT id, program_id, grade_level, school_year_id, semester_id FROM cc_sections WHERE id = :section_id LIMIT 1";
+            $sectionStmt = $this->conn->prepare($sectionQuery);
+
+            $sectionFacultyQuery = "SELECT COUNT(*) AS count FROM cc_section_faculty WHERE section_id = :section_id AND faculty_id = :faculty_id AND role = 'Instructor' AND (status = 'Active' OR status IS NULL)";
+            $sectionFacultyStmt = $this->conn->prepare($sectionFacultyQuery);
+
+            $semesterCheckQuery = "SELECT name, school_year_id FROM rgr_semesters WHERE id = :semester_id LIMIT 1";
+            $semesterCheckStmt = $this->conn->prepare($semesterCheckQuery);
+
+            $activeCurriculumQuery = "SELECT id FROM rgr_curriculums WHERE course_id = :program_id AND is_active = 1 LIMIT 1";
+            $activeCurriculumStmt = $this->conn->prepare($activeCurriculumQuery);
+
+            $curriculumSubjectQuery = "SELECT cs.id, s.code, s.units 
+                                       FROM rgr_curriculum_subjects cs
+                                       INNER JOIN rgr_subjects s ON cs.subject_id = s.id
+                                       WHERE cs.curriculum_id = :curriculum_id 
+                                       AND cs.subject_id = :subject_id
+                                       AND cs.year_level = :year_level
+                                       AND cs.semester = :semester
+                                       LIMIT 1";
+            $curriculumSubjectStmt = $this->conn->prepare($curriculumSubjectQuery);
+
+            $duplicateCheckQuery = "SELECT COUNT(*) AS count FROM cc_faculty_load 
+                                    WHERE section_id = :section_id 
+                                    AND subject_id = :subject_id 
+                                    LIMIT 1";
+            $duplicateCheckStmt = $this->conn->prepare($duplicateCheckQuery);
+
+            $insertSql = "INSERT INTO cc_faculty_load 
+                    (faculty_id, section_id, subject_id, school_year_id, semester_id) 
+                    VALUES (:faculty_id, :section_id, :subject_id, :school_year_id, :semester_id)";
+            $insertStmt = $this->conn->prepare($insertSql);
+
+            foreach ($assignments as $assignment) {
+                $sectionId = (int)$assignment['section_id'];
+                $subjectId = (int)$assignment['subject_id'];
+
+                // 1. Verify section exists and get its details
+                $sectionStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
+                $sectionStmt->execute();
+                $section = $sectionStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$section) {
+                    throw new Exception('Selected section does not exist.');
+                }
+
+                // 2. Verify faculty is assigned as instructor to this section
+                $sectionFacultyStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
+                $sectionFacultyStmt->bindParam(':faculty_id', $facultyId, PDO::PARAM_INT);
+                $sectionFacultyStmt->execute();
+                $sectionFacultyResult = $sectionFacultyStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$sectionFacultyResult || (int)$sectionFacultyResult['count'] === 0) {
+                    throw new Exception('This faculty is not assigned as the instructor of the selected section.');
+                }
+
+                // 3. Verify academic period information exists
+                if (empty($section['school_year_id']) || empty($section['semester_id'])) {
+                    throw new Exception('Selected section is missing academic period information');
+                }
+
+                $schoolYearId = (int)$section['school_year_id'];
+                $semesterId = (int)$section['semester_id'];
+                $programId = (int)$section['program_id'];
+                $gradeLevel = $section['grade_level'];
+
+                // 4. Verify semester-school year consistency
+                $semesterCheckStmt->bindParam(':semester_id', $semesterId, PDO::PARAM_INT);
+                $semesterCheckStmt->execute();
+                $semesterRow = $semesterCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$semesterRow || (int)$semesterRow['school_year_id'] !== $schoolYearId) {
+                    throw new Exception('Selected section has an invalid semester / school year combination');
+                }
+
+                $semesterName = $semesterRow['name'];
+
+                // 5. Verify active curriculum exists for this program
+                $activeCurriculumStmt->bindParam(':program_id', $programId, PDO::PARAM_INT);
+                $activeCurriculumStmt->execute();
+                $curriculumRow = $activeCurriculumStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$curriculumRow) {
+                    throw new Exception('No active curriculum found for this section\'s program. Contact the Registrar.');
+                }
+
+                $curriculumId = (int)$curriculumRow['id'];
+
+                // 6. Convert grade level string to numeric year level
+                $yearLevel = $this->parseYearLevel($gradeLevel);
+
+                // 7. Verify subject belongs to the active curriculum with matching year level and semester
+                $curriculumSubjectStmt->bindParam(':curriculum_id', $curriculumId, PDO::PARAM_INT);
+                $curriculumSubjectStmt->bindParam(':subject_id', $subjectId, PDO::PARAM_INT);
+                $curriculumSubjectStmt->bindParam(':year_level', $yearLevel, PDO::PARAM_INT);
+                $curriculumSubjectStmt->bindParam(':semester', $semesterName);
+                $curriculumSubjectStmt->execute();
+                $curriculumSubject = $curriculumSubjectStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$curriculumSubject) {
+                    throw new Exception('This subject is not part of the active curriculum for this section, year level, and semester.');
+                }
+
+                // 8. Prevent duplicate subject assignments
+                $duplicateCheckStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
+                $duplicateCheckStmt->bindParam(':subject_id', $subjectId, PDO::PARAM_INT);
+                $duplicateCheckStmt->execute();
+                $duplicateResult = $duplicateCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($duplicateResult && (int)$duplicateResult['count'] > 0) {
+                    throw new Exception('This subject is already assigned to this section.');
+                }
+
+                // 9. Insert the assignment
+                $insertStmt->bindParam(':faculty_id', $facultyId, PDO::PARAM_INT);
+                $insertStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
+                $insertStmt->bindParam(':subject_id', $subjectId, PDO::PARAM_INT);
+                $insertStmt->bindParam(':school_year_id', $schoolYearId, PDO::PARAM_INT);
+                $insertStmt->bindParam(':semester_id', $semesterId, PDO::PARAM_INT);
+                $insertStmt->execute();
+            }
+
+            $this->conn->commit();
+            return ['success' => true, 'message' => 'Assignments saved successfully'];
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return ['success' => false, 'message' => 'Error saving assignments: ' . $e->getMessage()];
+        }
+    }
+
+    private function parseYearLevel($gradeLevel) {
+        if (is_numeric($gradeLevel)) {
+            return (int)$gradeLevel;
+        }
+        
+        // Extract number from strings like "1st Year", "2nd Year", "1st", "2nd", etc.
+        if (preg_match('/(\d+)/', $gradeLevel, $matches)) {
+            return (int)$matches[1];
+        }
+        
+        // Default to 1 if parsing fails
+        return 1;
+    }
+
+    public function deleteAssignment($facultyLoadId) {
+        $sql = "DELETE FROM cc_faculty_load WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':id', $facultyLoadId);
+        return $stmt->execute();
+    }
 }
+?>

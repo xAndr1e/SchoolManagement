@@ -6,6 +6,31 @@ window.addEventListener('page:loaded', () => {
     loadApprovalQueue();
 
     const uploadForm = document.getElementById('approval-upload-form');
+
+    // --- Modal wiring ---
+    const modalOverlay  = document.getElementById('approval-modal-overlay');
+    const openModalBtn  = document.getElementById('approval-open-modal');
+    const closeModalBtn = document.getElementById('approval-modal-close');
+
+    const openApprovalModal = () => modalOverlay?.classList.add('active');
+    const closeApprovalModal = () => {
+        modalOverlay?.classList.remove('active');
+        uploadForm?.reset();
+    };
+
+    openModalBtn?.addEventListener('click', openApprovalModal);
+    closeModalBtn?.addEventListener('click', closeApprovalModal);
+    modalOverlay?.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeApprovalModal();
+    });
+
+    if (!window.approvalEscBound) {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeApprovalModal();
+        });
+        window.approvalEscBound = true;
+    }
+
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -24,7 +49,7 @@ window.addEventListener('page:loaded', () => {
                 }
 
                 if (json.success) {
-                    uploadForm.reset();
+                    closeApprovalModal();
                     loadApprovalQueue();
                     showToast('Approval request submitted successfully!', 'success');
                 }

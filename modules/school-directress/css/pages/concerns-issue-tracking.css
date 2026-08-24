@@ -3,25 +3,7 @@ School Directress — Concerns & Issue Tracking
 Matches Student Monitoring / User Management styling.
 ============================================================ */
 
-/* ── Concern Form ─────────────────────────────────── */
-
-.concern-form {
-    padding: 1.6rem;
-    background: var(--color3);
-    border: 1px solid var(--color9);
-    border-radius: 10px;
-    margin-bottom: 1.5rem;
-}
-
-.concern-form h3 {
-    margin: 0 0 1.1rem;
-    color: var(--color2);
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-
 /* ── Form Groups ──────────────────────────────────── */
-
 .form-group {
     margin-bottom: 1rem;
 }
@@ -139,9 +121,6 @@ Matches Student Monitoring / User Management styling.
 
 /* ── Issue List Card ───────────────────────────────── */
 
-.concerns-list {
-    margin-top: 1.5rem;
-}
 
 /* ── List Header ──────────────────────────────────── */
 
@@ -149,7 +128,6 @@ Matches Student Monitoring / User Management styling.
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
     background: var(--color3);
     padding: 1.1rem 1.6rem;
     border-radius: 10px;
@@ -160,6 +138,30 @@ Matches Student Monitoring / User Management styling.
     color: var(--color2);
     font-size: 0.95rem;
     font-weight: 700;
+}
+
+/* ── Header Actions ───────────────────────────────── */
+
+.concerns-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.concern-add-btn {
+    padding: 0.6rem 1.1rem;
+    border: none;
+    border-radius: 7px;
+    background: var(--color1);
+    color: var(--color3);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.concern-add-btn:hover {
+    background: var(--color7);
 }
 
 /* ── Filters ───────────────────────────────────────── */
@@ -363,6 +365,65 @@ Matches Student Monitoring / User Management styling.
     font-size: 0.82rem;
 }
 
+/* ── Modal ─────────────────────────────────────────── */
+
+.concern-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.concern-modal-overlay.active {
+    display: flex;
+}
+
+.concern-modal {
+    width: 480px;
+    max-width: 92vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--color3);
+    border: 1px solid var(--color9);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.concern-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.6rem;
+    border-bottom: 1px solid var(--color9);
+}
+
+.concern-modal-header h3 {
+    margin: 0;
+    color: var(--color2);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.concern-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--color5);
+    cursor: pointer;
+}
+
+.concern-modal-close:hover {
+    color: var(--color2);
+}
+
+.concern-modal-body {
+    padding: 1.6rem;
+}
+
 /* ── Responsive ───────────────────────────────────── */
 
 @media (max-width: 900px) {
@@ -371,6 +432,11 @@ Matches Student Monitoring / User Management styling.
     }
 
     .concerns-list-head {
+        flex-wrap: wrap;
+    }
+
+    .concerns-header-actions {
+        width: 100%;
         flex-wrap: wrap;
     }
 
@@ -400,12 +466,16 @@ Matches Student Monitoring / User Management styling.
 }
 
 @media (max-width: 600px) {
-    .concern-form,
     .concerns-list {
         padding: 1rem;
     }
 
     .concerns-list-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .concerns-header-actions {
         flex-direction: column;
         align-items: stretch;
     }
@@ -442,5 +512,9 @@ Matches Student Monitoring / User Management styling.
     .btn-reopen,
     .btn-disabled {
         width: 100%;
+    }
+
+    .concern-modal {
+        width: 94vw;
     }
 }

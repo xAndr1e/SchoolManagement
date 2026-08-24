@@ -17,33 +17,11 @@ $departments = $departmentClass->getAllDepartments();
     </div>
 
     <div class="module-content">
-        <div class="approval-submission">
-            <div class="approval-upload">
-                <h3>Submit for Approval</h3>
-
-                <form id="approval-upload-form" enctype="multipart/form-data" data-skip>
-                    <div class="approval-form-group">
-                        <label for="approval-title">Title</label>
-                        <input type="text" id="approval-title" name="title" required>
-                    </div>
-
-                    <div class="approval-form-group">
-                        <label for="approval-attachment">Attachment (optional)</label>
-                        <input class="file-btn" type="file" id="approval-attachment" name="attachment">
-                    </div>
-
-                    <div class="approval-form-group">
-                        <button type="submit" class="approval-submit-btn" id="approval-submit-btn">
-                            Submit for Approval
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
         <div class="approval-section-header">
-                <h3>Approval Queue</h3>
+            <h3>Approval Queue</h3>
 
+            <div class="approval-header-actions">
                 <div class="approval-filter">
                     <select id="department-filter" class="ads-select">
                         <option value="">All Departments</option>
@@ -54,7 +32,12 @@ $departments = $departmentClass->getAllDepartments();
                         <?php endforeach; ?>
                     </select>
                 </div>
+
+                <button type="button" id="approval-open-modal" class="approval-add-btn">
+                    + Submit for Approval
+                </button>
             </div>
+        </div>
 
         <div class="approval-queue-section">
             <div class="ads-queue">
@@ -115,6 +98,38 @@ $departments = $departmentClass->getAllDepartments();
                             <?php endif; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Modal -->
+    <div class="approval-modal-overlay" id="approval-modal-overlay">
+        <div class="approval-modal" role="dialog" aria-modal="true" aria-labelledby="approval-modal-title">
+            <div class="approval-modal-header">
+                <h3 id="approval-modal-title">Submit for Approval</h3>
+                <button type="button" class="approval-modal-close" id="approval-modal-close" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="approval-modal-body">
+                <div class="approval-upload">
+                    <form id="approval-upload-form" enctype="multipart/form-data" data-skip>
+                        <div class="approval-form-group">
+                            <label for="approval-title">Title</label>
+                            <input type="text" id="approval-title" name="title" required>
+                        </div>
+
+                        <div class="approval-form-group">
+                            <label for="approval-attachment">Attachment (optional)</label>
+                            <input class="file-btn" type="file" id="approval-attachment" name="attachment">
+                        </div>
+
+                        <div class="approval-form-group">
+                            <button type="submit" class="approval-submit-btn" id="approval-submit-btn">
+                                Submit for Approval
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

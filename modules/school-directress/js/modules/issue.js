@@ -5,8 +5,34 @@ window.addEventListener('page:loaded', () => {
 
     loadIssues();
 
+    // --- Modal wiring ---
+    const modalOverlay  = document.getElementById('concern-modal-overlay');
+    const openModalBtn  = document.getElementById('concern-open-modal');
+    const closeModalBtn = document.getElementById('concern-modal-close');
+    const logForm       = document.getElementById('concern-log-form');
+
+    const openConcernModal = () => modalOverlay?.classList.add('active');
+    const closeConcernModal = () => {
+        modalOverlay?.classList.remove('active');
+        logForm?.reset();
+        const fileError = document.getElementById('file-error');
+        if (fileError) fileError.style.display = 'none';
+    };
+
+    openModalBtn?.addEventListener('click', openConcernModal);
+    closeModalBtn?.addEventListener('click', closeConcernModal);
+    modalOverlay?.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeConcernModal();
+    });
+
+    if (!window.concernEscBound) {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeConcernModal();
+        });
+        window.concernEscBound = true;
+    }
+
     // --- Submit concern ---
-    const logForm = document.getElementById('concern-log-form');
     if (logForm) {
         logForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -40,7 +66,7 @@ window.addEventListener('page:loaded', () => {
                 }
 
                 if (json.success) {
-                    logForm.reset();
+                    closeConcernModal();
                     showToast('Concern logged successfully!', 'success');
                     loadIssues();
                 } else {

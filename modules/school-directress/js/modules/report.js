@@ -5,8 +5,35 @@ function initReportModule() {
 
     loadReports();
 
+    const uploadForm = document.getElementById('report-upload-form');
+
+    // --- Modal wiring ---
+    const modalOverlay  = document.getElementById('rsm-modal-overlay');
+    const openModalBtn  = document.getElementById('rsm-open-modal');
+    const closeModalBtn = document.getElementById('rsm-modal-close');
+
+    const openReportModal = () => modalOverlay?.classList.add('active');
+    const closeReportModal = () => {
+        modalOverlay?.classList.remove('active');
+        uploadForm?.reset();
+        const fileError = document.getElementById('file-error');
+        if (fileError) fileError.style.display = 'none';
+    };
+
+    openModalBtn?.addEventListener('click', openReportModal);
+    closeModalBtn?.addEventListener('click', closeReportModal);
+    modalOverlay?.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeReportModal();
+    });
+
+    if (!window.rsmEscBound) {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeReportModal();
+        });
+        window.rsmEscBound = true;
+    }
+
     // --- Submit Report ---
-    const uploadForm  = document.getElementById('report-upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -35,7 +62,7 @@ function initReportModule() {
                 }
 
                 if (json.success) {
-                    uploadForm.reset();
+                    closeReportModal();
                     showToast('Report submitted successfully!', 'success');
                     loadReports();
                 } else {

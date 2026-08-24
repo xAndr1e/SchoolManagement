@@ -7,25 +7,15 @@
     width: 100%;
 }
 
-.rsm-submission {
+.rsm-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background: var(--color3);
-    border: 1px solid var(--color9);
-    border-radius: 8px;
-    padding: 1.6rem;
-    box-sizing: border-box;
+    padding: 1.1rem 1.6rem;
+    border-radius: 10px;
 }
 
-.rsm-submission {
-    margin-bottom: 1.1rem;
-}
-
-.rsm-section-header {
-    margin-bottom: 1.1rem;
-    padding-bottom: 1.1rem;
-    border-bottom: 1px solid var(--color9);
-}
-
-.rsm-section-header h3,
 .rsm-list-header h3 {
     margin: 0;
     color: var(--color2);
@@ -33,9 +23,29 @@
     font-weight: 700;
 }
 
+.rsm-header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.rsm-add-btn {
+    padding: 0.6rem 1.1rem;
+    border: none;
+    border-radius: 7px;
+    background: var(--color1);
+    color: var(--color3);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.rsm-add-btn:hover {
+    background: var(--color7);
+}
+
 .rsm-form {
-    width: 520px;
-    max-width: 100%;
+    width: 100%;
 }
 
 .rsm-form-group {
@@ -152,17 +162,6 @@
     background: var(--color1);
 }
 
-.rsm-list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.1rem;
-    background: var(--color3);
-    padding: 1.1rem 1.6rem;
-    border-radius: 10px;
-}
-
 .rsm-filters {
     display: flex;
     align-items: center;
@@ -269,14 +268,75 @@
     font-size: 0.82rem;
 }
 
-@media (max-width: 900px) {
-    .rsm-form {
-        width: 100%;
-    }
+/* ── Modal ─────────────────────────────────────────────── */
 
+.rsm-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.rsm-modal-overlay.active {
+    display: flex;
+}
+
+.rsm-modal {
+    width: 560px;
+    max-width: 92vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--color3);
+    border: 1px solid var(--color9);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.rsm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.6rem;
+    border-bottom: 1px solid var(--color9);
+}
+
+.rsm-modal-header h3 {
+    margin: 0;
+    color: var(--color2);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.rsm-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--color5);
+    cursor: pointer;
+}
+
+.rsm-modal-close:hover {
+    color: var(--color2);
+}
+
+.rsm-modal-body {
+    padding: 1.6rem;
+}
+
+@media (max-width: 900px) {
     .rsm-list-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .rsm-header-actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .rsm-filters {
@@ -296,7 +356,6 @@
 }
 
 @media (max-width: 600px) {
-    .rsm-submission,
     .rsm-list {
         padding: 1.1rem;
     }
@@ -319,4 +378,12 @@
     .rsm-btn-cancel {
         width: 100%;
     }
-}
+
+    .rsm-modal {
+        width: 94vw;
+    }
+}/* ============================================================
+   School Directress — Report Submission & Management
+   Independent styles
+   ============================================================ */
+

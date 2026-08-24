@@ -152,7 +152,7 @@
                 tbody.innerHTML += `
                     <tr class="student-row">
                         <td>${student.student_number}</td>
-                        <td>${student.first_name} ${student.surname}</td>
+                        <td> ${student.first_name.charAt(0).toUpperCase() + student.first_name.slice(1)}   ${student.surname.charAt(0).toUpperCase() + student.surname.slice(1)} </td>
                         <td>${student.course_code}</td>
                         <td> ${(() => {
                             switch (parseInt(student.year_level)) {

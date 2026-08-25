@@ -194,6 +194,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 : ['success' => false, 'message' => 'Unable to restore engagement.'];
         }
 
+        if ($action === 'get_faculty_education' && isset($input['employee_id'])) {
+            $employeeId = trim((string)$input['employee_id']);
+            $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
+            $matchedEducation = null;
+
+            foreach ($educationSummary as $education) {
+                $comparisonKey = $education['employee_code'] ?? null;
+                if ((string)$comparisonKey === $employeeId) {
+                    $matchedEducation = $education;
+                    break;
+                }
+
+                $comparisonId = $education['employee_id'] ?? null;
+                if ((string)$comparisonId === $employeeId) {
+                    $matchedEducation = $education;
+                    break;
+                }
+            }
+
+            if ($matchedEducation) {
+                $response = ['success' => true, 'records' => $matchedEducation['records'] ?? []];
+            } else {
+                $response = ['success' => false, 'message' => 'No records found.'];
+            }
+        }
+
+        if ($action === 'get_faculty_training' && isset($input['employee_id'])) {
+            $employeeId = trim((string)$input['employee_id']);
+            $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
+            $matchedTraining = null;
+
+            foreach ($trainingSummary as $training) {
+                $comparisonKey = $training['employee_code'] ?? null;
+                if ((string)$comparisonKey === $employeeId) {
+                    $matchedTraining = $training;
+                    break;
+                }
+
+                $comparisonId = $training['employee_id'] ?? null;
+                if ((string)$comparisonId === $employeeId) {
+                    $matchedTraining = $training;
+                    break;
+                }
+            }
+
+            if ($matchedTraining) {
+                $response = ['success' => true, 'records' => $matchedTraining['records'] ?? []];
+            } else {
+                $response = ['success' => false, 'message' => 'No records found.'];
+            }
+        }
+
+        if ($action === 'get_panel_content' && isset($input['tab'])) {
+            $tab = strtolower(trim((string)$input['tab']));
+            $facultyList = $facultyManager->getAllFacultyCredentials() ?? [];
+            $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
+            $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
+            $eligibleEmployees = $facultyManager->getEligibleEngagementEmployees() ?? [];
+
+            if ($tab === 'credentials') {
+                $response = ['success' => true, 'html' => renderCredentialsPanel($facultyList)];
+            } elseif ($tab === 'attainment') {
+                $response = ['success' => true, 'html' => renderAttainmentPanel($educationSummary)];
+            } elseif ($tab === 'trainings') {
+                $response = ['success' => true, 'html' => renderTrainingsPanel($trainingSummary, $eligibleEmployees)];
+            } else {
+                $response = ['success' => false, 'message' => 'Invalid tab.'];
+            }
+        }
+
+        if ($action === 'search_records' && isset($input['table'])) {
+            $tableName = (string)($input['table'] ?? '');
+            $term = isset($input['term']) ? strtolower(trim((string)$input['term'])) : '';
+            $filter = isset($input['filter']) ? strtolower(trim((string)$input['filter'])) : 'all';
+            $facultyList = $facultyManager->getAllFacultyCredentials() ?? [];
+            $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
+            $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
+            $html = '';
+
+            if ($tableName === 'credentialsTable') {
+                $html = renderCredentialsTableRows($facultyList, $term);
+            } elseif ($tableName === 'attainmentTable') {
+                $html = renderAttainmentTableRows($educationSummary, $term);
+            } elseif ($tableName === 'trainingsTable') {
+                $html = renderTrainingTableRows($trainingSummary, $term, $filter);
+            }
+
+            $response = ['success' => true, 'html' => $html];
+        }
+
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
@@ -212,34 +302,219 @@ $eligibleEmployees = $facultyManager->getEligibleEngagementEmployees() ?? [];
 $stats = [
     'faculty' => count($facultyList)
 ];
-?>
-    <div class="module-header">
-        <div>
-            <h1><i class="fas fa-chalkboard-teacher"></i> Faculty Management</h1>
-            <p>View and manage faculty credentials, attainment, and trainings.</p>
-        </div>
-    </div>
 
-    <div class="module-content">
-        <div class="stats-grid">
-        <div class="stat-card faculty">
-            <h6>Faculty Members</h6>
-            <h3><?php echo $stats['faculty']; ?></h3>
-        </div>
-    </div>
+function normalizeFacultySearchText($value) {
+    return strtolower(trim(strip_tags((string)$value)));
+}
 
-    <div class="academics-tabs">
-        <button class="academics-tab active" data-fm-tab="credentials">
-            <i class="fas fa-id-badge"></i> Faculty Credentials
-        </button>
-        <button class="academics-tab" data-fm-tab="attainment">
-            <i class="fas fa-graduation-cap"></i> Educational Attainment
-        </button>
-        <button class="academics-tab" data-fm-tab="trainings">
-            <i class="fas fa-certificate"></i> Trainings & Certifications
-        </button>
-    </div>
+function renderCredentialsRow($faculty) {
+    $middle = '';
+    if (!empty($faculty['middle_name'])) {
+        $middle = ' ' . strtoupper(substr(trim($faculty['middle_name']), 0, 1)) . '.';
+    }
+    $suffix = !empty($faculty['suffix']) ? ' ' . htmlspecialchars($faculty['suffix']) : '';
+    $fullName = htmlspecialchars(trim($faculty['first_name'] . $middle . ' ' . $faculty['last_name'] . $suffix));
 
+    ob_start();
+    ?>
+    <tr data-faculty-id="<?= (int)$faculty['faculty_id'] ?>"
+        data-employee-id="<?= (int)($faculty['employee_id'] ?? 0) ?>"
+        data-employee-code="<?= htmlspecialchars($faculty['employee_code']) ?>"
+        data-faculty-name="<?= $fullName ?>"
+        data-department="<?= htmlspecialchars($faculty['department']) ?>"
+        data-email="<?= htmlspecialchars($faculty['email']) ?>"
+        data-created-at="<?= htmlspecialchars($faculty['created_at']) ?>"
+        data-position="<?= htmlspecialchars($faculty['position']) ?>"
+        data-employment-type="<?= htmlspecialchars($faculty['employment_type']) ?>"
+        data-employment-status="<?= htmlspecialchars($faculty['employment_status']) ?>">
+        <td><?= htmlspecialchars($faculty['employee_code']) ?></td>
+        <td><?= $fullName ?></td>
+        <td><?= htmlspecialchars($faculty['department']) ?></td>
+        <td><?= htmlspecialchars($faculty['position']) ?></td>
+        <td><?= htmlspecialchars($faculty['employment_type']) ?></td>
+        <td><?= htmlspecialchars($faculty['employment_status']) ?></td>
+        <td class="actions">
+            <button type="button" class="btn btn-sm btn-info view-profile-btn">View</button>
+            <button type="button" class="btn btn-sm btn-secondary shift-schedule-btn" data-employee-id="<?= (int)($faculty['employee_id'] ?? 0) ?>">Shift Schedule</button>
+        </td>
+    </tr>
+    <?php
+    return ob_get_clean();
+}
+
+function renderAttainmentRow($education) {
+    $recordsJson = json_encode($education['records'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+    ob_start();
+    ?>
+    <tr data-record-type="education" data-employee-code="<?= htmlspecialchars($education['employee_code']) ?>" data-faculty-name="<?= htmlspecialchars($education['faculty_name']) ?>" data-department="<?= htmlspecialchars($education['department'] ?? 'Not provided') ?>" data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
+        <td><?= htmlspecialchars($education['employee_code']) ?></td>
+        <td><?= htmlspecialchars($education['faculty_name']) ?></td>
+        <td><?= htmlspecialchars($education['highest_degree']) ?></td>
+        <td><?= htmlspecialchars($education['school_name']) ?></td>
+        <td><?= htmlspecialchars($education['year_graduated']) ?></td>
+        <td class="actions"><button type="button" class="btn btn-sm btn-info view-attainment-btn">View</button></td>
+    </tr>
+    <?php
+    return ob_get_clean();
+}
+
+function renderTrainingRow($training) {
+    $recordsJson = json_encode($training['records'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+    ob_start();
+    ?>
+    <tr data-record-type="<?= htmlspecialchars($training['record_type'] ?? 'empty') ?>"
+        data-record-source="<?= htmlspecialchars($training['record_source'] ?? '') ?>"
+        data-record-id="<?= htmlspecialchars((string)($training['record_id'] ?? '')) ?>"
+        data-record-status="<?= htmlspecialchars($training['status'] ?? '') ?>"
+        data-record-outcome="<?= htmlspecialchars($training['outcome'] ?? '') ?>"
+        data-employee-code="<?= htmlspecialchars($training['employee_code'] ?? '') ?>"
+        data-faculty-name="<?= htmlspecialchars($training['faculty_name'] ?? '') ?>"
+        data-employment-type="<?= htmlspecialchars($training['employment_type'] ?? 'N/A') ?>"
+        data-employment-status="<?= htmlspecialchars($training['employment_status'] ?? 'N/A') ?>"
+        data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
+        <td><?= htmlspecialchars($training['employee_code'] ?? 'N/A') ?></td>
+        <td><?= htmlspecialchars($training['faculty_name'] ?? 'N/A') ?></td>
+        <td><?= htmlspecialchars($training['type'] ?? 'No record yet') ?></td>
+        <td><?= htmlspecialchars($training['title'] ?? 'No record yet') ?></td>
+        <td><?= htmlspecialchars($training['organization'] ?? 'No record yet') ?></td>
+        <td><?= htmlspecialchars($training['date_period'] ?? 'No record yet') ?></td>
+        <td><?= htmlspecialchars($training['status'] ?? 'No record yet') ?></td>
+        <td class="actions">
+            <button type="button" class="btn btn-sm btn-info view-training-btn">View</button>
+            <?php if (($training['record_source'] ?? '') === 'cc_certification_engagements'): ?>
+                <?php
+                    $statusValue = $training['status'] ?? '';
+                    $workflowButtons = '';
+
+                    if ($statusValue === 'Pending') {
+                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-success approve-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Approve</button>';
+                    } elseif (in_array($statusValue, ['Approved', 'Ongoing'], true)) {
+                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-warning complete-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Mark Completed</button>';
+                    } elseif ($statusValue === 'Completed') {
+                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-primary generate-certificate-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Generate Certificate</button>';
+                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-secondary archive-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Archive</button>';
+                    } elseif ($statusValue === 'Archived') {
+                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-success restore-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Restore</button>';
+                    }
+
+                    echo $workflowButtons;
+                ?>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <?php
+    return ob_get_clean();
+}
+
+function renderCredentialsTableRows($facultyList, $term = '') {
+    $rowsHtml = '';
+
+    foreach ($facultyList as $faculty) {
+        $searchableText = implode(' ', [
+            $faculty['employee_code'] ?? '',
+            $faculty['first_name'] ?? '',
+            $faculty['middle_name'] ?? '',
+            $faculty['last_name'] ?? '',
+            $faculty['suffix'] ?? '',
+            $faculty['department'] ?? '',
+            $faculty['position'] ?? '',
+            $faculty['employment_type'] ?? '',
+            $faculty['employment_status'] ?? '',
+        ]);
+
+        if ($term !== '' && stripos($searchableText, $term) === false) {
+            continue;
+        }
+
+        $rowsHtml .= renderCredentialsRow($faculty);
+    }
+
+    if ($rowsHtml === '') {
+        return '<tr class="no-data"><td colspan="7" class="text-center text-muted" style="padding: 20px;">No faculty records available.</td></tr>';
+    }
+
+    return $rowsHtml;
+}
+
+function renderAttainmentTableRows($educationSummary, $term = '') {
+    $rowsHtml = '';
+
+    foreach ($educationSummary as $education) {
+        $searchableText = implode(' ', [
+            $education['employee_code'] ?? '',
+            $education['faculty_name'] ?? '',
+            $education['highest_degree'] ?? '',
+            $education['school_name'] ?? '',
+            $education['year_graduated'] ?? '',
+            $education['department'] ?? '',
+        ]);
+
+        if ($term !== '' && stripos($searchableText, $term) === false) {
+            continue;
+        }
+
+        $rowsHtml .= renderAttainmentRow($education);
+    }
+
+    if ($rowsHtml === '') {
+        return '<tr class="no-data"><td colspan="6" class="text-center text-muted" style="padding: 20px;">No educational attainment records yet.</td></tr>';
+    }
+
+    return $rowsHtml;
+}
+
+function renderTrainingTableRows($trainingSummary, $term = '', $filter = 'all') {
+    $rowsHtml = '';
+
+    foreach ($trainingSummary as $training) {
+        $statusValue = strtolower((string)($training['status'] ?? ''));
+        if ($filter === 'archived') {
+            if ($statusValue !== 'archived') {
+                continue;
+            }
+        } elseif ($filter === 'completed') {
+            if ($statusValue !== 'completed') {
+                continue;
+            }
+        } elseif ($filter === 'active') {
+            if (!in_array($statusValue, ['pending', 'ongoing', 'for review', 'approved'], true)) {
+                continue;
+            }
+        } else {
+            if ($statusValue === 'archived') {
+                continue;
+            }
+        }
+
+        $searchableText = implode(' ', [
+            $training['employee_code'] ?? '',
+            $training['faculty_name'] ?? '',
+            $training['type'] ?? '',
+            $training['title'] ?? '',
+            $training['organization'] ?? '',
+            $training['date_period'] ?? '',
+            $training['status'] ?? '',
+        ]);
+
+        if ($term !== '' && stripos($searchableText, $term) === false) {
+            continue;
+        }
+
+        $rowsHtml .= renderTrainingRow($training);
+    }
+
+    if ($rowsHtml === '') {
+        return '<tr class="no-data"><td colspan="8" class="text-center text-muted" style="padding: 20px;">No trainings or certifications recorded yet.</td></tr>';
+    }
+
+    return $rowsHtml;
+}
+
+function renderCredentialsPanel($facultyList) {
+    ob_start();
+    ?>
     <div class="academics-panel fm-panel active" id="fm-panel-credentials">
         <div class="section-header">
             <h3>Faculty Credentials</h3>
@@ -269,35 +544,7 @@ $stats = [
                     <tbody>
                         <?php if (!empty($facultyList)): ?>
                             <?php foreach ($facultyList as $faculty): ?>
-                                <?php
-                                    $middle = '';
-                                    if (!empty($faculty['middle_name'])) {
-                                        $middle = ' ' . strtoupper(substr(trim($faculty['middle_name']), 0, 1)) . '.';
-                                    }
-                                    $suffix = !empty($faculty['suffix']) ? ' ' . htmlspecialchars($faculty['suffix']) : '';
-                                    $fullName = htmlspecialchars(trim($faculty['first_name'] . $middle . ' ' . $faculty['last_name'] . $suffix));
-                                ?>
-                                <tr data-faculty-id="<?= (int)$faculty['faculty_id'] ?>"
-                                    data-employee-id="<?= (int)($faculty['employee_id'] ?? 0) ?>"
-                                    data-employee-code="<?= htmlspecialchars($faculty['employee_code']) ?>"
-                                    data-faculty-name="<?= $fullName ?>"
-                                    data-department="<?= htmlspecialchars($faculty['department']) ?>"
-                                    data-email="<?= htmlspecialchars($faculty['email']) ?>"
-                                    data-created-at="<?= htmlspecialchars($faculty['created_at']) ?>"
-                                    data-position="<?= htmlspecialchars($faculty['position']) ?>"
-                                    data-employment-type="<?= htmlspecialchars($faculty['employment_type']) ?>"
-                                    data-employment-status="<?= htmlspecialchars($faculty['employment_status']) ?>">
-                                    <td><?= htmlspecialchars($faculty['employee_code']) ?></td>
-                                    <td><?= $fullName ?></td>
-                                    <td><?= htmlspecialchars($faculty['department']) ?></td>
-                                    <td><?= htmlspecialchars($faculty['position']) ?></td>
-                                    <td><?= htmlspecialchars($faculty['employment_type']) ?></td>
-                                    <td><?= htmlspecialchars($faculty['employment_status']) ?></td>
-                                    <td class="actions">
-                                        <button type="button" class="btn btn-sm btn-info view-profile-btn">View</button>
-                                        <button type="button" class="btn btn-sm btn-secondary shift-schedule-btn" data-employee-id="<?= (int)($faculty['employee_id'] ?? 0) ?>">Shift Schedule</button>
-                                    </td>
-                                </tr>
+                                <?php echo renderCredentialsRow($faculty); ?>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr class="no-data">
@@ -309,7 +556,13 @@ $stats = [
             </div>
         </div>
     </div>
+    <?php
+    return ob_get_clean();
+}
 
+function renderAttainmentPanel($educationSummary) {
+    ob_start();
+    ?>
     <div class="academics-panel fm-panel" id="fm-panel-attainment">
         <div class="section-header">
             <h3>Educational Attainment</h3>
@@ -338,17 +591,7 @@ $stats = [
                     <tbody>
                         <?php if (!empty($educationSummary)): ?>
                             <?php foreach ($educationSummary as $education): ?>
-                                <?php
-                                    $recordsJson = json_encode($education['records'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-                                ?>
-                                <tr data-record-type="education" data-employee-code="<?= htmlspecialchars($education['employee_code']) ?>" data-faculty-name="<?= htmlspecialchars($education['faculty_name']) ?>" data-department="<?= htmlspecialchars($education['department'] ?? 'Not provided') ?>" data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
-                                    <td><?= htmlspecialchars($education['employee_code']) ?></td>
-                                    <td><?= htmlspecialchars($education['faculty_name']) ?></td>
-                                    <td><?= htmlspecialchars($education['highest_degree']) ?></td>
-                                    <td><?= htmlspecialchars($education['school_name']) ?></td>
-                                    <td><?= htmlspecialchars($education['year_graduated']) ?></td>
-                                    <td class="actions"><button type="button" class="btn btn-sm btn-info view-attainment-btn">View</button></td>
-                                </tr>
+                                <?php echo renderAttainmentRow($education); ?>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr class="no-data">
@@ -360,7 +603,13 @@ $stats = [
             </div>
         </div>
     </div>
+    <?php
+    return ob_get_clean();
+}
 
+function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
+    ob_start();
+    ?>
     <div class="academics-panel fm-panel" id="fm-panel-trainings">
         <div class="section-header">
             <h3>Trainings & Certifications</h3>
@@ -398,49 +647,7 @@ $stats = [
                     <tbody>
                         <?php if (!empty($trainingSummary)): ?>
                             <?php foreach ($trainingSummary as $training): ?>
-                                <?php
-                                    $recordsJson = json_encode($training['records'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-                                ?>
-                                <tr data-record-type="<?= htmlspecialchars($training['record_type'] ?? 'empty') ?>"
-                                    data-record-source="<?= htmlspecialchars($training['record_source'] ?? '') ?>"
-                                    data-record-id="<?= htmlspecialchars((string)($training['record_id'] ?? '')) ?>"
-                                    data-record-status="<?= htmlspecialchars($training['status'] ?? '') ?>"
-                                    data-record-outcome="<?= htmlspecialchars($training['outcome'] ?? '') ?>"
-                                    data-employee-code="<?= htmlspecialchars($training['employee_code'] ?? '') ?>"
-                                    data-faculty-name="<?= htmlspecialchars($training['faculty_name'] ?? '') ?>"
-                                    data-employment-type="<?= htmlspecialchars($training['employment_type'] ?? 'N/A') ?>"
-                                    data-employment-status="<?= htmlspecialchars($training['employment_status'] ?? 'N/A') ?>"
-                                    data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
-                                    <td><?= htmlspecialchars($training['employee_code'] ?? 'N/A') ?></td>
-                                    <td><?= htmlspecialchars($training['faculty_name'] ?? 'N/A') ?></td>
-                                    <td><?= htmlspecialchars($training['type'] ?? 'No record yet') ?></td>
-                                    <td><?= htmlspecialchars($training['title'] ?? 'No record yet') ?></td>
-                                    <td><?= htmlspecialchars($training['organization'] ?? 'No record yet') ?></td>
-                                    <td><?= htmlspecialchars($training['date_period'] ?? 'No record yet') ?></td>
-                                    <td><?= htmlspecialchars($training['status'] ?? 'No record yet') ?></td>
-                                    <td class="actions">
-                                        <button type="button" class="btn btn-sm btn-info view-training-btn">View</button>
-                                        <?php if (($training['record_source'] ?? '') === 'cc_certification_engagements'): ?>
-                                            <?php
-                                                $statusValue = $training['status'] ?? '';
-                                                $workflowButtons = '';
-
-                                                if ($statusValue === 'Pending') {
-                                                    $workflowButtons .= '<button type="button" class="btn btn-sm btn-success approve-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Approve</button>';
-                                                } elseif (in_array($statusValue, ['Approved', 'Ongoing'], true)) {
-                                                    $workflowButtons .= '<button type="button" class="btn btn-sm btn-warning complete-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Mark Completed</button>';
-                                                } elseif ($statusValue === 'Completed') {
-                                                    $workflowButtons .= '<button type="button" class="btn btn-sm btn-primary generate-certificate-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Generate Certificate</button>';
-                                                    $workflowButtons .= '<button type="button" class="btn btn-sm btn-secondary archive-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Archive</button>';
-                                                } elseif ($statusValue === 'Archived') {
-                                                    $workflowButtons .= '<button type="button" class="btn btn-sm btn-success restore-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Restore</button>';
-                                                }
-
-                                                echo $workflowButtons;
-                                            ?>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
+                                <?php echo renderTrainingRow($training); ?>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr class="no-data">
@@ -452,6 +659,43 @@ $stats = [
             </div>
         </div>
     </div>
+    <?php
+    return ob_get_clean();
+}
+
+?>
+    <div class="module-header">
+        <div>
+            <h1><i class="fas fa-chalkboard-teacher"></i> Faculty Management</h1>
+            <p>View and manage faculty credentials, attainment, and trainings.</p>
+        </div>
+    </div>
+
+    <div class="module-content">
+        <div class="stats-grid">
+        <div class="stat-card faculty">
+            <h6>Faculty Members</h6>
+            <h3><?php echo $stats['faculty']; ?></h3>
+        </div>
+    </div>
+
+    <div class="academics-tabs">
+        <button class="academics-tab active" data-fm-tab="credentials">
+            <i class="fas fa-id-badge"></i> Faculty Credentials
+        </button>
+        <button class="academics-tab" data-fm-tab="attainment">
+            <i class="fas fa-graduation-cap"></i> Educational Attainment
+        </button>
+        <button class="academics-tab" data-fm-tab="trainings">
+            <i class="fas fa-certificate"></i> Trainings & Certifications
+        </button>
+    </div>
+
+    <?php echo renderCredentialsPanel($facultyList); ?>
+
+    <?php echo renderAttainmentPanel($educationSummary); ?>
+
+    <?php echo renderTrainingsPanel($trainingSummary, $eligibleEmployees); ?>
 </div>
 
 <div id="fmAddEngagementModal" class="modal">
@@ -723,5 +967,4 @@ $stats = [
 
     
 
-<script src="js/modules/faculty-management.js"></script>
 <link rel="stylesheet" href="css/pages/faculty-management.css">

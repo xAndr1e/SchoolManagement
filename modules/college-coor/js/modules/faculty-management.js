@@ -615,6 +615,7 @@ function initFacultyManagementPage() {
             const engagementId = this.dataset.engagementId;
             if (!engagementId) return;
 
+            
             const confirmed = window.confirm('Restore this archived engagement record?');
             if (!confirmed) return;
 

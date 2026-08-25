@@ -5,16 +5,16 @@
 <main class="main-content">
     <div class="container-fluid px-4">
         <h1 class="h3 mb-2 text-gray-800">Inventory</h1>
-        <p class="mb-4">Psychology Laboratory</p>
+        <p class="mb-4">HE Laboratory</p>
 
         <div class="card mb-4 card shadow-sm border-0 border-top border-4 border-secondary shadow-lg p-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <i class="fas fa-table me-1"></i>
-                    Inventory
+                    Inventory Management
                 </div>
 
-                <a href="#" class="btn btn-primary btn-sm" id="psychInventoryBtn">
+                <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#psyAddInventoryModal">
                     <i class="fas fa-plus me-1"></i> Create New
                 </a>
             </div>
@@ -23,53 +23,62 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Photo</th>
+                            <th>Item Name</th>
                             <th>Category</th>
-                            <th>total</th>
-                            <th>Available</th>
+                            <th>Laboratory</th>
+                            <th>Total Quantity</th>
+                            <th>Available Quantity</th>
+                            <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                          <?php foreach( $inventories as $inventory )  { ?>
-                        <tr>
-                            <td><?= $inventory['id'] ?></td>
-                            <td>
-                                <img src="<?= BASE_URL ?>/public/<?= $inventory['item_img'] ?>" class="img-fluid rounded" style="max-width: 100px;">
-                            </td>
-                            <td><?= $inventory['category'] ?></td>
-                            <td><?= $inventory['total'] ?></td>
-                            <td><?= $inventory['available'] ?></td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        Action
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li>
-                                            <button class="dropdown-item psychViewBtn" data-id="<?= $inventory['id'] ?>">
-                                                 <i class="fas fa-eye me-2"></i> View
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item psychEditBtn" data-id="<?= $inventory['id'] ?>">
-                                                <i class="fas fa-edit me-2"></i> Edit
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li>
-                                            <li><a class="dropdown-item text-danger deleteBtn" data-id="<?= $inventory['id'] ?>"><i class="fas fa-trash me-2"></i>Delete</a></li>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
+                        <?php foreach ($inventories as $row): ?>
+                            <tr>
+                                <td><?= $row['id'] ?></td>
+                                <td><?= $row['item_name'] ?></td>
+                                <td><?= $row['category'] ?></td>
+                                <td><?= $row['laboratory'] ?></td>
+                                <td><?= $row['total_item'] ?></td>
+                                <td><?= $row['available_item'] ?></td>
+                                <td><?= $row['status'] ?></td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            Action
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a href="#"
+                                                    class="dropdown-item viewBtn"
+                                                    data-id="<?= $row['id']; ?>">
+                                                    <i class="fas fa-eye me-2"></i> View
+                                                </a>
+                                            </li>
 
-                        <?php }?>
-
-                        
+                                            <li>
+                                                <a href="#"
+                                                    class="dropdown-item editBtn"
+                                                    data-id="<?= $row['id']; ?>">
+                                                    <i class="fas fa-edit me-2"></i> Edit
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li>
+                                                <a href="#"
+                                                    class="dropdown-item text-danger deleteBtn"
+                                                    data-id="<?= $row['id']; ?>">
+                                                    <i class="fas fa-trash me-2"></i>
+                                                    Delete
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -77,6 +86,7 @@
 
     </div>
 </main>
+
 
 <script>
     $(document).ready(function() {
@@ -87,11 +97,13 @@
     });
 </script>
 
-<?php require __DIR__ . '/psyAdd-inventory-modal.php'; ?>
-<?php require __DIR__ . '/psyView-inventory-modal.php'; ?>
-<?php require __DIR__ . '/psyEdit-inventory-modal.php'; ?>
+<?php require __DIR__ . '/psyAddInventoryModal.php'; ?>
+<?php require __DIR__ . '/psyViewInventoryModal.php'; ?>
+<?php require __DIR__ . '/psyEditInventoryModal.php'; ?>
 
-<script> const BASE_URL = "<?= BASE_URL ?>"; </script>
+<script>
+    const BASE_URL = "<?= BASE_URL ?>";
+</script>
 <script src="<?= BASE_URL ?>/js/psychInventory.js"></script>
 
 

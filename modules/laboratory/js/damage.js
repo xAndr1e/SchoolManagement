@@ -18,27 +18,19 @@ CreateDamageBtn.addEventListener("click", function() {
             let modal = new bootstrap.Modal(document.getElementById('viewDamageModal'));
             modal.show();
 
-            document.getElementById("damage_id").value = id;
       
             fetch(`${BASE_URL}/damages/view/${id}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById("damage_id").textContent = data.id;
-                    document.getElementById("damage_code").textContent = data.code;
-                    document.getElementById("damage_category").textContent = data.category;
-                    document.getElementById("damage_description").textContent = data.description;
-                    document.getElementById("damage_status").textContent = data.status;
                     
-                    let statusEl = document.getElementById("damage_status")
+                    document.getElementById("view_item_name").value = data.item_name;
+                    document.getElementById("view_laboratory").value = data.laboratory;
+                    document.getElementById("view_issue").value = data.issue;
+                    document.getElementById("view_reported_by").value = data.reported_by;
+                    document.getElementById("view_date_reported").value = data.date_reported;
+                    document.getElementById("view_status").value = data.status;
 
-                    if (data.status === "Fixed") {
-                        statusEl.classList.remove("bg-danger");
-                        statusEl.classList.add("bg-success");
-                    } else {
-                        statusEl.classList.remove("bg-success");
-                        statusEl.classList.add("bg-danger");
-                    }
-
+                 
                 })
                 .catch(error => {
                     console.error('Error fetching damage details:', error);
@@ -64,11 +56,13 @@ CreateDamageBtn.addEventListener("click", function() {
               fetch(`${BASE_URL}/damages/edit/${id}`)
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('damage_id').value = data.id
-                    document.getElementById('item').value = data.category;
-                    document.getElementById("description").value = data.description;
-                    document.getElementById('status').value = data.status;
-                      document.getElementById('code').value = data.code;
+                    document.getElementById('edit_id').value = data.id
+                    document.getElementById('edit_item_name').value = data.item_name;
+                    document.getElementById("edit_laboratory").value = data.laboratory;
+                    document.getElementById("edit_issue").value = data.issue;
+                    document.getElementById("edit_reported_by").value = data.reported_by;
+                    document.getElementById("edit_date_reported").value = data.date_reported;
+                    document.getElementById("edit_status").value = data.status;
                 })
                 .catch(error => {
                     console.error('Error fetching damage details:', error);

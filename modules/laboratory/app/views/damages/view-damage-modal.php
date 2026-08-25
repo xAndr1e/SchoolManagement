@@ -1,48 +1,81 @@
-<div class="modal fade" id="viewDamageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow">
+<div class="modal fade" id="viewDamageModal" tabindex="-1" aria-labelledby="viewDamageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
 
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Damage Details
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDamageModalLabel">
+                    <i class="fas fa-eye me-2"></i>
+                    View Damage
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
 
-                <div class="text-center mb-4">
-                    <img src="projector.png" class="img-fluid rounded border p-2" style="max-width:160px;">
-                </div>
-
                 <div class="row g-3">
 
-                    <div class="col-12">
-                        <small class="text-muted">Code</small>
-                        <div class="fw-semibold" id="damage_id">DMG-001</div>
+                    <!-- Item Name -->
+                    <div class="col-md-6">
+                        <label class="form-label">Item Name</label>
+                        <input
+                            type="text"
+                            id="view_item_name"
+                            class="form-control"
+                            readonly>
                     </div>
 
-                    <div class="col-12">
-                        <small class="text-muted">Category</small>
-                        <div class="fw-semibold" id="damage_category">Projector</div>
+                    <!-- Laboratory -->
+                    <div class="col-md-6">
+                        <label class="form-label">Laboratory</label>
+                        <input
+                            type="text"
+                            id="view_laboratory"
+                            class="form-control"
+                            readonly>
                     </div>
 
-                    <div class="col-12">
-                        <small class="text-muted">Item Code</small>
-                        <div class="fw-semibold" id="damage_code">PRJ-00012</div>
+                    <!-- Issue -->
+                    <div class="col-md-6">
+                        <label class="form-label">Issue</label>
+                        <input
+                            type="text"
+                            id="view_issue"
+                            class="form-control"
+                            readonly>
                     </div>
 
-                    <div class="col-12">
-                        <small class="text-muted">Description</small>
-                        <div class="fw-semibold" id="damage_description">
-                            Lens cracked and projector not turning on.
-                        </div>
+                    <!-- Reported By -->
+                    <div class="col-md-6">
+                        <label class="form-label">Reported By</label>
+                        <input
+                            type="text"
+                            id="view_reported_by"
+                            class="form-control"
+                            readonly>
                     </div>
 
-                    <div class="col-12">
-                        <small class="text-muted">Status</small><br>
-                        <span class="badge bg-danger px-3 py-2" id="damage_status"></span>
-                        
+                    <!-- Date Reported -->
+                    <div class="col-md-6">
+                        <label class="form-label">Date Reported</label>
+                        <input
+                            type="date"
+                            id="view_date_reported"
+                            class="form-control"
+                            readonly>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select
+                            id="view_status"
+                            class="form-select"
+                            disabled>
+                            <option value="Working">Working</option>
+                            <option value="Under Maintenance">Under Maintenance</option>
+                            <option value="Damaged">Damaged</option>
+                            <option value="Unavailable">Unavailable</option>
+                        </select>
                     </div>
 
                 </div>
@@ -50,7 +83,7 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i> Close
                 </button>
             </div>

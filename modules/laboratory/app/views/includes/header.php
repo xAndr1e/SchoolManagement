@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,6 +20,9 @@
     <!-- DataTables Bootstrap 5 JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Gsap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 
     <title><?php echo $pageTitle ?? 'School Management System'; ?></title>
 
@@ -37,10 +39,6 @@
         </div>
     </header>
 
-  
+
 
     <script src="js/sidebar.js"></script>
-
-
-
-    

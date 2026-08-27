@@ -71,11 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ── Success: clear attempt tracking & build session ───────────────────
         unset($_SESSION[$key]);
 
+        $_SESSION['user_id']        = $user['user_id'];
         $_SESSION['employee_id']     = $user['employee_id'];
+        $_SESSION['username']        = $user['employee_id'];
         $_SESSION['role']            = $user['role'];
         $_SESSION['role_name']       = $user['role_name'];
         $_SESSION['department_id']   = $user['department'];        
         $_SESSION['department_name'] = $user['department_name'];  
+        $_SESSION['sensitive_auth']  = true;
+        $_SESSION['sensitive_last_activity'] = time();
+        $_SESSION['sensitive_timeout'] = 900;
 
         $redirectMap = [
         1 => 'modules/school-directress/index.php',
@@ -84,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         4 => 'modules/clinic/index.php',
         5 => 'modules/library/index.php',
         6 => 'modules/laboratory/',
-        7 => 'modules/monitoring/index.php',
+        7 => 'modules/monitoring/public/index.php?page=dashboard',
         8 => 'modules/guidance/index.php',
         9 => 'modules/college-coor/index.php',
         10 => 'modules/recruitment/index.php',
@@ -99,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         echo json_encode([
             'success'  => true,
-            'redirect' => $redirectMap[$role],
+            'redirect' => '/' . ltrim($redirectMap[$role], '/'),
         ]);
         exit();
 

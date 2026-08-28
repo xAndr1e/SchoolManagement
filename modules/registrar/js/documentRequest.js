@@ -4,7 +4,8 @@
    const selectAll = document.getElementById('select-all');
    const tbody = document.querySelector('tbody');
    const deleteBtn = document.getElementById('delete-btn');
-   const addReportApproval = document.getElementById('addReportApproval');
+   const viewDetailsModal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+   
 
 
 
@@ -146,220 +147,126 @@
     */
     
 
-    // show  
 
-    addReportApproval.addEventListener('click',function(){
-
-       let addApprovalModal = new bootstrap.Modal(document.getElementById('addApprovalModal'));
-        addApprovalModal.show();
-    });
-
-
-    // submit button connect to form
-
-    document.getElementById('addReportApprovalSubmit').addEventListener('click', function() {
-
-    document.getElementById('addReportApprovalForm').requestSubmit();
-       
-    });
-
-
-    // close button with reset
-
-    document.getElementById('closeBtn').addEventListener('click',function(){
-
-    resetForm('addReportApprovalForm');
-
-    });
-
-    // ai input cleaner text-wrapper    
-
-    const aiInputClean = document.querySelectorAll('.ai-clean');
-    const aiToggleEnabler  = document.getElementById('aiAutoCorrect');
     
-    aiInputClean.forEach(input => {
-
-
-        input.addEventListener('blur', function(){
-
-        if (!aiToggleEnabler.checked) return;
-
-        const originalText = this.value.trim();
-
-        if (originalText.length < 4) return;
-
-
-        fetch(`${BASE_URL}/cleaner`, { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: originalText })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.cleaned) {
-                this.value = data.cleaned;
-            }
-        })
-        .catch(err => {
-            console.error('AI Cleanup Error:', err);
-        });
-
-    });
-
-
-
-    });
-
-   
-    // form action
-
-   document.getElementById('addReportApprovalForm').addEventListener('submit', function(e) {
-    e.preventDefault(); 
-
-    const formData = new FormData(this);
-
-    fetch(this.action, { 
-        method: 'POST',    
-        body: formData,
-    })
-    .then(res => res.json())
-    .then(data => {
-        // Clear previous errors
-        document.querySelectorAll('.error').forEach(el => el.innerText = '');
-        document.querySelectorAll('.form-control').forEach(input => input.classList.remove('is-invalid'));
-        document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-
-        if (data.status === 'error') {
-            for (let field in data.errors) {
-                const input = document.getElementById(field);
-                const feedback = document.getElementById('error-' + field);
-                
-                if (input) input.classList.add('is-invalid');        
-                if (feedback) feedback.innerText = data.errors[field]; 
-            }
-        } else if (data.status === 'success') {
-            this.reset();
-
-            document.querySelectorAll('.invalid-feedback').forEach(el => el.innerText = '');
-            document.querySelectorAll('.form-control').forEach(el => el.classList.remove('is-invalid'));
-
-            getData(currentOrder, currentLimit, currentPage);
-
-            const addReportApprovalModal = bootstrap.Modal.getInstance(document.getElementById('addApprovalModal'));
-            addReportApprovalModal.hide();
-
-            Swal.fire({
-                title: "Success!",
-                text: data.message,
-                icon: "success"
-            });
-        }
-    })
-    .catch(err => console.log(err));
-});
-
-    // updating the toggles in status 
-
-        tbody.addEventListener('change', function(e) {
-        if(e.target.classList.contains('status-toggle')) {
-
-            
-            const allSameToggles = tbody.querySelectorAll('.status-toggle');
-
-            if(e.target.checked){
-
-            const checkedToggleId = e.target.dataset.id;
-
-
-            
-          Swal.fire({
-            title: "Are you sure?",
-            text: "This will permanently modify important data. Do you wish to proceed?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: `Yes, I understand`,
-            }).then((result) => {
-            if (result.isConfirmed) {
-            
-              fetch(`${BASE_URL}/school-year/${checkedToggleId}/update`, 
-                    {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ checkedToggleId })
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(result => {
-                         allSameToggles.forEach(checkbox => {
-                            if(checkbox != e.target){
-                            checkbox.checked = false; 
-                            }
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                    
-                }else{
-                     e.target.checked = false;
-                }
-             });
-
-            }
-        }
-    });
-
    document.getElementById("studentsTableBody").addEventListener("click", function(e) {
+
+  
+    // approved
 
     if (e.target.classList.contains("approved")) {
 
         const reportId = e.target.dataset.id;
 
-        fetch(`${BASE_URL}/reports-approval/${reportId}/approved`, {
-            method: "POST"
-        })
-        .then(response => response.json())
-        .then(result => {
-
-               let currentOrder = 'DESC';
-                let currentLimit = 10;
-                let currentPage = 1;
-                getData(currentOrder, currentLimit, currentPage);
+ 
 
 
-        });
 
-    }
+        console.log(reportId);
 
-        if (e.target.classList.contains("reject")) {
+        // fetch(`${BASE_URL}/reports-approval/${reportId}/approved`, {
+        //     method: "POST"
+        // })
+        // .then(response => response.json())
+        // .then(result => {
+
+        //        let currentOrder = 'DESC';
+        //         let currentLimit = 10;
+        //         let currentPage = 1;
+        //         getData(currentOrder, currentLimit, currentPage);
+
+
+        // });
+
+        }
+
+        // reject
+
+        else if (e.target.classList.contains("reject")) {
 
             const reportId = e.target.dataset.id;
 
-            fetch(`${BASE_URL}/reports-approval/${reportId}/reject`, {
-            method: "POST"
-        })
+            //     fetch(`${BASE_URL}/reports-approval/${reportId}/reject`, {
+            //     method: "POST"
+            // })
+            // .then(response => response.json())
+            // .then(result => {
+
+            //     let currentOrder = 'DESC';
+            //         let currentLimit = 10;
+            //         let currentPage = 1;
+            //         getData(currentOrder, currentLimit, currentPage);
+
+
+            // });
+
+            console.log(reportId);
+ 
+        }
+
+         else if (e.target.classList.contains("view")) {
+
+            const reportId = e.target.dataset.id;
+
+
+
+        fetch(`${BASE_URL}/allDocument/${reportId}/view`)
         .then(response => response.json())
-        .then(result => {
+        .then(request => {
 
-               let currentOrder = 'DESC';
-                let currentLimit = 10;
-                let currentPage = 1;
-                getData(currentOrder, currentLimit, currentPage);
 
+        
+
+
+        document.getElementById('requestNumber').textContent =
+        request.request_number;
+
+        document.getElementById('requestStatus').textContent =
+        request.document_status;
+
+        document.getElementById('documentType').textContent =
+        request.document_type;
+
+         document.getElementById('semesterName').textContent = request.semester_name ?? '-';
+
+         document.getElementById('courseName').textContent = request.course_name;
+         
+         document.getElementById('purpose').textContent = request.purpose;
+
+         document.getElementById('requestedAt').textContent = request.requested_at;
+         
+         document.getElementById('studentName').textContent = `${request.surname}, ${request.first_name}`
+
+         document.getElementById('copies').textContent = request.copies;
+
+         document.getElementById('fileName').textContent = request.file_path;
+         
+         
+
+
+       
+
+        
+
+         viewDetailsModal.show();
+
+        })
+        .catch(error => {
+
+            console.error('Error:', error);
 
         });
 
             
+ 
         }
+
+
+
 
     });
  
+
 
     });
 
@@ -537,7 +444,12 @@ function getAction(request)
             </button>
             <button class="btn btn-danger btn-sm reject" data-id="${request.id}">
             Reject
-            </button>`
+            </button>
+            <button class="btn btn-secondary btn-sm view" data-id="${request.id}">
+             View Details 
+            </button>
+            
+            `
 
             break;
             case 'verified':
@@ -552,6 +464,8 @@ function getAction(request)
             break;
     }
 }
+
+
 
 
 

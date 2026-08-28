@@ -41,6 +41,41 @@
 
          return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+
+    protected function documentRequestDetails(int $id)
+    {
+ 
+        $sql = "
+            SELECT 
+            rs.name AS semester_name,
+            rsy.name AS school_year,
+            eap.surname AS surname,
+            eap.first_name AS first_name,
+            rc.name as course_name,
+            rdr.request_number AS request_number,
+            rdr.document_type AS document_type,
+            rdr.purpose AS purpose,
+            rdr.copies AS copies,
+            rdr.image_file_path AS file_path,
+            rdr.status AS document_status,
+            rdr.requested_at AS requested_at,
+            rdr.released_by AS released_by
+            FROM $this->tableName rdr
+            JOIN enr_students es ON es.student_id = rdr.student_id
+            JOIN enr_applicants eap ON eap.applicant_id = es.applicant_id
+            LEFT JOIN rgr_semesters rs ON rs.id = rdr.semester_id
+            LEFT JOIN rgr_school_years rsy ON rsy.id = rs.school_year_id
+            JOIN rgr_courses rc ON rc.id = es.course_id
+            WHERE rdr.id = :documentRequestId     
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':documentRequestId', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+
+    }
    
  
     protected function allDocumentRequest($paginate = true)

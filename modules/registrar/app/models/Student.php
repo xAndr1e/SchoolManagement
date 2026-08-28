@@ -150,6 +150,7 @@
 
     protected function generateCor(int $id)
     {
+        
    $activeSemesterId = $this->activeSemester();
 
     if (!$activeSemesterId) {

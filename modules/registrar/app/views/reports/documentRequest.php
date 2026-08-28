@@ -12,9 +12,6 @@
              <p class="text-muted small">Simple approval queue for submitted requests and reports.</p>
         </div>
 
-          <button class="btn btn-primary btn-sm" id="addReportApproval">
-                <i class="bi bi-plus-lg"></i> Submit a Report
-            </button>
 
     </div>
   
@@ -108,6 +105,219 @@
     </div>        
     </div>
 </main>
+
+
+<div class="modal fade"
+     id="viewDetailsModal"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false"
+     tabindex="-1"
+     aria-labelledby="viewDetailsModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <!-- Header -->
+            <div class="modal-header bg-primary text-white">
+                <div>
+                    <h5 class="modal-title fw-semibold mb-1"
+                        id="viewDetailsModalLabel">
+                        Document Request Details
+                    </h5>
+
+                    <small class="text-white-50" id="requestNumber">
+                        REQ-20260828-6520
+                    </small>
+                </div>
+
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body p-4">
+
+                <!-- Status -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">
+                            Request Status
+                        </div>
+
+                        <div class="mt-1">
+                            <span id="requestStatus"
+                                  class="badge bg-warning-subtle text-warning-emphasis px-3 py-2">
+                                Pending
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <div class="text-muted small text-uppercase fw-semibold">
+                            Document
+                        </div>
+
+                        <div class="fw-semibold mt-1" id="documentType">
+                            COR
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- Request Information -->
+                <div class="mb-4">
+
+                    <h6 class="fw-semibold mb-3">
+                        Request Information
+                    </h6>
+
+                    <div class="border rounded-3 p-3 bg-light">
+
+                        <div class="row g-3">
+
+                            <div class="col-6">
+                                <div class="text-muted small">
+                                    Purpose
+                                </div>
+
+                                <div class="fw-medium" id="purpose">
+                                    Employment
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="text-muted small">
+                                    Course
+                                </div>
+
+                                <div class="fw-medium" id="courseName">
+                                    1
+                                </div>
+                            </div>  
+
+
+                            <div class="col-6">
+                                <div class="text-muted small">
+                                    Student Name
+                                </div>
+
+                                <div class="fw-medium" id="studentName">
+                                    13
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="text-muted small">
+                                    Copies
+                                </div>
+
+                                <div class="fw-medium" id="copies">
+                                    1
+                                </div>
+                            </div>
+
+
+                             <div class="col-6">
+                                <div class="text-muted small">
+                                    Semester
+                                </div>
+
+                                <div class="fw-medium" id="semesterName">
+                                    31
+                                </div>
+                            </div>
+
+
+                            <div class="col-6">
+                                <div class="text-muted small">
+                                    Requested At
+                                </div>
+
+                                <div class="fw-medium" id="requestedAt">
+                                    1
+                                </div>
+                            </div>                                                                                                                             
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Attachment -->
+                <div>
+
+                    <h6 class="fw-semibold mb-3">
+                        Submitted Document
+                    </h6>
+
+                    <div class="border rounded-3 p-3">
+
+                        <div class="d-flex align-items-center">
+
+                            <!-- File Icon -->
+                            <div class="bg-light rounded-3 p-3 me-3">
+                                <i class="bi bi-file-earmark-image fs-4 text-primary"></i>
+                            </div>
+
+                            <!-- File Information -->
+                            <div class="flex-grow-1 overflow-hidden">
+
+                                <div class="fw-medium text-truncate"
+                                     id="fileName">
+                                    doc_6a908f16349eb9.88423253.png
+                                </div>
+
+                                <small class="text-muted">
+                                    Submitted document
+                                </small>
+
+                            </div>
+
+                            <!-- View -->
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm ms-2"
+                                    id="viewDocumentBtn">
+                                <i class="bi bi-eye me-1"></i>
+                                View
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer bg-light">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Close
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="verifyRequestBtn">
+                    <i class="bi bi-check2-circle me-1"></i>
+                    Verify Request
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+</div>
 
 
 

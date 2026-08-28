@@ -16,8 +16,6 @@ use App\Models\Employee;
     public function index()
     {
 
-        
-       
         $user = Employee::find('1003');
         $semester = Semester::activeSemester();
         $schoolYear = SchoolYear::activeSchoolYear();
@@ -33,6 +31,40 @@ use App\Models\Employee;
     }
 
 
+    public function updateVerify()
+    {
+ 
+       header('Content-Type: application/json');
+
+
+        Logger::log(
+        "Updated A New School Year",
+         "Updated A New Schoool Year Information for System"
+         );
+
+          // reset the status of school year
+          SchoolYear::updateStatus();
+
+          // reset all the status
+         Semester::updateStatus();
+
+         // activate the default
+         Semester::activateDefaultSemester($id);
+
+         // update the status in school year
+         SchoolYear::update($id,[
+
+            'is_active' => true,
+
+         ]);        
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Course updated successfully.'
+        ]);
+
+    }
+
     public function allDocumentRequest()
     {
  
@@ -41,7 +73,17 @@ use App\Models\Employee;
 
     }
 
- 
+
+    public function documentRequestDetails($id)
+    {
+       
+      $document = DocumentRequest::documentRequestDetails($id);
+      Response::json($document);
+
+    }
+
+   
+
 
 
 

@@ -283,6 +283,7 @@ use App\Models\Semester;
 $r->get('/requested',[DocumentRequestController::class,'index']);
 $r->get('/allDocumentRequest',[DocumentRequestController::class,'allDocumentRequest']);
 $r->get('/allDocument/{id:\d+}',[DocumentRequestController::class,'getAllDocuments']);
+$r->get('/allDocument/{id:\d+}/view',[DocumentRequestController::class,'documentRequestDetails']);
 
 
 // grades 

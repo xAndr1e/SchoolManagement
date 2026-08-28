@@ -145,61 +145,7 @@
 
      <div class="row d-flex align-items-stretch">
 
-    <div class="col-lg-8 mb-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-                <h6 class="m-0 fw-bold text-primary">Activity Calendar</h6>
-            </div>
-            <div class="card-body">
-                <div id='homeCalendar' style="height: 100%; width: 100%;"></div>
-            </div>
-        </div>
-     </div>
-
-    <div class="col-lg-4 mb-4 d-flex flex-column">
-        
-      
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white py-3">
-                <h6 class="m-0 fw-bold text-primary">System Status</h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3 small">
-                    Maintenance Mode: <span class="badge bg-success float-end">Off</span>
-                </div>
-                <div class="mb-0 small">
-                        CPU Usage:  <?= $cpu ?>%      
-                    <div class="progress mt-2" style="height: 8px;">
-                        <div id="cpuBar" class="progress-bar bg-info" style="width:  <?= $cpu ?>%"></div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-     
-        <div class="card shadow-sm border-0 flex-grow-1"> 
-            <div class="card-header bg-white py-3 d-flex justify-content-between">
-                <h6 class="m-0 fw-bold text-primary">Activity</h6>
-
-                 <select id="period" class="form-select form-select-sm w-auto">
-                    <option value="7days" selected>7 Days</option>
-                    <option value="last_week">Last Week</option>
-                    <option value="this_month">This Month</option>
-                    <option value="last_month">Last Month</option>
-                </select>
-            </div>
-
-            
-            <div class="card-body p-2">
-                <canvas id="activityChart" style="height: 100%; width: 100%;"></canvas>
-            </div>
-        </div>
-
-    </div>
-</div>
-
-<!-- RECENT ENROLLEES -->
+     <!-- RECENT ENROLLEES -->
 
 <div class="row mb-4">
     <div class="col-12">
@@ -254,6 +200,62 @@
 
 
 </div>
+
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <h6 class="m-0 fw-bold text-primary">Activity Calendar</h6>
+            </div>
+            <div class="card-body">
+                <div id='homeCalendar' style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+     </div>
+
+    <div class="col-lg-4 mb-4 d-flex flex-column">
+        
+      
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-primary">System Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 small">
+                    Maintenance Mode: <span class="badge bg-success float-end">Off</span>
+                </div>
+                <div class="mb-0 small">
+                        CPU Usage:  <?= $cpu ?>%      
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div id="cpuBar" class="progress-bar bg-info" style="width:  <?= $cpu ?>%"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+     
+        <div class="card shadow-sm border-0 flex-grow-1"> 
+            <div class="card-header bg-white py-3 d-flex justify-content-between">
+                <h6 class="m-0 fw-bold text-primary">Activity</h6>
+
+                 <select id="period" class="form-select form-select-sm w-auto">
+                    <option value="7days" selected>7 Days</option>
+                    <option value="last_week">Last Week</option>
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                </select>
+            </div>
+
+            
+            <div class="card-body p-2">
+                <canvas id="activityChart" style="height: 100%; width: 100%;"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
 
 
 

@@ -2,6 +2,7 @@
 
     let notifBtn = document.getElementById('notif-btn');
     const notifModal = new bootstrap.Modal(document.getElementById('notif-modal'));
+    
 
    setInterval(() => {
         NotificationBody();

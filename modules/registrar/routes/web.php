@@ -288,6 +288,7 @@ $r->post('/document-request/verify/{id:\d+}',[DocumentRequestController::class,'
 $r->post('/document-request/process/{id:\d+}',[DocumentRequestController::class,'updateProcess']);
 $r->post('/document-request/ready/{id:\d+}',[DocumentRequestController::class,'markReadyProcess']);
 $r->post('/document-request/release/{id:\d+}',[DocumentRequestController::class,'releasedProcess']);
+$r->post('/document-request/rejected/{id:\d+}',[DocumentRequestController::class,'updateReject']);
 
 
 

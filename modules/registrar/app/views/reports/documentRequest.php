@@ -312,6 +312,126 @@
 </div>
 
 
+<div class="modal fade"
+     id="rejectDocumentModal"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false"
+     tabindex="-1"
+     aria-labelledby="rejectDocumentModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <!-- Header -->
+            <div class="modal-header bg-danger text-white">
+
+                <div>
+                    <h5 class="modal-title fw-semibold mb-1"
+                        id="rejectDocumentModalLabel">
+                        Reject Document Request
+                    </h5>
+
+                    <small class="text-white-50" id="rejectRequestNumber">
+                        REQ-20260828-6520
+                    </small>
+                </div>
+
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+
+            <!-- Body -->
+            <div class="modal-body p-4">
+
+                <!-- Warning -->
+                <div class="alert alert-danger d-flex align-items-start mb-4"
+                     role="alert">
+
+                    <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+
+                    <div>
+                        <div class="fw-semibold">
+                            Reject this document request?
+                        </div>
+
+                        <small>
+                            The student will be notified that the request was rejected.
+                            Please provide a reason below.
+                        </small>
+                    </div>
+
+                </div>
+
+
+            
+               <div> 
+                <label for="rejectionReasonSelect" class="form-label fw-semibold"> Reason for Rejection 
+                    <span class="text-danger">*</span> 
+                </label>
+                
+              
+                  <select class="form-select" id="rejectionReasonSelect" name="rejection_reason" required>
+                     <option value="" selected disabled> Select a reason </option> 
+                     <option value="Incomplete requirements"> Incomplete requirements </option> 
+                     <option value="Invalid or incorrect information"> Invalid or incorrect information </option> 
+                     <option value="Document is not available"> Document is not available </option> 
+                     <option value="Request does not meet the requirements"> Request does not meet the requirements </option> 
+                     <option value="Student record requires verification"> Student record requires verification </option> 
+                     <option value="Duplicate request"> Duplicate request </option>
+                      <option value="Request is not authorized"> Request is not authorized </option> 
+                      <option value="Others"> Others </option> </select> 
+                  
+                       
+                      <div class="mt-3 d-none" id="otherReasonContainer"> 
+                        <label for="otherReason" class="form-label fw-semibold"> Please specify <span class="text-danger">*</span> </label>
+                         <textarea class="form-control" id="otherReason" name="other_reason" rows="4" maxlength="500" placeholder="Enter the reason for rejection...">
+
+                         </textarea> <div class="d-flex justify-content-between mt-2"> 
+                            <small class="text-muted">
+                             Please provide a clear and specific reason.
+                            </small> <small class="text-muted"> 
+                            <span id="reasonCharacterCount">0</span>/500 
+                        </small> 
+                    </div> 
+                </div> 
+            </div>
+
+            </div>
+
+
+            <!-- Footer -->
+            <div class="modal-footer bg-light">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        class="btn btn-danger"
+                        id="confirmRejectBtn">
+
+                    <i class="bi bi-x-circle me-1"></i>
+                    Reject Request
+
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+
 
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js"></script>

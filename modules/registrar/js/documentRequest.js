@@ -5,6 +5,12 @@
    const tbody = document.querySelector('tbody');
    const deleteBtn = document.getElementById('delete-btn');
    const viewDetailsModal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    const rejectDocumentModal = new bootstrap.Modal(document.getElementById('rejectDocumentModal'));
+
+   const reasonSelect = document.getElementById('rejectionReasonSelect'); 
+   const otherReasonContainer = document.getElementById('otherReasonContainer');
+    const otherReason = document.getElementById('otherReason'); 
+    const characterCount = document.getElementById('reasonCharacterCount');
    
 
     let currentOrder = 'desc';
@@ -55,6 +61,21 @@
        |                                                                                         |
        ========================================================================================= 
     */
+
+       reasonSelect.addEventListener('change', function () { 
+        if (this.value === 'Others') {
+             otherReasonContainer.classList.remove('d-none');
+              otherReason.required = true; 
+        } else { 
+        otherReasonContainer.classList.add('d-none'); 
+        otherReason.required = false; otherReason.value = '';
+         characterCount.textContent = '0'; 
+        }
+        });
+
+    otherReason.addEventListener('input', function () {
+         characterCount.textContent = this.value.length;
+     });
 
     
     // show and hide the delete button when there is checked box.
@@ -144,6 +165,7 @@
     */
     
 
+   
 
     
    document.getElementById("studentsTableBody").addEventListener("click", function(e) {
@@ -185,22 +207,98 @@
         else if (e.target.classList.contains("reject")) {
 
             const reportId = e.target.dataset.id;
-
-            //     fetch(`${BASE_URL}/reports-approval/${reportId}/reject`, {
-            //     method: "POST"
-            // })
-            // .then(response => response.json())
-            // .then(result => {
-
-            //     let currentOrder = 'DESC';
-            //         let currentLimit = 10;
-            //         let currentPage = 1;
-            //         getData(currentOrder, currentLimit, currentPage);
+            const studentId  = e.target.dataset.student;
 
 
-            // });
+            rejectDocumentModal.show();
 
-            console.log(reportId);
+            document.getElementById("confirmRejectBtn").addEventListener("click", async function () {
+
+    const selectedReason =
+        document.getElementById("rejectionReasonSelect").value;
+
+    const otherReason =
+        document.getElementById("otherReason").value.trim();
+
+
+    if (!selectedReason) {
+        alert("Please select a reason.");
+        return;
+    }
+
+
+  
+    let rejectionReason = selectedReason;
+
+    if (selectedReason === "Others") {
+
+        if (!otherReason) {
+            alert("Please specify the reason.");
+            return;
+        }
+
+        rejectionReason = otherReason;
+    }
+
+
+
+    
+    try {
+
+        const response = await fetch(
+            `${BASE_URL}/document-request/rejected/${reportId}?student_id=${studentId}`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    rejection_reason: rejectionReason
+                })
+            }
+        );
+
+
+        const result = await response.json();
+
+        console.log("Server result:", result);
+
+
+        if (result.status == 'success') {
+
+            rejectDocumentModal.hide();
+
+
+            getData(
+                currentOrder,
+                currentLimit,
+                currentPage
+            );
+
+        } else {
+
+            alert(result.message || "Failed to reject document.");
+
+        }
+
+    } catch (error) {
+
+        console.error("Reject error:", error);
+
+        alert("Something went wrong while rejecting the document.");
+
+    }
+
+    });
+
+            
+
+
+            
+
+    
  
         }
 
@@ -517,7 +615,7 @@ function getAction(request)
          return `<button class="btn btn-primary btn-sm approved" data-id="${request.id}" data-student="${request.student_id}">
             Approve
             </button>
-            <button class="btn btn-danger btn-sm reject" data-id="${request.id}">
+            <button class="btn btn-danger btn-sm reject" data-id="${request.id}" data-student="${request.student_id}">
             Reject
             </button>
             <button class="btn btn-secondary btn-sm view" data-id="${request.id}">

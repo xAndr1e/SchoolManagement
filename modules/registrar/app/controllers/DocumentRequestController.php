@@ -32,6 +32,50 @@ use App\Models\Employee;
 
     }
 
+    public function updateReject($id)
+    {
+ 
+       header('Content-Type: application/json');
+       $input = json_decode(
+            file_get_contents('php://input'),
+            true
+        );
+
+        $reason = trim($input['rejection_reason'] ?? '');
+        $student_id = $_GET['student_id'] ?? '';
+
+
+        Logger::log(
+        "Updated Document Request ",
+         "Verified a student document request"
+         );
+
+
+         DocumentRequest::update($id,[
+
+            'status' => 'rejected',
+
+         ]);        
+
+         $templated_reason = $this->reasonTemplatePool($reason);
+
+         Notification::create([
+  
+          'student_id' => $student_id,
+          'recipient_type' => 'student',
+          'type' => 'document',
+          'title' => 'Request Update',
+          'message' => $templated_reason 
+         ]);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Course updated successfully.'
+        ]);
+
+
+    }
+
 
     public function updateVerify($id)
     {
@@ -205,6 +249,66 @@ use App\Models\Employee;
 
     }
 
+    public function reasonTemplatePool($reason)
+    {
+ 
+      switch($reason)
+      {
+        case 'Incomplete requirements':
+
+          return "Your document request has been rejected because
+           the required documents or information are incomplete.
+            Please submit the missing requirements and resubmit your request.";
+
+     
+          case 'Invalid or incorrect information':
+ 
+            return "Your document request has been rejected because 
+            some of the information provided is invalid or does not match our records. 
+            Please verify your information and resubmit your request.";
+
+  
+            case 'Document is not available':
+
+              return "Your document request has been rejected because the requested document is currently unavailable. Please contact the Registrar's Office for assistance.";
+
+              case 'Request does not meet the requirements':
+ 
+                return "Your document request has been rejected because you do not
+                 currently meet the requirements for the requested document.
+                 Please contact the Registrar's Office for further information.";
+
+              
+                case 'Student record requires verification':
+  
+                  return "Your document request has been rejected because your 
+                  student record requires verification. 
+                  Please contact the Registrar's Office for assistance.";
+
+                  
+                  case 'Duplicate request':
+ 
+                    return "Your document request has been rejected 
+                    because a similar request has already been submitted.
+                     Please check your existing requests before submitting another one.";
+
+                   
+                    case 'Request is not authorized':
+ 
+                      return "Your document request has been rejected because
+                   the request could not be verified as authorized.
+                   Please contact the Registrar's Office for assistance.";
+
+                      
+                      default:
+
+                       return "Your document request has been rejected because $reason.
+                   Please contact the Registrar's Office for assistance.";
+ 
+                
+      }
+
+    }
    
 
 

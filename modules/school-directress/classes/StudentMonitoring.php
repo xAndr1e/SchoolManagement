@@ -50,7 +50,7 @@ class StudentMonitoring
         }
     }
 
-    public function getStudents()
+    public function getStudents() : array
     {
         $stmt = $this->conn->query("
             SELECT

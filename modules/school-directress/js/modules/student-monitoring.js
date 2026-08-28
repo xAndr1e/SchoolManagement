@@ -43,20 +43,23 @@ function smCollapseRow(row) {
 }
 
 // Called directly from the inline onclick="" in the markup
-function smToggle(tr, rid) {
+window.smToggle = function (tr, rid) {
     const detail = document.getElementById(rid);
     if (!detail) return;
 
     const isOpen = detail.classList.contains('sm--open');
 
-    document.querySelectorAll('.sm-detail-row.sm--open').forEach(el => el.classList.remove('sm--open'));
-    document.querySelectorAll('.sm-row.sm-row--expanded').forEach(el => el.classList.remove('sm-row--expanded'));
+    document.querySelectorAll('.sm-detail-row.sm--open')
+        .forEach(el => el.classList.remove('sm--open'));
+
+    document.querySelectorAll('.sm-row.sm-row--expanded')
+        .forEach(el => el.classList.remove('sm-row--expanded'));
 
     if (!isOpen) {
         detail.classList.add('sm--open');
         tr.classList.add('sm-row--expanded');
     }
-}
+};
 
 // ── FILTER MATCHING (shared by pagination + CSV export) ─────────────────────
 function smCurrentFilters() {

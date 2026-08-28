@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="../guidance/css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <title><?php echo $pageTitle ?? 'School Management System'; ?></title>
+    <link rel="icon" href="assets/bcp-logo.png" type="image/png">
+    <title>Guidance Management</title>
 </head>
 <body>
 <header>

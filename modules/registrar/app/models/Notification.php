@@ -27,7 +27,7 @@
 
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-        $where = " WHERE 1=1 ";
+        $where = " WHERE s.recipient_type = 'registrar' ";
         
         $params = [];
 

@@ -25,7 +25,6 @@
   function notificationCounts()
   {
 
-
      const notifCount = document.getElementById('notifCount'); 
 
       fetch(`${BASE_URL}/notificationsCount`)

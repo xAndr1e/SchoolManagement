@@ -7,6 +7,7 @@ use App\Helper\Logger;
   use App\Helper\Response;
   use App\Models\DocumentRequest;
 use App\Models\Employee;
+  use App\Models\Notification;
   use App\Models\SchoolYear;
   use App\Models\Semester;
 
@@ -34,6 +35,9 @@ use App\Models\Employee;
 
     public function updateVerify($id)
     {
+
+
+       $student_id = $_GET['student_id'] ?? '';
  
        header('Content-Type: application/json');
 
@@ -50,6 +54,17 @@ use App\Models\Employee;
 
          ]);        
 
+         Notification::create([
+  
+          'student_id' => $student_id,
+          'recipient_type' => 'student',
+          'type' => 'document',
+          'title' => 'Request Update',
+          'message' => 'Great news! Your document submission has been verified. Your application will now move to the processing stage.',
+
+
+         ]);
+
         echo json_encode([
             'status' => 'success',
             'message' => 'Course updated successfully.'
@@ -60,6 +75,9 @@ use App\Models\Employee;
 
       public function updateProcess($id)
      {
+
+      
+       $student_id = $_GET['student_id'] ?? '';
  
        header('Content-Type: application/json');
 
@@ -77,6 +95,16 @@ use App\Models\Employee;
 
          ]);        
 
+          Notification::create([
+  
+          'student_id' => $student_id,
+          'recipient_type' => 'student',
+          'type' => 'document',
+          'title' => 'Request Update',
+          'message' => "Your application is officially under review. Registrar is processing your details, and we will update you once it's complete.",
+
+         ]);
+
         echo json_encode([
             'status' => 'success',
             'message' => 'Course updated successfully.'
@@ -87,6 +115,8 @@ use App\Models\Employee;
 
      public function markReadyProcess($id)
      {
+
+      $student_id = $_GET['student_id'] ?? '';
  
        header('Content-Type: application/json');
 
@@ -104,6 +134,16 @@ use App\Models\Employee;
 
          ]);        
 
+          Notification::create([
+  
+          'student_id' => $student_id,
+          'recipient_type' => 'student',
+          'type' => 'document',
+          'title' => 'Request Update',
+          'message' => "Good news! Your file has been processed successfully and is now ready for release.",
+
+         ]);
+
         echo json_encode([
             'status' => 'success',
             'message' => 'Course updated successfully.'
@@ -113,6 +153,8 @@ use App\Models\Employee;
      public function releasedProcess($id)
      {
  
+       $student_id = $_GET['student_id'] ?? '';
+
        header('Content-Type: application/json');
 
 
@@ -127,7 +169,17 @@ use App\Models\Employee;
 
             'status' => 'released',
 
-         ]);        
+         ]);     
+         
+         
+          Notification::create([
+  
+          'student_id' => $student_id,
+          'recipient_type' => 'student',
+          'type' => 'document',
+          'title' => 'Request Update',
+          'message' => "Your document is ready for pickup! Please bring a valid ID (and authorization letter if represented) to the Registrar's Office during office hours.",
+         ]);
 
         echo json_encode([
             'status' => 'success',

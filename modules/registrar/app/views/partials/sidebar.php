@@ -1,4 +1,5 @@
 <aside class="sidebar">
+
         <div class="school-logo">
             <img src="<?php echo BASE_URL ?>/assets/images/bcp-logo.png" alt="School Logo">
 
@@ -47,7 +48,7 @@
          </ul>
         </div>
 
-            </div>
+         </div>
        
 
         </div>

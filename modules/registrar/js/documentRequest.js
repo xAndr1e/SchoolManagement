@@ -7,9 +7,6 @@
    const viewDetailsModal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
    
 
-
-
-
     let currentOrder = 'desc';
     let currentLimit = 10;
     let currentPage = 1;
@@ -157,14 +154,17 @@
     if (e.target.classList.contains("approved")) {
 
         const reportId = e.target.dataset.id;
+        const studentId = e.target.dataset.student;
+        
 
-        fetch(`${BASE_URL}/document-request/verify/${reportId}`, {
+        fetch(`${BASE_URL}/document-request/verify/${reportId}?student_id=${studentId}`, {
             method: 'POST'
         })
         .then(response => response.json())
         .then(data => {
 
             if (data.status === 'success') {
+
                 console.log(data.message);
 
                 getData(currentOrder, currentLimit, currentPage);
@@ -207,6 +207,7 @@
          else if (e.target.classList.contains("view")) {
 
             const reportId = e.target.dataset.id;
+            const studentId = e.target.dataset.student;
 
 
 
@@ -238,12 +239,6 @@
          document.getElementById('copies').textContent = request.copies;
 
          document.getElementById('fileName').textContent = request.file_path;
-         
-         
-
-
-       
-
         
 
          viewDetailsModal.show();
@@ -262,9 +257,10 @@
         else if (e.target.classList.contains("process")) {
 
             const reportId = e.target.dataset.id;
+            const studentId = e.target.dataset.student;
 
 
-            fetch(`${BASE_URL}/document-request/process/${reportId}`, {
+            fetch(`${BASE_URL}/document-request/process/${reportId}?student_id=${studentId}`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -288,9 +284,10 @@
         else if (e.target.classList.contains("ready")) {
 
             const reportId = e.target.dataset.id;
+            const studentId = e.target.dataset.student;
 
 
-            fetch(`${BASE_URL}/document-request/ready/${reportId}`, {
+            fetch(`${BASE_URL}/document-request/ready/${reportId}?student_id=${studentId}`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -316,9 +313,10 @@
         else if (e.target.classList.contains("release")) {
 
             const reportId = e.target.dataset.id;
+            const studentId = e.target.dataset.student;
 
 
-            fetch(`${BASE_URL}/document-request/release/${reportId}`, {
+            fetch(`${BASE_URL}/document-request/release/${reportId}?student_id=${studentId}`, {
             method: 'POST'
         })
         .then(response => response.json())
@@ -516,7 +514,7 @@ function getAction(request)
     {
        case 'pending':
 
-         return `<button class="btn btn-primary btn-sm approved" data-id="${request.id}">
+         return `<button class="btn btn-primary btn-sm approved" data-id="${request.id}" data-student="${request.student_id}">
             Approve
             </button>
             <button class="btn btn-danger btn-sm reject" data-id="${request.id}">
@@ -535,7 +533,7 @@ function getAction(request)
                         View Details 
                         </button>
 
-                        <button class="btn btn-danger btn-sm process" data-id="${request.id}">
+                        <button class="btn btn-danger btn-sm process" data-id="${request.id}" data-student="${request.student_id}">
                             Start Processing
                         </button>`
             
@@ -547,7 +545,7 @@ function getAction(request)
                         View Details 
                         </button>
 
-                        <button class="btn btn-success btn-sm ready" data-id="${request.id}">
+                        <button class="btn btn-success btn-sm ready" data-id="${request.id}" data-student="${request.student_id}">
                             Mark Ready
                         </button>`
             
@@ -560,7 +558,7 @@ function getAction(request)
                         View Details 
                         </button>
 
-                        <button class="btn btn-warning btn-sm release" data-id="${request.id}">
+                        <button class="btn btn-warning btn-sm release" data-id="${request.id}" data-student="${request.student_id}">
                             Release
                         </button>`
             

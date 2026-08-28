@@ -284,6 +284,14 @@ $r->get('/requested',[DocumentRequestController::class,'index']);
 $r->get('/allDocumentRequest',[DocumentRequestController::class,'allDocumentRequest']);
 $r->get('/allDocument/{id:\d+}',[DocumentRequestController::class,'getAllDocuments']);
 $r->get('/allDocument/{id:\d+}/view',[DocumentRequestController::class,'documentRequestDetails']);
+$r->post('/document-request/verify/{id:\d+}',[DocumentRequestController::class,'updateVerify']);
+$r->post('/document-request/process/{id:\d+}',[DocumentRequestController::class,'updateProcess']);
+$r->post('/document-request/ready/{id:\d+}',[DocumentRequestController::class,'markReadyProcess']);
+$r->post('/document-request/release/{id:\d+}',[DocumentRequestController::class,'releasedProcess']);
+
+
+
+
 
 
 // grades 

@@ -3,7 +3,8 @@
   namespace App\Controllers;
 
   use App\Core\Controller;
-use App\Helper\Response;
+use App\Helper\Logger;
+  use App\Helper\Response;
   use App\Models\DocumentRequest;
 use App\Models\Employee;
   use App\Models\SchoolYear;
@@ -31,30 +32,100 @@ use App\Models\Employee;
     }
 
 
-    public function updateVerify()
+    public function updateVerify($id)
     {
  
        header('Content-Type: application/json');
 
 
         Logger::log(
-        "Updated A New School Year",
-         "Updated A New Schoool Year Information for System"
+        "Updated Document Request ",
+         "Verified a student document request"
          );
 
-          // reset the status of school year
-          SchoolYear::updateStatus();
 
-          // reset all the status
-         Semester::updateStatus();
+         DocumentRequest::update($id,[
 
-         // activate the default
-         Semester::activateDefaultSemester($id);
+            'status' => 'verified',
 
-         // update the status in school year
-         SchoolYear::update($id,[
+         ]);        
 
-            'is_active' => true,
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Course updated successfully.'
+        ]);
+
+    }
+
+
+      public function updateProcess($id)
+     {
+ 
+       header('Content-Type: application/json');
+
+
+        Logger::log(
+        "Updated Document Request ",
+         "Processing a student document request"
+         );
+
+
+
+         DocumentRequest::update($id,[
+
+            'status' => 'processing',
+
+         ]);        
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Course updated successfully.'
+        ]);
+
+    }
+
+
+     public function markReadyProcess($id)
+     {
+ 
+       header('Content-Type: application/json');
+
+
+        Logger::log(
+        "Updated Document Request ",
+         "Mark Ready a student document request"
+         );
+
+
+
+         DocumentRequest::update($id,[
+
+            'status' => 'ready for release',
+
+         ]);        
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Course updated successfully.'
+        ]);
+
+    }
+     public function releasedProcess($id)
+     {
+ 
+       header('Content-Type: application/json');
+
+
+        Logger::log(
+        "Updated Document Request ",
+         "Released a student document request"
+         );
+
+
+
+         DocumentRequest::update($id,[
+
+            'status' => 'released',
 
          ]);        
 

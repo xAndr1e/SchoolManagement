@@ -158,25 +158,25 @@
 
         const reportId = e.target.dataset.id;
 
- 
+        fetch(`${BASE_URL}/document-request/verify/${reportId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
 
+            if (data.status === 'success') {
+                console.log(data.message);
 
+                getData(currentOrder, currentLimit, currentPage);
 
-        console.log(reportId);
+            } else {
+                console.error(data.message);
+            }
 
-        // fetch(`${BASE_URL}/reports-approval/${reportId}/approved`, {
-        //     method: "POST"
-        // })
-        // .then(response => response.json())
-        // .then(result => {
-
-        //        let currentOrder = 'DESC';
-        //         let currentLimit = 10;
-        //         let currentPage = 1;
-        //         getData(currentOrder, currentLimit, currentPage);
-
-
-        // });
+        })
+        .catch(error => {
+            console.error(error);
+        });
 
         }
 
@@ -215,14 +215,12 @@
         .then(request => {
 
 
-        
-
+    
 
         document.getElementById('requestNumber').textContent =
         request.request_number;
 
-        document.getElementById('requestStatus').textContent =
-        request.document_status;
+        setRequestStatus(request.document_status);
 
         document.getElementById('documentType').textContent =
         request.document_type;
@@ -261,7 +259,86 @@
  
         }
 
+        else if (e.target.classList.contains("process")) {
 
+            const reportId = e.target.dataset.id;
+
+
+            fetch(`${BASE_URL}/document-request/process/${reportId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.status === 'success') {
+                console.log(data.message);
+
+                getData(currentOrder, currentLimit, currentPage);
+
+            } else {
+                console.error(data.message);
+            }
+
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+       }
+        else if (e.target.classList.contains("ready")) {
+
+            const reportId = e.target.dataset.id;
+
+
+            fetch(`${BASE_URL}/document-request/ready/${reportId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.status === 'success') {
+                console.log(data.message);
+
+                getData(currentOrder, currentLimit, currentPage);
+
+            } else {
+                console.error(data.message);
+            }
+
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+       }
+
+
+        else if (e.target.classList.contains("release")) {
+
+            const reportId = e.target.dataset.id;
+
+
+            fetch(`${BASE_URL}/document-request/release/${reportId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            if (data.status === 'success') {
+                console.log(data.message);
+
+                getData(currentOrder, currentLimit, currentPage);
+
+            } else {
+                console.error(data.message);
+            }
+
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+       }
 
 
     });
@@ -454,17 +531,111 @@ function getAction(request)
             break;
             case 'verified':
 
-             return `<button class="btn btn-primary btn-sm approved" data-id="${request.id}">
-                            View
+             return ` <button class="btn btn-secondary btn-sm view" data-id="${request.id}">
+                        View Details 
                         </button>
-                        <button class="btn btn-danger btn-sm reject" data-id="${request.id}">
+
+                        <button class="btn btn-danger btn-sm process" data-id="${request.id}">
                             Start Processing
                         </button>`
+            
+            break;
 
+            case 'processing':
+
+             return ` <button class="btn btn-secondary btn-sm view" data-id="${request.id}">
+                        View Details 
+                        </button>
+
+                        <button class="btn btn-success btn-sm ready" data-id="${request.id}">
+                            Mark Ready
+                        </button>`
+            
+            break;
+
+
+            case 'ready for release':
+
+             return ` <button class="btn btn-secondary btn-sm view" data-id="${request.id}">
+                        View Details 
+                        </button>
+
+                        <button class="btn btn-warning btn-sm release" data-id="${request.id}">
+                            Release
+                        </button>`
+            
+            break;
+
+             case 'released':
+
+             return ` <button class="btn btn-secondary btn-sm view" data-id="${request.id}">
+                        View Details 
+                        </button>`
             break;
     }
 }
 
+
+
+function setRequestStatus(status) {
+    const statusElement = document.getElementById('requestStatus');
+
+  
+    statusElement.className = 'badge px-3 py-2';
+
+    switch (status?.toLowerCase()) {
+
+        case 'pending':
+            statusElement.classList.add(
+                'bg-warning-subtle',
+                'text-warning-emphasis'
+            );
+            break;
+
+        case 'verified':
+            statusElement.classList.add(
+                'bg-primary-subtle',
+                'text-primary-emphasis'
+            );
+            break;
+
+        case 'processing':
+            statusElement.classList.add(
+                'bg-info-subtle',
+                'text-info-emphasis'
+            );
+            break;
+
+        case 'ready for release':
+            statusElement.classList.add(
+                'bg-success-subtle',
+                'text-success-emphasis'
+            );
+            break;
+
+        case 'released':
+            statusElement.classList.add(
+                'bg-success',
+                'text-white'
+            );
+            break;
+
+        case 'rejected':
+            statusElement.classList.add(
+                'bg-danger-subtle',
+                'text-danger-emphasis'
+            );
+            break;
+
+        default:
+            statusElement.classList.add(
+                'bg-secondary-subtle',
+                'text-secondary-emphasis'
+            );
+    }
+
+    statusElement.textContent = status ?? '-';
+}
 
 
 

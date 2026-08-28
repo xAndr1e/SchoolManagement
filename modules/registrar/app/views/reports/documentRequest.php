@@ -305,14 +305,6 @@
                         data-bs-dismiss="modal">
                     Close
                 </button>
-
-                <button type="button"
-                        class="btn btn-primary"
-                        id="verifyRequestBtn">
-                    <i class="bi bi-check2-circle me-1"></i>
-                    Verify Request
-                </button>
-
             </div>
 
         </div>

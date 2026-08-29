@@ -214,10 +214,6 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
 
     try {
 
-        // ==========================================
-        // 1. GET CLASS DETAILS USING SCHEDULE ID
-        // ==========================================
-
         const scheduleResponse = await fetch(
             `${BASE_URL}/class-list/${scheduleId}/schedule`
         );
@@ -234,9 +230,7 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
         const schedule = scheduleData[0];
 
 
-        // ==========================================
-        // 2. FILL COURSE INFORMATION
-        // ==========================================
+        
 
         document.getElementById("show_course_code").textContent =
             schedule.course_code ?? "—";
@@ -251,9 +245,7 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
             schedule.grade_level ?? "—";
 
 
-        // ==========================================
-        // 3. FILL SUBJECT INFORMATION
-        // ==========================================
+       
 
         document.getElementById("show_subject_code").textContent =
             schedule.subject_code ?? "—";
@@ -277,9 +269,6 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
             "—";
 
 
-        // ==========================================
-        // 4. FILL CLASS / SCHEDULE INFORMATION
-        // ==========================================
 
         document.getElementById("show_day").textContent =
             schedule.day_of_week ?? "—";
@@ -291,8 +280,7 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
             schedule.end_time ?? "—";
 
 
-        // These are not included in your current
-        // schedule SQL result
+        
         document.getElementById("show_room").textContent =
              schedule.room_name ?? "—";
 
@@ -303,9 +291,7 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
             schedule.building ??  "—";
 
 
-        // ==========================================
-        // 5. GET ENROLLED STUDENTS
-        // ==========================================
+   
 
         const enrollmentResponse = await fetch(
             `${BASE_URL}/enrollment/${scheduleId}/schedule`
@@ -316,17 +302,13 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
         console.log("Students:", students);
 
 
-        // ==========================================
-        // 6. FILL STUDENT COUNT
-        // ==========================================
+
 
         document.getElementById("show_student_count").textContent =
             `${students.length} Student${students.length !== 1 ? "s" : ""}`;
 
 
-        // ==========================================
-        // 7. FILL STUDENT TABLE
-        // ==========================================
+      
 
         const studentList =
             document.getElementById("show_student_list");
@@ -428,10 +410,6 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
     }   
     }
   
-
-
-  
-
 
     function resetForm(formId)
     {

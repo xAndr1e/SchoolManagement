@@ -137,6 +137,57 @@
 </main>
 
 
+<!-- filtering -->
+
+<div class="modal fade" id="filterModal">
+  <div class="modal-dialog">
+    <div class="modal-content p-3">
+
+      <h5>Filter</h5>
+
+
+        <div class="form-floating mb-2">
+      <select id="filter_course" class="form-select" aria-label="Floating label select example">
+        <option value="" selected>All Courses</option>
+         <?php foreach($course as $courses) { ?>
+        
+        <option 
+            value="<?= $courses['id']; ?>" 
+        >
+        <?= $courses['name']; ?>
+        </option>
+
+        <?php  } ?> 
+      </select>
+     
+
+      <label for="floatingSelect">Course</label>
+
+      </div>
+
+
+
+    <div class="form-floating mb-2" id="year-level-container">
+    <select id="filter_year_level" class="form-select" aria-label="Year Level">
+        <option value="" selected>All Year Levels</option>
+        <option value="1">1st Year</option>
+        <option value="2">2nd Year</option>
+        <option value="3">3rd Year</option>
+        <option value="4">4th Year</option>
+    </select>
+
+    <label for="filter_year_level">Year Level</label>
+</div>
+      
+
+
+      <button class="btn btn-primary w-100 mb-2" id="applyFilter">Apply Filter</button>
+      <button class="btn btn-warning w-100" id="resetFilter">Reset Filter</button>
+
+    </div>
+  </div>
+</div>
+
 
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js"></script>

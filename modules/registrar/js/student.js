@@ -1,5 +1,15 @@
   
+   let filters = {
+    course:'',
+    year_level:''
+    };
+  
+  
+  
   document.addEventListener('DOMContentLoaded', function() {
+
+
+    const modal = new bootstrap.Modal(document.getElementById('filterModal'));
     
     let currentStatus = 'all';
     let currentLimit = 10;
@@ -41,6 +51,55 @@
 
 
 
+
+    const schoolYearLevelSelect = document.getElementById('filter_year_level');
+    const courseSelect = document.getElementById('filter_course');
+
+    const defaultCourseSelect = courseSelect.value;
+    const defaultSchoolYearLevelSelect = schoolYearLevelSelect.value;
+
+
+
+    filterBtn.addEventListener('click',function(){
+  
+        modal.show();
+    
+    });
+
+
+    
+    document.getElementById('resetFilter').addEventListener('click', function() {
+    
+    filters.course = courseSelect.value = defaultCourseSelect;
+    filters.year_level = schoolYearLevelSelect.value = defaultSchoolYearLevelSelect;
+
+    
+
+    updateFilterBadge();
+    
+     getData(currentStatus, currentLimit, currentPage);
+  
+     modal.hide();
+         
+    }) 
+
+
+     document.getElementById("applyFilter").addEventListener("click", () => {
+
+    filters.course = courseSelect.value;
+    filters.year_level = schoolYearLevelSelect.value;
+    
+    updateFilterBadge();
+
+    getData(currentStatus, currentLimit,currentPage);
+  
+    modal.hide();
+
+   });
+
+
+
+
     document.getElementById('pdf').addEventListener('click',()=>{
 
         const status = document.getElementById("status").value;
@@ -77,6 +136,12 @@
     }
     });
 
+
+
+
+
+
+
     });
 
      /*  ========================================================================================= 
@@ -86,6 +151,21 @@
        ========================================================================================= 
     */
 
+    function updateFilterBadge() {
+
+    const badge = document.getElementById("filterBadge");
+
+    let count = 0;
+
+    if (filters.year_level) count++;
+    if(filters.course) count++;
+    if (count > 0) {
+        badge.classList.remove("d-none");
+        badge.textContent = count;
+    } else {
+        badge.classList.add("d-none");
+    }   
+    }
 
     // pdf data 
 
@@ -137,7 +217,7 @@
     const search = document.getElementById("search").value;
     const tbody = document.getElementById("studentsTableBody");
 
-    fetch(`${BASE_URL}/students/all?status=${status}&limit=${limit}&page=${page}&search=${encodeURIComponent(search)}`)
+    fetch(`${BASE_URL}/students/all?status=${status}&limit=${limit}&page=${page}&search=${encodeURIComponent(search)}&year_level=${filters.year_level}&course=${filters.course}`)
         .then(response => response.json())
         .then(result => {
 

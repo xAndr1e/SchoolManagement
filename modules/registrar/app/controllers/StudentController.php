@@ -30,11 +30,13 @@ class StudentController extends Controller {
     {   
         $user = Employee::find('1003'); 
         $semester = Semester::activeSemester();
-        $schoolYear = SchoolYear::activeSchoolYear();   
+        $schoolYear = SchoolYear::activeSchoolYear();  
+        $course = Course::all(); 
         
         $this->render('/students/index', 
         [
             'user' => $user,
+             'course' => $course,
              'semester' => $semester,
              'schoolYear' => $schoolYear
         ]);

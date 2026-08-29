@@ -270,6 +270,11 @@
 
  protected function allStudents($paginate = true)
     {
+
+    $year_level = $_GET['year_level'] ?? '';
+    $course = $_GET['course'] ?? '';
+    $school_year_select = $_GET['school_year'] ?? '';
+     
     $perPage = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
     $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
     if ($page < 1) $page = 1;
@@ -284,14 +289,38 @@
      $order = in_array($order, ['asc', 'desc']) 
             ? strtoupper($order) 
             : 'DESC';
+    
+    
 
     $where = " WHERE 1=1 ";
+    
     $params = [];
+
+
+   if ($year_level !== '') {
+    $where .= " AND stud.year_level = :year_level";
+    $params[':year_level'] = $year_level;
+   }
+
+
+   if ($course !== '') {
+    $where .= " AND stud.course_id = :course";
+    $params[':course'] = $course;
+   }
+
+   if (!empty($school_year_select) && $school_year_select !== 'all_school_year') {
+    $where .= " AND sem.school_year_id = :school_year";
+    $params[':school_year'] = $school_year_select;
+   }
+
+
+
 
     if (!empty($status) && strtolower($status) !== 'all') {
         $where .= " AND stud.enrollment_status = :status";
         $params[':status'] = $status;
     }
+    
 
     if (!empty($search)) {
         $where .= " AND (

@@ -221,6 +221,32 @@
 // ============================================
 // API CALL HELPER - FIXES UNEXPECTED JSON ERROR
 // ============================================
+function getMonitoringBasePath() {
+    const pathname = window.location.pathname || '/';
+    const candidates = [
+        '/modules/monitoring/public',
+        '/Monitoring2/public',
+        '/modules/monitoring',
+        '/Monitoring2'
+    ];
+
+    for (const candidate of candidates) {
+        const index = pathname.indexOf(candidate);
+        if (index !== -1) {
+            return pathname.substring(0, index + candidate.length);
+        }
+    }
+
+    return '';
+}
+
+function getMonitoringApiUrl(endpoint) {
+    const cleanEndpoint = (endpoint || '').replace(/^\/+/, '');
+    const normalized = cleanEndpoint.startsWith('api/') ? cleanEndpoint : 'api/' + cleanEndpoint;
+    const basePath = getMonitoringBasePath();
+    return basePath ? `${basePath}/${normalized}` : `/${normalized}`;
+}
+
 async function apiCall(endpoint, method = 'GET', data = null) {
     try {
         const options = {
@@ -236,14 +262,14 @@ async function apiCall(endpoint, method = 'GET', data = null) {
             options.body = JSON.stringify(data);
         }
 
-        const response = await fetch('/api/' + endpoint, options);
+        const response = await fetch(getMonitoringApiUrl(endpoint), options);
         
         // Check if response is OK
         if (!response.ok) {
             if (response.status === 401 || response.status === 302) {
                 showToast('Session expired. Please login again.', 'error');
                 setTimeout(() => {
-                    window.location.href = '/login';
+                    window.location.href = '/';
                 }, 2000);
                 return null;
             }

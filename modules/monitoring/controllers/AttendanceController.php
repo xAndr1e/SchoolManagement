@@ -14,131 +14,265 @@ class AttendanceController {
         $this->archiveModel = new AttendanceArchive();
     }
     
+    // ============================================
+    // getOnlineClasses - Returns JSON
+    // ============================================
+    public function getOnlineClasses($date = null) {
+        try {
+            // Clear any output buffers
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            if ($date === null && isset($_GET['date'])) {
+                $date = $_GET['date'];
+            }
+
+            $records = $this->attendanceModel->getOnlineClasses($date);
+
+            if (empty($records)) {
+                header('Content-Type: application/json');
+                echo json_encode([]);
+                return;
+            }
+
+            $formattedRecords = [];
+            foreach ($records as $record) {
+                $formattedRecords[] = [
+                    'id' => $record['id'],
+                    'schedule_id' => $record['schedule_id'] ?? null,
+                    'faculty_name' => $record['faculty_name'] ?? 'Unknown',
+                    'course_section' => $record['course_section'] ?? 'N/A',
+                    'subject_code' => $record['subject_code'] ?? 'N/A',
+                    'room' => $record['room'] ?? 'N/A',
+                    'student_count' => isset($record['student_count']) ? (int)$record['student_count'] : 0,
+                    'attendance_date' => $record['attendance_date'] ?? date('Y-m-d'),
+                    'check_time' => $record['check_time'] ?? date('Y-m-d H:i:s'),
+                    'created_at' => $record['check_time'] ?? date('Y-m-d H:i:s'),
+                    'status' => $record['status'] ?? 'online',
+                    'is_online' => isset($record['is_online']) ? (int)$record['is_online'] : 1,
+                    'meeting_link' => $record['meeting_link'] ?? null,
+                    'meeting_screenshot' => $record['meeting_screenshot'] ?? null,
+                    'face_to_face_image' => $record['face_to_face_image'] ?? null,
+                    'verified_by' => $record['verified_by'] ?? 'System',
+                    'verification_method' => $record['verification_method'] ?? 'online',
+                    'remarks' => $record['remarks'] ?? null
+                ];
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($formattedRecords);
+
+        } catch (Exception $e) {
+            error_log("Error in getOnlineClasses: " . $e->getMessage());
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode(['error' => true, 'message' => $e->getMessage()]);
+        }
+    }
+    
+    // ============================================
+    // getSchedules - Returns JSON
+    // ============================================
     public function getSchedules($date = null) {
         try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
+            if (!$date && isset($_GET['date'])) {
+                $date = $_GET['date'];
+            }
             if (!$date) {
                 $date = date('Y-m-d');
             }
+
             $schedules = $this->scheduleModel->getByDate($date);
-            
+
             $result = [];
             foreach ($schedules as $schedule) {
+                $subjectCode = $schedule['subject_code'] ?? ($schedule['subject_name'] ?? 'N/A');
+                $sectionName = $schedule['section_name'] ?? ($schedule['course_section'] ?? 'N/A');
+                $roomName = $schedule['room_name'] ?? ($schedule['room'] ?? 'N/A');
+                $dayOfWeek = $schedule['day_of_week'] ?? ($schedule['day'] ?? '');
+
                 $result[] = [
-                    'id' => $schedule['id'],
+                    'id' => (int) ($schedule['id'] ?? 0),
                     'faculty_name' => $schedule['faculty_name'] ?? 'N/A',
                     'subject_name' => $schedule['subject_name'] ?? 'N/A',
-                    'subject_code' => $schedule['subject_name'] ?? 'N/A',
-                    'course_section' => $schedule['section_name'] ?? 'N/A',
-                    'room' => $schedule['room_name'] ?? 'N/A',
-                    'room_name' => $schedule['room_name'] ?? 'N/A',
-                    'start_time' => $schedule['start_time'],
-                    'end_time' => $schedule['end_time'],
-                    'day' => $schedule['day_of_week'],
-                    'day_of_week' => $schedule['day_of_week'],
+                    'subject_code' => $subjectCode,
+                    'course_section' => $sectionName,
+                    'section_name' => $sectionName,
+                    'room' => $roomName,
+                    'room_name' => $roomName,
+                    'start_time' => $schedule['start_time'] ?? null,
+                    'end_time' => $schedule['end_time'] ?? null,
+                    'day' => $dayOfWeek,
+                    'day_of_week' => $dayOfWeek,
                     'status' => $schedule['status'] ?? 'Scheduled',
                     'schedule_date' => $schedule['schedule_date'] ?? $date,
                     'schedule_type' => $schedule['schedule_type'] ?? 'Class',
                     'student_count' => 0
                 ];
             }
-            return $result;
+
+            echo json_encode($result);
+
         } catch (Exception $e) {
             error_log("Error in getSchedules: " . $e->getMessage());
-            return [];
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode([]);
         }
     }
     
+    // ============================================
+    // getSchedulesByDay - Returns JSON
+    // ============================================
     public function getSchedulesByDay($day = null) {
-    try {
-        // Fallback to $_GET or today's day name if $day was not passed by the Router
-        if (!$day) {
-            $day = $_GET['day'] ?? date('l');
-        }
-        
-        // Fetch schedules matching the requested day of the week
-        $allSchedules = $this->scheduleModel->getByDay($day);
-        
-        // Sort schedules chronologically
-        usort($allSchedules, function($a, $b) {
-            return strcmp($a['start_time'], $b['start_time']);
-        });
-        
-        $result = [];
-        foreach ($allSchedules as $schedule) {
-            $result[] = [
-                'id' => $schedule['id'],
-                'faculty_name' => $schedule['faculty_name'] ?? 'N/A',
-                'subject_name' => $schedule['subject_name'] ?? 'N/A',
-                'subject_code' => $schedule['subject_name'] ?? 'N/A',
-                'course_section' => $schedule['section_name'] ?? 'N/A',
-                'room' => $schedule['room_name'] ?? 'N/A',
-                'room_name' => $schedule['room_name'] ?? 'N/A',
-                'start_time' => $schedule['start_time'],
-                'end_time' => $schedule['end_time'],
-                'day' => $schedule['day_of_week'],
-                'day_of_week' => $schedule['day_of_week'],
-                'status' => $schedule['status'] ?? 'Scheduled',
-                'schedule_date' => $schedule['schedule_date'] ?? date('Y-m-d'),
-                'schedule_type' => $schedule['schedule_type'] ?? 'Class',
-                'student_count' => 0
-            ];
-        }
-        return $result;
-    } catch (Exception $e) {
-        error_log("Error in getSchedulesByDay: " . $e->getMessage());
-        return [];
-    }
-}
-
-    public function getFacultySchedules($faculty) {
         try {
-            $today = date('Y-m-d');
-            $day = date('l');
-            $schedules = $this->scheduleModel->getByDay($day);
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
             
-            $filtered = array_filter($schedules, function($schedule) use ($faculty, $today) {
-                $matchesFaculty = isset($schedule['faculty_name']) && stripos($schedule['faculty_name'], $faculty) !== false;
-                $matchesDate = !isset($schedule['schedule_date']) || $schedule['schedule_date'] >= $today;
-                return $matchesFaculty && $matchesDate;
+            if (!$day && isset($_GET['day'])) {
+                $day = $_GET['day'];
+            }
+            if (!$day) {
+                $day = date('l');
+            }
+
+            $allSchedules = $this->scheduleModel->getByDay($day);
+
+            usort($allSchedules, function($a, $b) {
+                return strcmp($a['start_time'], $b['start_time']);
             });
-            
+
             $result = [];
-            foreach ($filtered as $schedule) {
+            foreach ($allSchedules as $schedule) {
+                $subjectCode = $schedule['subject_code'] ?? ($schedule['subject_name'] ?? 'N/A');
+                $sectionName = $schedule['section_name'] ?? ($schedule['course_section'] ?? 'N/A');
+                $roomName = $schedule['room_name'] ?? ($schedule['room'] ?? 'N/A');
+                $dayOfWeek = $schedule['day_of_week'] ?? ($schedule['day'] ?? $day);
+
                 $result[] = [
-                    'id' => $schedule['id'],
+                    'id' => (int) ($schedule['id'] ?? 0),
                     'faculty_name' => $schedule['faculty_name'] ?? 'N/A',
                     'subject_name' => $schedule['subject_name'] ?? 'N/A',
-                    'subject_code' => $schedule['subject_name'] ?? 'N/A',
-                    'course_section' => $schedule['section_name'] ?? 'N/A',
-                    'room' => $schedule['room_name'] ?? 'N/A',
-                    'room_name' => $schedule['room_name'] ?? 'N/A',
-                    'start_time' => $schedule['start_time'],
-                    'end_time' => $schedule['end_time'],
-                    'day' => $schedule['day_of_week'],
-                    'day_of_week' => $schedule['day_of_week'],
+                    'subject_code' => $subjectCode,
+                    'course_section' => $sectionName,
+                    'section_name' => $sectionName,
+                    'room' => $roomName,
+                    'room_name' => $roomName,
+                    'start_time' => $schedule['start_time'] ?? null,
+                    'end_time' => $schedule['end_time'] ?? null,
+                    'day' => $dayOfWeek,
+                    'day_of_week' => $dayOfWeek,
                     'status' => $schedule['status'] ?? 'Scheduled',
-                    'schedule_date' => $schedule['schedule_date'] ?? $today,
+                    'schedule_date' => $schedule['schedule_date'] ?? date('Y-m-d'),
                     'schedule_type' => $schedule['schedule_type'] ?? 'Class',
                     'student_count' => 0
                 ];
             }
-            return $result;
+
+            echo json_encode($result);
+
         } catch (Exception $e) {
-            error_log("Error in getFacultySchedules: " . $e->getMessage());
-            return [];
+            error_log("Error in getSchedulesByDay: " . $e->getMessage());
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode([]);
         }
     }
     
     // ============================================
-    // MARK / UPDATE ATTENDANCE
+    // getRecords - Returns JSON
+    // ============================================
+    public function getRecords($date = null) {
+        try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
+            if (!$date && isset($_GET['date'])) {
+                $date = $_GET['date'];
+            }
+            if (!$date) {
+                $date = date('Y-m-d');
+            }
+
+            $records = $this->attendanceModel->getByDate($date);
+            echo json_encode($records);
+
+        } catch (Exception $e) {
+            error_log("Error in getRecords: " . $e->getMessage());
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+    
+    // ============================================
+    // getAttendanceRecordsByDay - Returns JSON
+    // ============================================
+    public function getAttendanceRecordsByDay($day = null) {
+        try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
+            if (!$day && isset($_GET['day'])) {
+                $day = $_GET['day'];
+            }
+            if (!$day) {
+                $day = date('l');
+            }
+            
+            $today = date('Y-m-d');
+            $allRecords = $this->attendanceModel->getByDay($day);
+            
+            $filtered = array_filter($allRecords, function($record) use ($today) {
+                return isset($record['attendance_date']) && $record['attendance_date'] === $today;
+            });
+            
+            echo json_encode(array_values($filtered));
+            
+        } catch (Exception $e) {
+            error_log("Error in getAttendanceRecordsByDay: " . $e->getMessage());
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+    
+    // ============================================
+    // markAttendance - Returns JSON
     // ============================================
     public function markAttendance($data, $files = null) {
         try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
             if ($files === null && isset($_FILES) && !empty($_FILES)) {
                 $files = $_FILES;
             }
             
-            // Normalize Schedule Details
             if (isset($data['schedule_id']) && !empty($data['schedule_id'])) {
                 $schedule = $this->scheduleModel->getById($data['schedule_id']);
                 if ($schedule) {
@@ -149,10 +283,8 @@ class AttendanceController {
                 }
             }
             
-            // Normalize status to lowercase
             $data['status'] = strtolower(trim($data['status'] ?? 'present'));
             
-            // Validate required fields
             $required = ['faculty_name', 'course_section', 'subject_code', 'room', 'status'];
             $errors = [];
             foreach ($required as $field) {
@@ -162,16 +294,16 @@ class AttendanceController {
             }
             
             if (!empty($errors)) {
-                return ['success' => false, 'errors' => $errors];
+                echo json_encode(['success' => false, 'errors' => $errors]);
+                return;
             }
             
-            // Allowed Statuses
             $allowedStatuses = ['present', 'absent', 'late', 'excused', 'online', 'nt', 'eb', 'ed', 'ob', 'at', 'pending'];
             if (!in_array($data['status'], $allowedStatuses)) {
-                return ['success' => false, 'error' => 'Invalid status: ' . $data['status']];
+                echo json_encode(['success' => false, 'error' => 'Invalid status: ' . $data['status']]);
+                return;
             }
             
-            // Set Defaults
             $data['student_count'] = isset($data['student_count']) ? (int)$data['student_count'] : 0;
             $data['check_time'] = date('Y-m-d H:i:s');
             $data['attendance_date'] = !empty($data['attendance_date']) ? $data['attendance_date'] : date('Y-m-d');
@@ -179,7 +311,6 @@ class AttendanceController {
             $data['verified_by'] = !empty($data['verified_by']) ? $data['verified_by'] : 'Administrator';
             $data['verification_method'] = !empty($data['verification_method']) ? $data['verification_method'] : 'physical_check';
             
-            // Handle Face-to-Face Image (Optional for absent/excused, required for present physical checks if provided)
             if ($files && isset($files['face_to_face_image']) && $files['face_to_face_image']['error'] === UPLOAD_ERR_OK) {
                 $uploadDir = __DIR__ . '/../public/uploads/face_to_face/';
                 if (!is_dir($uploadDir)) {
@@ -196,7 +327,6 @@ class AttendanceController {
                 }
             }
             
-            // Handle Online Meeting Screenshot
             if ($data['is_online'] && $files && isset($files['meeting_screenshot']) && $files['meeting_screenshot']['error'] === UPLOAD_ERR_OK) {
                 $uploadDir = __DIR__ . '/../public/uploads/meeting_screenshots/';
                 if (!is_dir($uploadDir)) {
@@ -213,7 +343,6 @@ class AttendanceController {
                 }
             }
             
-            // Clean Payload for DB
             $cleanData = [
                 'schedule_id' => !empty($data['schedule_id']) ? $data['schedule_id'] : null,
                 'faculty_name' => $data['faculty_name'],
@@ -233,8 +362,6 @@ class AttendanceController {
                 'remarks' => $data['remarks'] ?? null
             ];
             
-            // ⭐ RE-MARK / UPDATE SUPPORT:
-            // Check if attendance record already exists for today's schedule
             $existingRecord = null;
             if (!empty($cleanData['schedule_id'])) {
                 $recordsToday = $this->attendanceModel->getByDate($cleanData['attendance_date']);
@@ -246,9 +373,7 @@ class AttendanceController {
                 }
             }
             
-            // If already marked, UPDATE existing record instead of throwing error
             if ($existingRecord) {
-                // Keep previous images if new ones were not uploaded
                 if (empty($cleanData['face_to_face_image'])) {
                     $cleanData['face_to_face_image'] = $existingRecord['face_to_face_image'];
                 }
@@ -256,79 +381,62 @@ class AttendanceController {
                     $cleanData['meeting_screenshot'] = $existingRecord['meeting_screenshot'];
                 }
                 
-                return $this->attendanceModel->update($existingRecord['id'], $cleanData);
+                $result = $this->attendanceModel->update($existingRecord['id'], $cleanData);
+                echo json_encode($result);
+                return;
             }
             
-            // Otherwise, insert new record
-            return $this->attendanceModel->create($cleanData);
+            $result = $this->attendanceModel->create($cleanData);
+            echo json_encode($result);
             
         } catch (Exception $e) {
             error_log("❌ Error in markAttendance: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Failed to mark attendance: ' . $e->getMessage()];
-        }
-    }
-
-    public function getRecords($date = null) {
-        try {
-            if (!$date) $date = date('Y-m-d');
-            return $this->attendanceModel->getByDate($date);
-        } catch (Exception $e) {
-            error_log("Error in getRecords: " . $e->getMessage());
-            return [];
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Failed to mark attendance: ' . $e->getMessage()]);
         }
     }
     
-    public function getAttendanceRecords($date) {
-        return $this->getRecords($date);
-    }
-    
-    public function getAttendanceRecordsByDay($day) {
-        try {
-            $today = date('Y-m-d');
-            $allRecords = $this->attendanceModel->getByDay($day);
-            
-            $filtered = array_filter($allRecords, function($record) use ($today) {
-                return isset($record['attendance_date']) && $record['attendance_date'] === $today;
-            });
-            
-            return array_values($filtered);
-        } catch (Exception $e) {
-            error_log("Error in getAttendanceRecordsByDay: " . $e->getMessage());
-            return [];
-        }
-    }
-    
+    // ============================================
+    // deleteRecord - Returns JSON
+    // ============================================
     public function deleteRecord($id) {
         try {
-            if (!$id) return ['success' => false, 'error' => 'Record ID is required'];
-            return $this->attendanceModel->delete($id);
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
+            if (!$id) {
+                echo json_encode(['success' => false, 'error' => 'Record ID is required']);
+                return;
+            }
+            
+            $result = $this->attendanceModel->delete($id);
+            echo json_encode($result);
+            
         } catch (Exception $e) {
             error_log("Error in deleteRecord: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Failed to delete record: ' . $e->getMessage()];
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Failed to delete record: ' . $e->getMessage()]);
         }
     }
     
-    public function getOnlineClasses($date = null) {
-        try {
-            return $this->attendanceModel->getOnlineClasses($date);
-        } catch (Exception $e) {
-            error_log("Error in getOnlineClasses: " . $e->getMessage());
-            return [];
-        }
-    }
-    
-    public function getArchivedRecords($faculty = null) {
-        try {
-            if ($faculty) return $this->archiveModel->getByFaculty($faculty);
-            return $this->archiveModel->getAll();
-        } catch (Exception $e) {
-            error_log("Error in getArchivedRecords: " . $e->getMessage());
-            return [];
-        }
-    }
-    
+    // ============================================
+    // archiveRecords - Returns JSON
+    // ============================================
     public function archiveRecords($data) {
         try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
             $archivedBy = $data['archived_by'] ?? ($_SESSION['fullname'] ?? 'System');
             
             if (isset($data['ids']) && is_array($data['ids']) && !empty($data['ids'])) {
@@ -354,29 +462,47 @@ class AttendanceController {
                 }
                 
                 if ($count > 0) {
-                    return ['success' => true, 'archived_count' => $count];
+                    echo json_encode(['success' => true, 'archived_count' => $count]);
+                    return;
                 }
-                return ['success' => false, 'error' => 'Archive Failed: ' . $lastError];
+                echo json_encode(['success' => false, 'error' => 'Archive Failed: ' . $lastError]);
+                return;
             }
-
+            
             $date = $data['date'] ?? null;
             if ($date) {
-                return $this->attendanceModel->archiveAll($archivedBy, $date, $date);
+                $result = $this->attendanceModel->archiveAll($archivedBy, $date, $date);
+                echo json_encode($result);
+                return;
             }
-            return $this->attendanceModel->archiveAll($archivedBy);
+            
+            $result = $this->attendanceModel->archiveAll($archivedBy);
+            echo json_encode($result);
+            
         } catch (Exception $e) {
             error_log("Error in archiveRecords: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Exception: ' . $e->getMessage()];
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Exception: ' . $e->getMessage()]);
         }
     }
-
-    // ⭐ NEW RESTORE METHOD
+    
+    // ============================================
+    // restoreRecords - Returns JSON
+    // ============================================
     public function restoreRecords($data) {
         try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
             if (isset($data['ids']) && is_array($data['ids']) && !empty($data['ids'])) {
                 $count = 0;
                 $lastError = 'Record not found in archive.';
-
+                
                 foreach ($data['ids'] as $id) {
                     $archivedRec = $this->archiveModel->getById($id);
                     if ($archivedRec) {
@@ -385,7 +511,7 @@ class AttendanceController {
                         unset($restoreData['original_id']);
                         unset($restoreData['archived_by']);
                         unset($restoreData['archived_at']);
-
+                        
                         $res = $this->attendanceModel->create($restoreData);
                         if ($res && ($res['success'] ?? false)) {
                             $this->archiveModel->delete($id);
@@ -395,16 +521,120 @@ class AttendanceController {
                         }
                     }
                 }
-
+                
                 if ($count > 0) {
-                    return ['success' => true, 'restored_count' => $count];
+                    echo json_encode(['success' => true, 'restored_count' => $count]);
+                    return;
                 }
-                return ['success' => false, 'error' => 'Restore Failed: ' . $lastError];
+                echo json_encode(['success' => false, 'error' => 'Restore Failed: ' . $lastError]);
+                return;
             }
-            return ['success' => false, 'error' => 'No record IDs provided'];
+            
+            echo json_encode(['success' => false, 'error' => 'No record IDs provided']);
+            
         } catch (Exception $e) {
             error_log("Error in restoreRecords: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Exception: ' . $e->getMessage()];
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Exception: ' . $e->getMessage()]);
         }
     }
+    
+    // ============================================
+    // getArchivedRecords - Returns JSON
+    // ============================================
+    public function getArchivedRecords($faculty = null) {
+        try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            
+            if ($faculty) {
+                $records = $this->archiveModel->getByFaculty($faculty);
+            } else {
+                $records = $this->archiveModel->getAll();
+            }
+            
+            echo json_encode($records);
+            
+        } catch (Exception $e) {
+            error_log("Error in getArchivedRecords: " . $e->getMessage());
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+    
+    // ============================================
+    // getFacultySchedules - Returns JSON
+    // ============================================
+    public function getFacultySchedules($faculty) {
+        try {
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+
+            $today = date('Y-m-d');
+            $day = date('l');
+            $schedules = $this->scheduleModel->getByDay($day);
+
+            $filtered = array_filter($schedules, function($schedule) use ($faculty, $today) {
+                $facultyName = $schedule['faculty_name'] ?? '';
+                $matchesFaculty = stripos($facultyName, $faculty) !== false;
+                $matchesDate = !isset($schedule['schedule_date']) || $schedule['schedule_date'] >= $today;
+                return $matchesFaculty && $matchesDate;
+            });
+
+            $result = [];
+            foreach ($filtered as $schedule) {
+                $subjectCode = $schedule['subject_code'] ?? ($schedule['subject_name'] ?? 'N/A');
+                $sectionName = $schedule['section_name'] ?? ($schedule['course_section'] ?? 'N/A');
+                $roomName = $schedule['room_name'] ?? ($schedule['room'] ?? 'N/A');
+                $dayOfWeek = $schedule['day_of_week'] ?? ($schedule['day'] ?? $day);
+
+                $result[] = [
+                    'id' => (int) ($schedule['id'] ?? 0),
+                    'faculty_name' => $schedule['faculty_name'] ?? 'N/A',
+                    'subject_name' => $schedule['subject_name'] ?? 'N/A',
+                    'subject_code' => $subjectCode,
+                    'course_section' => $sectionName,
+                    'section_name' => $sectionName,
+                    'room' => $roomName,
+                    'room_name' => $roomName,
+                    'start_time' => $schedule['start_time'] ?? null,
+                    'end_time' => $schedule['end_time'] ?? null,
+                    'day' => $dayOfWeek,
+                    'day_of_week' => $dayOfWeek,
+                    'status' => $schedule['status'] ?? 'Scheduled',
+                    'schedule_date' => $schedule['schedule_date'] ?? $today,
+                    'schedule_type' => $schedule['schedule_type'] ?? 'Class',
+                    'student_count' => 0
+                ];
+            }
+
+            echo json_encode($result);
+
+        } catch (Exception $e) {
+            error_log("Error in getFacultySchedules: " . $e->getMessage());
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json');
+            echo json_encode([]);
+        }
+    }
+    
+    // ============================================
+    // getAttendanceRecords - Returns JSON
+    // ============================================
+    public function getAttendanceRecords($date) {
+        return $this->getRecords($date);
+    }
 }
+?>

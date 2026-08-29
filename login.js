@@ -73,9 +73,13 @@ form.addEventListener('submit', async function (e) {
     setLoading(true);
 
     try {
+        const redirect = new URLSearchParams(window.location.search).get('redirect');
+        const formData = new FormData(form);
+        if (redirect) formData.append('redirect', redirect);
+
         const response = await fetch('auth/login.php', {   // no leading slash
         method: 'POST',
-        body: new FormData(form)
+        body: formData
     });
 
         // Guard against non-JSON responses (e.g. PHP errors)

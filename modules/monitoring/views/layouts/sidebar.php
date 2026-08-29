@@ -6,7 +6,7 @@
 <div class="col-md-2 sidebar-enhanced">
     <div class="sidebar-wrapper">
         
-        <!-- User Profile Header Section (Matched to Image) -->
+        <!-- User Profile Header Section -->
         <div class="user-header-section">
             <div class="header-top-actions">
                 <div class="school-logo">
@@ -148,12 +148,11 @@
     </div>
 </div>
 
-<!-- Exact Color & Font Styles Matching Target Image -->
 <style>
 .sidebar-enhanced {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     min-height: 100vh;
-    background: #1a337e; /* Exact deep royal blue tone from student portal */
+    background: #19006b; /* Updated sidebar background */
     padding: 0;
     position: sticky;
     top: 0;
@@ -171,7 +170,7 @@
 /* User Header Section */
 .user-header-section {
     padding: 18px 20px 22px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .header-top-actions {
@@ -190,7 +189,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    color: #a3b8e0;
+    color: #c7c4f0;
     font-size: 1.2rem;
 }
 
@@ -217,7 +216,7 @@
     height: 8px;
     background: #22c55e;
     border-radius: 50%;
-    border: 1.5px solid #1a337e;
+    border: 1.5px solid #19006b;
 }
 
 /* Avatar Circle */
@@ -232,7 +231,7 @@
     width: 90px;
     height: 90px;
     border-radius: 50%;
-    background: #2d3e52; /* Dark slate circle */
+    background: #334354; /* Updated avatar background */
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -253,7 +252,7 @@
 }
 
 .user-email {
-    color: #8fa3cf;
+    color: #c7c4f0;
     font-size: 0.8rem;
     font-weight: 500;
 }
@@ -271,7 +270,7 @@
 }
 
 .nav-section-label .section-title {
-    color: #7f95ff; /* Bright violet-blue header text */
+    color: #ffffff; /* Updated header title */
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.6px;
@@ -279,7 +278,7 @@
 }
 
 .nav-section-label .section-subtitle {
-    color: #8fa3cf; /* Soft blue subtitle text */
+    color: #c7c4f0; /* Updated subtext */
     font-size: 0.7rem;
     font-weight: 500;
     margin-top: 2px;
@@ -310,13 +309,13 @@
 }
 
 .nav .nav-link:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
 }
 
-/* Active Nav Link (Matched to Dashboard item in image) */
+/* Active Nav Link */
 .nav .nav-link.active {
-    background: #335099; /* Solid lighter slate-blue active pill */
+    background: #4d49b6; /* Updated active pill color */
     color: #ffffff;
     font-weight: 700;
 }
@@ -325,18 +324,18 @@
     margin-left: auto;
     transition: transform 0.3s ease;
     font-size: 0.72rem;
-    color: #a3b8e0;
+    color: #c7c4f0;
 }
 
 .nav .nav-link .dropdown-arrow.open {
     transform: rotate(180deg);
 }
 
-/* Yellow Badge (Matched to BETA badge in image) */
+/* Yellow Badge */
 .badge-beta {
     margin-left: auto;
     margin-right: 6px;
-    background: #ffbe00; /* Gold-yellow pill */
+    background: #ffbe00;
     color: #0d172a;
     font-size: 0.62rem;
     font-weight: 800;
@@ -365,7 +364,7 @@
 }
 
 .sub-nav-link {
-    color: #d1dcff;
+    color: #c7c4f0;
     padding: 9px 14px;
     margin: 2px 0;
     border-radius: 6px;
@@ -383,7 +382,7 @@
     font-size: 1rem;
     width: 20px;
     text-align: center;
-    color: #a3b8e0;
+    color: #c7c4f0;
 }
 
 .sub-nav-link:hover {
@@ -403,12 +402,12 @@
 }
 
 .divider {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
     margin: 10px 0 14px 0;
 }
 
 .logout-btn {
-    color: #d1dcff;
+    color: #c7c4f0;
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -432,7 +431,7 @@
 .sidebar-footer {
     text-align: center;
     padding-top: 10px;
-    color: #7f95c5;
+    color: #c7c4f0;
     font-size: 0.65rem;
     font-weight: 500;
 }
@@ -446,7 +445,6 @@
 }
 </style>
 
-<!-- Vanilla JavaScript Dropdown Toggle Logic -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     function setupDropdown(toggleId, menuId, arrowId) {
@@ -463,11 +461,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize Dropdowns
     setupDropdown('attendanceToggle', 'attendanceSubMenu', 'attendanceArrow');
     setupDropdown('reportsToggle', 'reportsSubMenu', 'reportsArrow');
 
-    // Logout Prompt
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {

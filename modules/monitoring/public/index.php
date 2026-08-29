@@ -1,4 +1,5 @@
 <?php
+define('MONITORING_ROOT', dirname(__DIR__));
 // Start session for authentication
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -103,7 +104,9 @@ if (is_numeric($action)) {
 
 // Public frontend routes and auth routes
 $publicRoutes = ['login', 'home', 'register', 'timeout'];
+$publicMobileRoutes = ['mobile-attendance', 'mobile-facilities', 'register'];
 $isPublicRoute = in_array($controller, $publicRoutes) || ($controller === 'auth' && in_array($action, ['login', 'check']));
+$isPublicMobileRoute = !$isApiRequest && in_array($controller, $publicMobileRoutes, true);
 
 $hasValidSession = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
@@ -118,7 +121,7 @@ if (!$isApiRequest && $controller === 'home' && $action === 'index') {
         header('Location: /dashboard');
         exit;
     }
-    header('Location: /login');
+    header('Location: /');
     exit;
 }
 
@@ -129,11 +132,7 @@ if (!$isApiRequest && $controller === 'login') {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
     header('Expires: 0');
-    if ($hasValidSession) {
-        header('Location: /dashboard');
-        exit;
-    }
-    include '../views/login.php';
+    header('Location: /');
     exit;
 }
 
@@ -141,7 +140,7 @@ if (!$isApiRequest && $controller === 'login') {
 // Handle Public Views (no auth required)
 // ============================================
 if (!$isApiRequest && in_array($controller, ['register', 'timeout'])) {
-    $viewFile = "../views/{$controller}.php";
+    $viewFile = MONITORING_ROOT . "/views/{$controller}.php";
     if (file_exists($viewFile)) {
         header('Content-Type: text/html; charset=utf-8');
         include $viewFile;
@@ -168,7 +167,7 @@ if (!$isApiRequest && $hasValidSession) {
             if ($id) {
                 $redirect .= '/' . $id;
             }
-            header('Location: /login?redirect=' . urlencode($redirect));
+            header('Location: /?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
             exit;
         }
 
@@ -185,7 +184,7 @@ if (!$isApiRequest && $hasValidSession) {
             if ($id) {
                 $redirect .= '/' . $id;
             }
-            header('Location: /login?redirect=' . urlencode($redirect));
+            header('Location: /?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
             exit;
         }
         $_SESSION['sensitive_last_activity'] = time();
@@ -195,7 +194,7 @@ if (!$isApiRequest && $hasValidSession) {
 // ============================================
 // Protect ALL frontend routes if not logged in
 // ============================================
-if (!$isApiRequest && !$hasValidSession) {
+if (!$isApiRequest && !$hasValidSession && !$isPublicMobileRoute) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
     header('Expires: 0');
@@ -206,13 +205,13 @@ if (!$isApiRequest && !$hasValidSession) {
     if ($id) {
         $redirect .= '/' . $id;
     }
-    header('Location: /login?redirect=' . urlencode($redirect));
+    header('Location: /?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
     exit;
 }
 
 // Handle API auth check
 if ($isApiRequest && $controller === 'auth' && $action === 'check') {
-    require_once '../controllers/AuthController.php';
+    require_once MONITORING_ROOT . '/controllers/AuthController.php';
     $authController = new AuthController();
     $result = $authController->checkAuth();
     header('Content-Type: application/json');
@@ -227,7 +226,10 @@ $publicApiRoutes = [
     'visitor/register',
     'visitor/checkout-by-identifier',
     'auth/login',
-    'auth/check'
+    'auth/check',
+    'schedule/mobile-view',
+    'attendance/mark',
+    'facility/report'
 ];
 
 $isPublicApiRoute = false;
@@ -271,7 +273,7 @@ if ($isApiRequest) {
     
     switch ($controller) {
         case 'auth':
-            require_once '../controllers/AuthController.php';
+            require_once MONITORING_ROOT . '/controllers/AuthController.php';
             $authController = new AuthController();
             if ($action === 'login' && $method === 'POST') {
                 $employeeId = $_POST['employee_id'] ?? '';
@@ -281,7 +283,7 @@ if ($isApiRequest) {
             } elseif ($action === 'logout' && ($method === 'GET' || $method === 'POST')) {
                 $authController->logout();
                 if ($method === 'GET') {
-                    header('Location: /login');
+                    header('Location: /');
                     exit;
                 }
                 echo json_encode(['success' => true]);
@@ -289,7 +291,7 @@ if ($isApiRequest) {
             break;
             
         case 'dashboard':
-            require_once '../controllers/DashboardController.php';
+            require_once MONITORING_ROOT . '/controllers/DashboardController.php';
             $dashboardController = new DashboardController();
             if ($method === 'GET') {
                 $data = $dashboardController->getDashboardData();
@@ -297,79 +299,74 @@ if ($isApiRequest) {
             }
             break;
             
-        case 'attendance':
-            require_once '../controllers/AttendanceController.php';
-            $attendanceController = new AttendanceController();
+         case 'attendance':
+    require_once MONITORING_ROOT . '/controllers/AttendanceController.php';
+    $attendanceController = new AttendanceController();
+    
+    if ($method === 'GET') {
+        $date = $_GET['date'] ?? null;
+        $day = $_GET['day'] ?? null;
+        $faculty = $_GET['faculty'] ?? null;
+        
+        if ($action === 'online') {
+            // ✅ FIX: Controller already echoes JSON, just call it
+            $attendanceController->getOnlineClasses($date);
             
-            if ($method === 'GET') {
-                $date = $_GET['date'] ?? null;
-                $day = $_GET['day'] ?? null;
-                $faculty = $_GET['faculty'] ?? null;
-                
-                if ($action === 'schedules' || $action === '') {
-                    if ($date) {
-                        $result = $attendanceController->getSchedules($date);
-                    } elseif ($day) {
-                        $result = $attendanceController->getSchedulesByDay($day);
-                    } elseif ($faculty) {
-                        $result = $attendanceController->getFacultySchedules($faculty);
-                    } else {
-                        $result = $attendanceController->getSchedules(date('Y-m-d'));
-                    }
-                    echo json_encode($result);
-                    
-                } elseif ($action === 'records') {
-                    if ($date) {
-                        $result = $attendanceController->getAttendanceRecords($date);
-                    } elseif ($day) {
-                        $result = $attendanceController->getAttendanceRecordsByDay($day);
-                    } else {
-                        $result = $attendanceController->getAttendanceRecords(date('Y-m-d'));
-                    }
-                    echo json_encode($result);
-                    
-                } elseif ($action === 'online') {
-                    $result = $attendanceController->getOnlineClasses($date);
-                    echo json_encode($result);
-                    
-                } elseif ($action === 'archive') {
-                    $faculty = $_GET['faculty'] ?? null;
-                    $result = $attendanceController->getArchivedRecords($faculty);
-                    echo json_encode($result);
-                    
-                } elseif ($action === 'delete' && !empty($id)) {
-                    $result = $attendanceController->deleteRecord($id);
-                    echo json_encode($result);
-                    
-                } else {
-                    echo json_encode(['error' => 'Invalid attendance endpoint', 'action' => $action]);
-                }
-                
-            } elseif ($method === 'POST') {
-                if ($action === 'mark') {
-                    $result = $attendanceController->markAttendance($postData, $uploadedFiles);
-                    echo json_encode($result);
-                } elseif ($action === 'archive') {
-                    $result = $attendanceController->archiveRecords($postData);
-                    echo json_encode($result);
-                } elseif ($action === 'restore') {
-                    $result = $attendanceController->restoreRecords($postData);
-                    echo json_encode($result);
-                } else {
-                    echo json_encode(['error' => 'Invalid attendance POST endpoint']);
-                }
-            } elseif ($method === 'DELETE') {
-                if ($action === 'record' && !empty($id)) {
-                    $result = $attendanceController->deleteRecord($id);
-                    echo json_encode($result);
-                } else {
-                    echo json_encode(['error' => 'Invalid attendance DELETE endpoint']);
-                }
+        } elseif ($action === 'schedules' || $action === '') {
+            if ($date) {
+                $attendanceController->getSchedules($date);
+            } elseif ($day) {
+                $attendanceController->getSchedulesByDay($day);
+            } elseif ($faculty) {
+                $attendanceController->getFacultySchedules($faculty);
+            } else {
+                $attendanceController->getSchedules(date('Y-m-d'));
             }
-            break;
+            
+        } elseif ($action === 'records') {
+            if ($date) {
+                $attendanceController->getAttendanceRecords($date);
+            } elseif ($day) {
+                $attendanceController->getAttendanceRecordsByDay($day);
+            } else {
+                $attendanceController->getAttendanceRecords(date('Y-m-d'));
+            }
+            
+        } elseif ($action === 'archive') {
+            $faculty = $_GET['faculty'] ?? null;
+            $attendanceController->getArchivedRecords($faculty);
+            
+        } elseif ($action === 'delete' && !empty($id)) {
+            $attendanceController->deleteRecord($id);
+            
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Invalid attendance endpoint', 'action' => $action]);
+        }
+        
+    } elseif ($method === 'POST') {
+        if ($action === 'mark') {
+            $attendanceController->markAttendance($postData, $uploadedFiles);
+        } elseif ($action === 'archive') {
+            $attendanceController->archiveRecords($postData);
+        } elseif ($action === 'restore') {
+            $attendanceController->restoreRecords($postData);
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Invalid attendance POST endpoint']);
+        }
+    } elseif ($method === 'DELETE') {
+        if ($action === 'record' && !empty($id)) {
+            $attendanceController->deleteRecord($id);
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Invalid attendance DELETE endpoint']);
+        }
+    }
+    break;
 
         case 'schedule':
-            require_once '../controllers/ScheduleController.php';
+            require_once MONITORING_ROOT . '/controllers/ScheduleController.php';
             $scheduleController = new ScheduleController();
             
             if ($method === 'GET') {
@@ -392,7 +389,7 @@ if ($isApiRequest) {
             break;
             
         case 'facility':
-            require_once '../controllers/FacilityController.php';
+            require_once MONITORING_ROOT . '/controllers/FacilityController.php';
             $facilityController = new FacilityController();
             
             if ($method === 'GET') {
@@ -463,7 +460,7 @@ if ($isApiRequest) {
             break;
             
         case 'visitor':
-            require_once '../controllers/VisitorController.php';
+            require_once MONITORING_ROOT . '/controllers/VisitorController.php';
             $visitorController = new VisitorController();
             
             if ($method === 'GET') {
@@ -557,7 +554,7 @@ if ($isApiRequest) {
             break;
             
         case 'report':
-            require_once '../controllers/ReportController.php';
+            require_once MONITORING_ROOT . '/controllers/ReportController.php';
             $reportController = new ReportController();
             
             if ($method === 'GET') {
@@ -607,25 +604,27 @@ if ($isApiRequest) {
 // ============================================
 // HANDLE FRONTEND VIEWS (HTML)
 // ============================================
-$allowedViews = ['dashboard', 'attendance', 'facilities', 'visitors', 'reports', 'online-classes', 'archive', 'qrcode', 'mobile-attendance', 'mobile-facilities'];
+$allowedViews = ['dashboard', 'attendance', 'facilities', 'visitors', 'reports', 'online-classes', 'archive', 'qrcode', 'mobile-attendance', 'mobile-facilities','register'];
 $viewFile = null;
 
 if ($controller === 'home' || $controller === '') {
     if (isset($_SESSION['user_id'])) {
-        $viewFile = '../views/dashboard.php';
+        $viewFile = MONITORING_ROOT . '/views/dashboard.php';
     } else {
-        include '../views/login.php';
+        header('Location: /');
+        exit;
         exit;
     }
 } elseif (in_array($controller, $allowedViews)) {
-    $viewFile = "../views/{$controller}.php";
+    $viewFile = MONITORING_ROOT . "/views/{$controller}.php";
 } elseif (in_array($action, $allowedViews)) {
-    $viewFile = "../views/{$action}.php";
+    $viewFile = MONITORING_ROOT . "/views/{$action}.php";
 } else {
     if (isset($_SESSION['user_id'])) {
-        $viewFile = '../views/dashboard.php';
+        $viewFile = MONITORING_ROOT . '/views/dashboard.php';
     } else {
-        include '../views/login.php';
+        header('Location: /');
+        exit;
         exit;
     }
 }

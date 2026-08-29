@@ -3,7 +3,7 @@ require_once 'Model.php';
 
 class Schedule extends Model {
     protected $table = 'cc_schedule';
-    private bool $isRelational = false;
+    private bool $isRelational = true;
 
     public function __construct() {
         parent::__construct();

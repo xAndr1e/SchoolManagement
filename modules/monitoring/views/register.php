@@ -774,7 +774,7 @@
         // ============================================
         // CONFIGURATION
         // ============================================
-        const API_BASE = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '') + '/api';
+        const API_BASE = window.location.origin + '/modules/monitoring/public/index.php?api=';
         const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
         const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
         let visitorId = null;

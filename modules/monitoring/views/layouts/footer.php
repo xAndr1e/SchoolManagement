@@ -227,7 +227,7 @@ $(document).ready(function() {
         console.error('AJAX Error:', error);
         if (jqXHR.status === 401) {
             // Session expired - redirect to login
-            window.location.href = '/login';
+            window.location.href = '/';
         }
     });
     

@@ -2121,27 +2121,8 @@ createApp({
         }
 
         async function openFaceToFaceCamera() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                if (faceToFaceCameraInput.value) faceToFaceCameraInput.value.click();
-                return;
-            }
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: 'environment' } },
-                    audio: false
-                });
-                cameraStream = stream;
-                showCameraCapture.value = true;
-                await nextTick();
-                if (cameraVideo.value) {
-                    cameraVideo.value.srcObject = stream;
-                    await cameraVideo.value.play();
-                }
-            } catch (e) {
-                console.error('Camera error:', e);
-                showToast('Could not open the camera — pick a photo instead', 'warning');
-                if (faceToFaceInput.value) faceToFaceInput.value.click();
-            }
+            // Native capture works on phone HTTP/LAN pages where getUserMedia is blocked.
+            if (faceToFaceCameraInput.value) faceToFaceCameraInput.value.click();
         }
 
         function stopFaceToFaceCameraStream() {
@@ -2206,11 +2187,11 @@ async function loadMobileData(opts = {}) {
 
     try {
         // Changed absolute URL to relative URL
-        const response = await fetch('api/schedule/mobile-view');
+        const response = await fetch('index.php?api=schedule/mobile-view');
 
         if (!response.ok) {
             if (response.status === 401 || response.status === 302) {
-                window.location.href = 'login';
+                window.location.href = '/';
                 return;
             }
             throw new Error('HTTP error: ' + response.status);
@@ -2278,7 +2259,7 @@ async function submitMobileAttendance() {
         if (uploadedFile.value) formData.append('meeting_screenshot', uploadedFile.value);
 
         // Changed absolute URL to relative URL
-        const response = await fetch('api/attendance/mark', {
+        const response = await fetch('index.php?api=attendance/mark', {
             method: 'POST',
             body: formData
         });
@@ -2329,7 +2310,7 @@ async function syncAll() {
     for (const schedule of syncable) {
         try {
             // Changed absolute URL to relative URL
-            const response = await fetch('api/attendance/mark', {
+            const response = await fetch('index.php?api=attendance/mark', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2421,7 +2402,7 @@ async function syncAll() {
                 if (faceToFaceFile.value) formData.append('face_to_face_image', faceToFaceFile.value);
                 if (uploadedFile.value) formData.append('meeting_screenshot', uploadedFile.value);
 
-                const response = await fetch('/api/attendance/mark', {
+                const response = await fetch('/modules/monitoring/public/index.php?api=attendance/mark', {
                     method: 'POST',
                     body: formData
                 });
@@ -2498,7 +2479,7 @@ async function syncAll() {
             let successCount = 0;
             for (const schedule of syncable) {
                 try {
-                    const response = await fetch('/api/attendance/mark', {
+                    const response = await fetch('/modules/monitoring/public/index.php?api=attendance/mark', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

@@ -14,6 +14,15 @@ class Attendance extends Model {
             'verification_method', 'remarks'
         ];
     }
+
+    private function isRelationalSchedule(): bool {
+        try {
+            $stmt = $this->db->query("SHOW COLUMNS FROM cc_schedule LIKE 'faculty_id'");
+            return (bool) $stmt->fetch();
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
     
     public function getByDate($date) {
         try {
@@ -71,6 +80,62 @@ class Attendance extends Model {
         }
     }
     
+    // ============================================
+    // FIXED: getOnlineClasses - Returns Array
+    // ============================================
+    public function getOnlineClasses($date = null) {
+        try {
+            $isRelational = $this->isRelationalSchedule();
+
+            if ($isRelational) {
+                $sql = "
+                    SELECT ar.*, 
+                           COALESCE(CONCAT(f.first_name, ' ', f.last_name), ar.faculty_name) AS faculty_name,
+                           COALESCE(sec.section_code, ar.course_section) AS course_section,
+                           COALESCE(sub.code, ar.subject_code) AS subject_code,
+                           COALESCE(r.room_name, ar.room) AS room
+                    FROM mon_attendance_records ar
+                    LEFT JOIN cc_schedule s ON ar.schedule_id = s.id
+                    LEFT JOIN cc_faculty f ON s.faculty_id = f.id
+                    LEFT JOIN cc_sections sec ON s.section_id = sec.id
+                    LEFT JOIN rgr_subjects sub ON s.subject_id = sub.id
+                    LEFT JOIN cc_room r ON s.room_id = r.id
+                    WHERE ar.is_online = 1";
+
+                if ($date) {
+                    $sql .= " AND ar.attendance_date = ?";
+                }
+                $sql .= " ORDER BY ar.attendance_date DESC, ar.check_time DESC";
+
+                $stmt = $this->db->prepare($sql);
+                if ($date) {
+                    $stmt->execute([$date]);
+                } else {
+                    $stmt->execute();
+                }
+                return $stmt->fetchAll();
+            }
+
+            $sql = "SELECT * FROM mon_attendance_records WHERE is_online = 1";
+            if ($date) {
+                $sql .= " AND attendance_date = ?";
+            }
+            $sql .= " ORDER BY attendance_date DESC, check_time DESC";
+
+            $stmt = $this->db->prepare($sql);
+            if ($date) {
+                $stmt->execute([$date]);
+            } else {
+                $stmt->execute();
+            }
+            return $stmt->fetchAll();
+
+        } catch (PDOException $e) {
+            error_log("Error getting online classes: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function archive($id, $archivedBy) {
         try {
             $record = $this->getById($id);
@@ -151,60 +216,35 @@ class Attendance extends Model {
             return ['success' => false, 'errors' => ['Archive failed: ' . $e->getMessage()]];
         }
     }
-    
-    public function getOnlineClasses($date = null) {
-        try {
-            $sql = "SELECT * FROM mon_attendance_records WHERE is_online = 1";
-            if ($date) {
-                $sql .= " AND attendance_date = ?";
-            }
-            $sql .= " ORDER BY attendance_date DESC";
-            
-            $stmt = $this->db->prepare($sql);
-            if ($date) {
-                $stmt->execute([$date]);
-            } else {
-                $stmt->execute();
-            }
-            return $stmt->fetchAll();
-            
-        } catch (PDOException $e) {
-            error_log("Error getting online classes: " . $e->getMessage());
-            return [];
-        }
-    }
 
     public function autoArchivePreviousDays() {
-    $today = date('Y-m-d');
-    try {
-        // Find records older than today
-        $stmt = $this->db->prepare("SELECT * FROM mon_attendance_records WHERE attendance_date < ?");
-        $stmt->execute([$today]);
-        $records = $stmt->fetchAll();
-        
-        foreach ($records as $row) {
-            // Insert into archive
-            $archiveStmt = $this->db->prepare("
-                INSERT INTO mon_attendance_archive 
-                (original_id, schedule_id, faculty_name, course_section, subject_code, room, student_count, attendance_date, check_time, status, is_online, meeting_link, meeting_screenshot, verified_by, verification_method, remarks, archived_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Auto-System')
-            ");
-            $archiveStmt->execute([
-                $row['id'], $row['schedule_id'], $row['faculty_name'], $row['course_section'], 
-                $row['subject_code'], $row['room'], $row['student_count'], $row['attendance_date'], 
-                $row['check_time'], $row['status'], $row['is_online'], $row['meeting_link'], 
-                $row['meeting_screenshot'], $row['verified_by'], $row['verification_method'], $row['remarks']
-            ]);
+        $today = date('Y-m-d');
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM mon_attendance_records WHERE attendance_date < ?");
+            $stmt->execute([$today]);
+            $records = $stmt->fetchAll();
+            
+            foreach ($records as $row) {
+                $archiveStmt = $this->db->prepare("
+                    INSERT INTO mon_attendance_archive 
+                    (original_id, schedule_id, faculty_name, course_section, subject_code, room, student_count, attendance_date, check_time, status, is_online, meeting_link, meeting_screenshot, verified_by, verification_method, remarks, archived_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Auto-System')
+                ");
+                $archiveStmt->execute([
+                    $row['id'], $row['schedule_id'], $row['faculty_name'], $row['course_section'], 
+                    $row['subject_code'], $row['room'], $row['student_count'], $row['attendance_date'], 
+                    $row['check_time'], $row['status'], $row['is_online'], $row['meeting_link'], 
+                    $row['meeting_screenshot'], $row['verified_by'], $row['verification_method'], $row['remarks']
+                ]);
+            }
+            
+            $del = $this->db->prepare("DELETE FROM mon_attendance_records WHERE attendance_date < ?");
+            $del->execute([$today]);
+            return true;
+        } catch (PDOException $e) {
+            error_log("Auto-archive attendance error: " . $e->getMessage());
+            return false;
         }
-        
-        // Delete original past records
-        $del = $this->db->prepare("DELETE FROM mon_attendance_records WHERE attendance_date < ?");
-        $del->execute([$today]);
-        return true;
-    } catch (PDOException $e) {
-        error_log("Auto-archive attendance error: " . $e->getMessage());
-        return false;
     }
-}
 }
 ?>

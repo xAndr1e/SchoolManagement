@@ -24,7 +24,7 @@ class ScheduleController {
         $hasAttendance = $this->attendanceModel->hasAttendance($schedule['id'], $today);
         $attendanceStatus = 'pending';
         $studentCount = 0;
-        
+
         if ($hasAttendance) {
             $records = $this->attendanceModel->getByDate($today);
             foreach ($records as $record) {
@@ -35,22 +35,28 @@ class ScheduleController {
                 }
             }
         }
-        
+
+        $facultyName = $schedule['faculty_name'] ?? 'N/A';
+        $subjectName = $schedule['subject_name'] ?? 'N/A';
+        $subjectCode = $schedule['subject_code'] ?? $subjectName;
+        $sectionName = $schedule['section_name'] ?? ($schedule['course_section'] ?? 'N/A');
+        $roomName = $schedule['room_name'] ?? ($schedule['room'] ?? 'N/A');
+        $dayOfWeek = $schedule['day_of_week'] ?? ($schedule['day'] ?? '');
         $scheduleDate = $schedule['schedule_date'] ?? $today;
 
         return [
-            'id' => $schedule['id'],
-            'faculty_name' => $schedule['faculty_name'] ?? 'N/A',
-            'subject_name' => $schedule['subject_name'] ?? 'N/A',
-            'subject_code' => $schedule['subject_name'] ?? 'N/A',
-            'course_section' => $schedule['section_name'] ?? 'N/A',
-            'section_name' => $schedule['section_name'] ?? 'N/A',
-            'room' => $schedule['room_name'] ?? 'N/A',
-            'room_name' => $schedule['room_name'] ?? 'N/A',
-            'start_time' => $schedule['start_time'],
-            'end_time' => $schedule['end_time'],
-            'day' => $schedule['day_of_week'],
-            'day_of_week' => $schedule['day_of_week'],
+            'id' => (int) ($schedule['id'] ?? 0),
+            'faculty_name' => $facultyName,
+            'subject_name' => $subjectName,
+            'subject_code' => $subjectCode,
+            'course_section' => $sectionName,
+            'section_name' => $sectionName,
+            'room' => $roomName,
+            'room_name' => $roomName,
+            'start_time' => $schedule['start_time'] ?? null,
+            'end_time' => $schedule['end_time'] ?? null,
+            'day' => $dayOfWeek,
+            'day_of_week' => $dayOfWeek,
             'schedule_date' => $scheduleDate,
             'schedule_type' => $schedule['schedule_type'] ?? 'Class',
             'status' => $schedule['status'] ?? 'Scheduled',
@@ -58,7 +64,7 @@ class ScheduleController {
             'attendance_status' => $attendanceStatus,
             'student_count' => $studentCount,
             'is_past' => $scheduleDate < $today,
-            'is_past_time' => $schedule['start_time'] < $currentTime
+            'is_past_time' => !empty($schedule['start_time']) && $schedule['start_time'] < $currentTime
         ];
     }
     

@@ -2,6 +2,7 @@
 include "./database/db.php";
 
 $timeout_message = '';
+$redirect = $_GET['redirect'] ?? '';
 if (isset($_GET['reason']) && $_GET['reason'] === 'timeout') {
     $timeout_message = '<p class="error-message" id="errorMsg">Your session has expired. Please log in again.</p>';
 }

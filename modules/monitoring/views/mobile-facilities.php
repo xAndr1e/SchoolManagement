@@ -148,7 +148,7 @@ Vue.createApp({
                     formData.append('damage_image', photoFile.value);
                 }
 
-                const response = await fetch('/api/facility/report', {
+                const response = await fetch('/modules/monitoring/public/index.php?api=facility/report', {
                     method: 'POST',
                     body: formData
                 });

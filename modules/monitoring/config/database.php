@@ -1,5 +1,5 @@
 <?php
-return [
+/*return [
     'host' => getenv('DB_HOST') ?: '127.0.0.1',
     'dbname' => getenv('DB_NAME') ?: 'monitoring',
     'username' => getenv('DB_USER') ?: 'root',

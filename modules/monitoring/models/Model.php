@@ -10,7 +10,7 @@ class Model {
         
         try {
             $this->db = new PDO(
-                "mysql:host=127.0.0.1;dbname=monitoring;charset=utf8mb4",
+                "mysql:host=127.0.0.1;dbname=sms;charset=utf8mb4",
                 "root",
                 "",
                 [

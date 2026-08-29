@@ -97,6 +97,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $role = (int) $user['role'];
 
+        $requestedRedirect = $_POST['redirect'] ?? '';
+        $allowedRedirects = [
+            'modules/monitoring/public/index.php?page=mobile-attendance',
+            'modules/monitoring/public/index.php?page=mobile-facilities',
+        ];
+        if ($role === 7 && in_array($requestedRedirect, $allowedRedirects, true)) {
+            $redirectMap[$role] = $requestedRedirect;
+        }
+
         if (!isset($redirectMap[$role])) {
             echo json_encode(['success' => false, 'locked' => false, 'message' => 'Invalid role.']);
             exit();

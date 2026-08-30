@@ -6,12 +6,6 @@ ob_start();
 ini_set('display_errors', '0'); // never leak raw PHP errors into the JSON response
 error_reporting(E_ALL);
 
-include_once __DIR__ . '/../../../auth/session.php';
-include_once __DIR__ . '/../classes/Report.php';
-include_once __DIR__ . '/../classes/Department.php';
-include_once __DIR__ . '/../classes/User.php';
-include
-
 header('Content-Type: application/json');
 
 function rsm_respond($payload) {
@@ -22,7 +16,35 @@ function rsm_respond($payload) {
     exit;
 }
 
+// Last-resort safety net: catches fatals that happen even outside try/catch
+// (e.g. a parse error while including a file, or memory exhaustion) so the
+// response is always valid JSON instead of an empty/HTML body.
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (ob_get_length() !== false) {
+            ob_end_clean();
+        }
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+        echo json_encode([
+            'success' => false,
+            'message' => 'A fatal server error occurred.',
+            // TEMP debug info — remove the "debug" key once this is fixed.
+            'debug' => $error['message'] . ' in ' . $error['file'] . ':' . $error['line'],
+        ]);
+    }
+});
+
 try {
+    // Includes are inside the try so a parse/fatal error in any of these files
+    // gets caught below and returned as JSON instead of an empty 500 response.
+    include_once __DIR__ . '/../../../auth/session.php';
+    include_once __DIR__ . '/../classes/Report.php';
+    include_once __DIR__ . '/../classes/Department.php';
+    include_once __DIR__ . '/../classes/User.php';
+
     // ── Guard ──────────────────────────────────────────────────────────────
     $userClass = new User();
     $userInfo  = $userClass->userSession();
@@ -171,7 +193,12 @@ try {
     }
 } catch (\Throwable $e) {
     error_log('[ReportController] Unhandled error: ' . $e->getMessage());
-    rsm_respond(['success' => false, 'message' => 'An unexpected server error occurred.']);
+    rsm_respond([
+        'success' => false,
+        'message' => 'An unexpected server error occurred.',
+        // TEMP debug info — remove the "debug" key once things are stable.
+        'debug' => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(),
+    ]);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -3,6 +3,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Load AI config (GEMINI_API_KEY) if present. Wrapped in file_exists() so a
+// missing config file doesn't fatal the whole app — AI summarization just
+// returns its "not configured" message instead.
+$aiConfig = __DIR__ . '/../config/ai_config.php';
+if (file_exists($aiConfig)) {
+    require_once $aiConfig;
+}
+
 $timeout = 1800;
 
 // Helper to detect API/fetch requests

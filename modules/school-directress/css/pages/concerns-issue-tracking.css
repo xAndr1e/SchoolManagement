@@ -78,6 +78,7 @@ Matches Student Monitoring / User Management styling.
     align-items: center;
     gap: 0.6rem;
     margin-top: 1rem;
+    flex-wrap: wrap;
 }
 
 .btn-log {
@@ -119,8 +120,11 @@ Matches Student Monitoring / User Management styling.
     color: var(--color2);
 }
 
-/* ── Issue List Card ───────────────────────────────── */
-
+.btn-cancel:disabled {
+    background: var(--color9);
+    color: var(--color5);
+    cursor: not-allowed;
+}
 
 /* ── List Header ──────────────────────────────────── */
 
@@ -289,6 +293,7 @@ Matches Student Monitoring / User Management styling.
     color: var(--color2);
     font-size: 0.8rem;
     font-weight: 600;
+    font-family: inherit;
     text-decoration: none;
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease;
@@ -310,6 +315,7 @@ Matches Student Monitoring / User Management styling.
     color: var(--color3);
     font-size: 0.8rem;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
     transition: background 0.15s ease;
 }
@@ -341,6 +347,24 @@ Matches Student Monitoring / User Management styling.
     color: var(--color5);
     font-size: 0.72rem;
     font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-draft {
+    border-color: var(--color9);
+    color: var(--color5);
+}
+
+.badge-submitted {
+    border-color: #17a2b8;
+    background: rgba(23, 162, 184, 0.08);
+    color: #17a2b8;
+}
+
+.badge-reviewed {
+    border-color: #b8860b;
+    background: rgba(255, 193, 7, 0.1);
+    color: #b8860b;
 }
 
 .badge-open {
@@ -352,6 +376,12 @@ Matches Student Monitoring / User Management styling.
     border-color: #16a34a;
     background: rgba(22, 163, 74, 0.08);
     color: #16a34a;
+}
+
+.badge-dismissed {
+    border-color: var(--color10);
+    background: rgba(229, 62, 62, 0.08);
+    color: var(--color10);
 }
 
 /* ── Notes ────────────────────────────────────────── */
@@ -392,6 +422,10 @@ Matches Student Monitoring / User Management styling.
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
+.concern-modal-lg {
+    width: 720px;
+}
+
 .concern-modal-header {
     display: flex;
     align-items: center;
@@ -422,6 +456,106 @@ Matches Student Monitoring / User Management styling.
 
 .concern-modal-body {
     padding: 1.6rem;
+}
+
+.concern-modal-body h4 {
+    margin: 1.1rem 0 0.4rem;
+    color: var(--color2);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.concern-modal-body p {
+    margin: 0;
+    color: var(--color2);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* ── Detail rows ───────────────────────────────────── */
+
+.concern-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color9);
+    font-size: 0.85rem;
+}
+
+.concern-detail-row:last-of-type {
+    border-bottom: none;
+}
+
+.concern-detail-label {
+    color: var(--color5);
+    font-weight: 600;
+}
+
+/* ── AI summary box ────────────────────────────────── */
+
+.concern-ai-box {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border: 1px dashed var(--color9);
+    border-radius: 8px;
+    background: rgba(32, 0, 130, 0.02);
+}
+
+.concern-ai-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.concern-ai-box-header strong {
+    color: var(--color2);
+    font-size: 0.82rem;
+}
+
+/* ── Review / resolution box ───────────────────────── */
+
+.concern-review-box {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border-radius: 8px;
+    background: var(--color3);
+    border: 1px solid var(--color9);
+}
+
+.concern-review-box label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--color2);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.concern-review-box textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--color9);
+    border-radius: 7px;
+    background: var(--color3);
+    color: var(--color2);
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+/* ── PDF viewer ────────────────────────────────────── */
+
+.concern-pdf-body {
+    padding: 0;
+    height: 78vh;
+}
+
+.concern-pdf-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
 }
 
 /* ── Responsive ───────────────────────────────────── */
@@ -514,7 +648,12 @@ Matches Student Monitoring / User Management styling.
         width: 100%;
     }
 
-    .concern-modal {
+    .concern-modal,
+    .concern-modal-lg {
         width: 94vw;
+    }
+
+    .concern-pdf-body {
+        height: 65vh;
     }
 }

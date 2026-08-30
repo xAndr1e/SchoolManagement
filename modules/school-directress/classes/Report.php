@@ -177,7 +177,7 @@
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
         // composer require dompdf/dompdf
         public function generatePdf($report_id) {
-            $autoload = __DIR__ . '/../vendor/autoload.php';
+            $autoload = __DIR__ . '/../../../vendor/autoload.php';
             if (!file_exists($autoload)) {
                 // Thrown as a normal Exception (not a fatal require error) so callers
                 // can catch it and still return a valid JSON response.
@@ -256,17 +256,18 @@
             HTML;
         }
 
-        // ── AI SUMMARIZATION ──────────────────────────────────────────
-        // Requires ANTHROPIC_API_KEY in env (or a defined constant of the same name)
+        // ── AI SUMMARIZATION (Google Gemini free tier) ────────────────
+        // Requires GEMINI_API_KEY in env (or a defined constant of the same name).
+        // Get a free key at https://aistudio.google.com/apikey — no credit card required.
         public function generateAiSummary($report_id) {
             $report = $this->getReportById($report_id);
             if (!$report) {
                 return ['success' => false, 'message' => 'Report not found.'];
             }
 
-            $apiKey = getenv('ANTHROPIC_API_KEY') ?: (defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : null);
+            $apiKey = getenv('GEMINI_API_KEY') ?: (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : null);
             if (!$apiKey) {
-                return ['success' => false, 'message' => 'AI summarization is not configured (missing ANTHROPIC_API_KEY).'];
+                return ['success' => false, 'message' => 'AI summarization is not configured (missing GEMINI_API_KEY).'];
             }
 
             $prompt = "Summarize the following school report in 3-4 concise sentences for a school directress reviewing it. "
@@ -277,22 +278,22 @@
                      . "Recommendations: {$report['recommendations']}";
 
             $payload = json_encode([
-                'model'      => 'claude-sonnet-4-6',
-                'max_tokens' => 400,
-                'messages'   => [
-                    ['role' => 'user', 'content' => $prompt],
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]],
+                ],
+                'generationConfig' => [
+                    'maxOutputTokens' => 400,
                 ],
             ]);
 
-            $ch = curl_init('https://api.anthropic.com/v1/messages');
+            $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent');
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST           => true,
                 CURLOPT_POSTFIELDS     => $payload,
                 CURLOPT_HTTPHEADER     => [
                     'Content-Type: application/json',
-                    'x-api-key: ' . $apiKey,
-                    'anthropic-version: 2023-06-01',
+                    'x-goog-api-key: ' . $apiKey,
                 ],
                 CURLOPT_TIMEOUT => 30,
             ]);
@@ -301,15 +302,23 @@
             curl_close($ch);
 
             if ($httpCode !== 200) {
-                return ['success' => false, 'message' => 'AI summarization failed.'];
+                error_log('[Report::generateAiSummary] Gemini API error (' . $httpCode . '): ' . $response);
+                return [
+                    'success' => false,
+                    'message' => 'AI summarization failed.',
+                    // TEMP debug info — remove once things are stable.
+                    'debug' => 'HTTP ' . $httpCode . ': ' . $response,
+                ];
             }
 
             $decoded     = json_decode($response, true);
-            $summaryText = $decoded['content'][0]['text'] ?? null;
+            $summaryText = $decoded['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
             if (!$summaryText) {
                 return ['success' => false, 'message' => 'No summary returned.'];
             }
+
+            $summaryText = trim($summaryText);
 
             $stmt = $this->conn->prepare("UPDATE `sd_reports` SET ai_summary = :ai_summary WHERE report_id = :report_id");
             $stmt->execute([':ai_summary' => $summaryText, ':report_id' => $report_id]);

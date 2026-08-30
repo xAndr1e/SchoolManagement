@@ -273,8 +273,8 @@
 }
 
 .rsm-status-submitted {
-    background: rgba(23, 162, 184, 0.12);
-    color: #17a2b8;
+    background: var(--color1);
+    color: var(--color3);
 }
 
 .rsm-status-reviewed {

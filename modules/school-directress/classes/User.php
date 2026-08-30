@@ -28,6 +28,7 @@ class User {
                         e.last_name,
                         e.middle_name,
                         e.department AS department_id,
+                        d.department_name,
                         r.role_name AS role,
                         e.status
                     FROM `sms_employee` e

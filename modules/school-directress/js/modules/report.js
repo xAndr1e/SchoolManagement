@@ -38,6 +38,7 @@ function initReportModule() {
         document.getElementById('report-id').value = '';
         modalOverlay?.classList.add('active');
     };
+    
     const closeCreateModal = () => {
         modalOverlay?.classList.remove('active');
         const formError = document.getElementById('report-form-error');

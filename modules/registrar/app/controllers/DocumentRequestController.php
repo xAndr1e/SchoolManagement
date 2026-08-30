@@ -64,6 +64,7 @@ use App\Models\Employee;
           'student_id' => $student_id,
           'recipient_type' => 'student',
           'type' => 'document',
+           'reference_id' => $id,
           'title' => 'Request Update',
           'message' => $templated_reason 
          ]);

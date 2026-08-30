@@ -87,7 +87,7 @@
     protected function numberOfNotifications()
     {
         $sql = "SELECT COUNT(*) as notification_counts FROM $this->tableName 
-        WHERE is_read != 1 ";
+        WHERE is_read != 1 AND recipient_type = 'registrar' ";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();

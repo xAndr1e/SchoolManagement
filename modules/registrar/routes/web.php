@@ -1,5 +1,6 @@
 <?php
 
+use App\Controllers\AcademicRecordsController;
 use App\Controllers\CalendarController;
 use App\Controllers\ClassController;
 use App\Controllers\ClassOfferingController;
@@ -312,7 +313,7 @@ $r->get('/class-list/{id:\d+}/schedule',[ClassController::class,'sectionSchedule
 
 // academic records 
 
-
+$r->get('/academic-records',[AcademicRecordsController::class,'index']);
 
 
 // for all 

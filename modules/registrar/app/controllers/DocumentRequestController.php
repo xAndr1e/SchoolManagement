@@ -103,6 +103,7 @@ use App\Models\Employee;
           'student_id' => $student_id,
           'recipient_type' => 'student',
           'type' => 'document',
+          'reference_id' => $id,
           'title' => 'Request Update',
           'message' => 'Great news! Your document submission has been verified. Your application will now move to the processing stage.',
 
@@ -144,6 +145,7 @@ use App\Models\Employee;
           'student_id' => $student_id,
           'recipient_type' => 'student',
           'type' => 'document',
+          'reference_id' => $id,
           'title' => 'Request Update',
           'message' => "Your application is officially under review. Registrar is processing your details, and we will update you once it's complete.",
 
@@ -183,6 +185,7 @@ use App\Models\Employee;
           'student_id' => $student_id,
           'recipient_type' => 'student',
           'type' => 'document',
+          'reference_id' => $id,
           'title' => 'Request Update',
           'message' => "Good news! Your file has been processed successfully and is now ready for release.",
 
@@ -221,6 +224,7 @@ use App\Models\Employee;
           'student_id' => $student_id,
           'recipient_type' => 'student',
           'type' => 'document',
+          'reference_id' => $id,
           'title' => 'Request Update',
           'message' => "Your document is ready for pickup! Please bring a valid ID (and authorization letter if represented) to the Registrar's Office during office hours.",
          ]);

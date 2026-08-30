@@ -463,7 +463,6 @@ document.getElementById("studentsTableBody").addEventListener("click", async fun
 
 
 
-
     // get data from students 
 
     function getData(order, limit, page = 1){

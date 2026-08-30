@@ -157,7 +157,7 @@
                 Recent Enrollees
             </h6>
 
-            <a href="<?= BASE_URL ?>/enrollees"
+            <a href="<?= BASE_URL ?>/students"
                class="btn btn-sm btn-outline-primary">
                 View All
             </a>

@@ -529,3 +529,66 @@
             width: 100%;
         }
     }
+
+    /* ===== Subject Filter Bar Fix — paste at the very end of the file ===== */
+.compact-filter-card .card-body {
+    display: block;
+}
+
+.compact-filter-card .row.g-2 {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+    margin: 0 !important;
+}
+
+.compact-filter-card .filter-col {
+    flex: 1 1 160px !important;
+    min-width: 140px !important;
+    max-width: none !important;
+    width: auto !important;
+}
+
+/* Search box gets more room */
+.compact-filter-card .filter-col:has(#searchSubjects),
+.compact-filter-card .filter-col:has(#searchSections) {
+    flex: 2 1 240px !important;
+}
+
+/* Reset Filters button: don't stretch full width, sits inline at the end */
+.compact-filter-card .filter-col:has(#resetSubjectFilters),
+.compact-filter-card .filter-col:has(#resetSectionFilters) {
+    flex: 0 0 auto !important;
+}
+
+.compact-filter-card #resetSubjectFilters,
+.compact-filter-card #resetSectionFilters {
+    width: auto !important;
+    white-space: nowrap;
+}
+
+.compact-filter-card .form-label {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.compact-filter-card .form-control,
+.compact-filter-card .form-select {
+    width: 100%;
+}
+
+/* Stack vertically only on small screens */
+@media (max-width: 640px) {
+    .compact-filter-card .row.g-2 {
+        flex-direction: column !important;
+    }
+    .compact-filter-card .filter-col,
+    .compact-filter-card .filter-col:has(#resetSubjectFilters),
+    .compact-filter-card .filter-col:has(#resetSectionFilters) {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+    }
+}
+
+/* Modal spacing is now provided by pages/academics-modal-fix.css */

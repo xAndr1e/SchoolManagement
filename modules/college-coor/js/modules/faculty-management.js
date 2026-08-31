@@ -1,4 +1,89 @@
 function initFacultyManagementPage() {
+    console.log('');
+    console.log('===================================================================');
+    console.log('=== initFacultyManagementPage() INITIALIZATION STARTED ===');
+    console.log('===================================================================');
+    console.log('');
+    
+    // DEBUG: Check CSS display rules for modal.show
+    const styleSheets = document.styleSheets;
+    console.log('🔍 CHECKING CSS RULES FOR MODAL DISPLAY...');
+    console.log('Total stylesheets found:', styleSheets.length);
+    console.log('');
+    
+    let modalShowRules = [];
+    let modalRules = [];
+    
+    for (let sheetIdx = 0; sheetIdx < styleSheets.length; sheetIdx++) {
+        const sheet = styleSheets[sheetIdx];
+        let sheetName = sheet.href || 'inline';
+        try {
+            const rules = sheet.cssRules || sheet.rules;
+            if (!rules) continue;
+            
+            for (let ruleIdx = 0; ruleIdx < rules.length; ruleIdx++) {
+                const rule = rules[ruleIdx];
+                if (!rule.selectorText) continue;
+                
+                // Check for .modal.show
+                if (rule.selectorText.includes('.modal.show')) {
+                    console.log(`✓ Found .modal.show rule in ${sheetName}:`);
+                    console.log(`    Selector: ${rule.selectorText}`);
+                    console.log(`    Display: ${rule.style.display || 'NOT SET'}`);
+                    console.log(`    Full CSS Text: ${rule.style.cssText}`);
+                    modalShowRules.push({sheet: sheetName, selector: rule.selectorText, display: rule.style.display});
+                }
+                
+                // Also check for just .modal
+                if (rule.selectorText === '.modal') {
+                    console.log(`✓ Found .modal rule in ${sheetName}:`);
+                    console.log(`    Display: ${rule.style.display || 'NOT SET'}`);
+                    console.log(`    Visibility: ${rule.style.visibility || 'NOT SET'}`);
+                    console.log(`    Full CSS Text: ${rule.style.cssText}`);
+                    modalRules.push({sheet: sheetName, display: rule.style.display});
+                }
+            }
+        } catch (e) {
+            // CORS errors on external stylesheets are expected
+        }
+    }
+    
+    console.log('');
+    if (modalShowRules.length === 0) {
+        console.warn('⚠️ WARNING: No CSS rule for .modal.show found!');
+        console.warn('    The modal will not display when .show class is added!');
+        console.warn('    Check CSS files or add: .modal.show { display: flex; }');
+    } else {
+        console.log(`✓ Found ${modalShowRules.length} .modal.show CSS rule(s)`);
+    }
+    
+    if (modalRules.length === 0) {
+        console.warn('⚠️ WARNING: No CSS rule for .modal found!');
+    } else {
+        console.log(`✓ Found ${modalRules.length} .modal CSS rule(s)`);
+    }
+    
+    // Test: Check actual computed style of modal element
+    console.log('');
+    console.log('🔍 CHECKING ACTUAL MODAL ELEMENT...');
+    const testModal = document.getElementById('fmEngagementDetailsModal');
+    if (testModal) {
+        console.log('✓ Modal element (#fmEngagementDetailsModal) exists in DOM');
+        console.log('  Current classes:', testModal.className);
+        console.log('  Computed display (without .show):', window.getComputedStyle(testModal).display);
+        
+        testModal.classList.add('show');
+        console.log('  Added .show class temporarily...');
+        console.log('  Computed display (with .show):', window.getComputedStyle(testModal).display);
+        testModal.classList.remove('show');
+        console.log('  Removed .show class');
+    } else {
+        console.error('✗ Modal element (#fmEngagementDetailsModal) NOT FOUND in DOM!');
+    }
+    
+    console.log('');
+    console.log('===================================================================');
+    
     const tabButtons = document.querySelectorAll('[data-fm-tab]');
     const panels = document.querySelectorAll('.fm-panel');
 
@@ -112,11 +197,25 @@ function initFacultyManagementPage() {
     const trainingTable = document.getElementById('trainingsTable');
     const trainingFilterButtons = document.querySelectorAll('[data-training-filter]');
     if (trainingSearchInput && trainingTable && trainingFilterButtons.length) {
+        console.log(`✓ Found ${trainingFilterButtons.length} training filter buttons`);
         trainingFilterButtons.forEach(button => {
             button.addEventListener('click', function () {
                 trainingFilter = this.dataset.trainingFilter || 'all';
+                console.log(`📋 FILTER CHANGED TO: "${trainingFilter}"`);
                 trainingFilterButtons.forEach(filterButton => filterButton.classList.toggle('active', filterButton === this));
                 trainingSearchInput.dispatchEvent(new Event('input'));
+                
+                // Debug: Log visible rows after filter
+                setTimeout(() => {
+                    const visibleRows = trainingTable.querySelectorAll('tbody tr:not([style*="display:none"])');
+                    console.log(`  Visible rows after filter: ${visibleRows.length}`);
+                    visibleRows.forEach((row, idx) => {
+                        const recordSource = row.dataset.recordSource;
+                        const recordStatus = row.dataset.recordStatus;
+                        const recordId = row.dataset.recordId;
+                        console.log(`    Row ${idx}: source=${recordSource}, status=${recordStatus}, id=${recordId}`);
+                    });
+                }, 100);
             });
         });
 
@@ -147,7 +246,7 @@ function initFacultyManagementPage() {
         modal.classList.remove('show');
     }
 
-    function openEducationModal(employeeCode, facultyName, department, records) {
+    function openEducationModal(employeeCode, facultyName, department, records, requirements) {
         const modal = document.getElementById('fmEducationModal');
         if (!modal) return;
 
@@ -155,6 +254,7 @@ function initFacultyManagementPage() {
         const facultyNameElement = document.getElementById('fmEducationFacultyName');
         const departmentElement = document.getElementById('fmEducationDepartment');
         const historyBody = document.getElementById('fmEducationHistoryBody');
+        const requirementsBody = document.getElementById('fmEducationRequirementsBody');
 
         employeeIdElement.textContent = employeeCode || 'N/A';
         facultyNameElement.textContent = facultyName || 'N/A';
@@ -162,25 +262,45 @@ function initFacultyManagementPage() {
 
         if (!records || records.length === 0) {
             historyBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding: 18px;">No educational attainment records found.</td></tr>';
-            modal.classList.add('show');
-            return;
+        } else {
+            historyBody.innerHTML = records.map(record => {
+                const degree = record.level || 'N/A';
+                const school = record.school_name || 'N/A';
+                const year = record.year_graduated || 'N/A';
+                const course = record.course || 'N/A';
+
+                return `
+                    <tr>
+                        <td>${course || degree}</td>
+                        <td>${school}</td>
+                        <td>${year}</td>
+                        <td>${degree}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        historyBody.innerHTML = records.map(record => {
-            const degree = record.level || 'N/A';
-            const school = record.school_name || 'N/A';
-            const year = record.year_graduated || 'N/A';
-            const course = record.course || 'N/A';
+        if (!requirements || requirements.length === 0) {
+            requirementsBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding: 18px;">No faculty requirement records found.</td></tr>';
+        } else {
+            requirementsBody.innerHTML = requirements.map(requirement => {
+                const requirementName = requirement.requirement_name || 'N/A';
+                const status = requirement.status || 'N/A';
+                const remarks = requirement.remarks || 'N/A';
+                const submittedDate = requirement.submitted_date || 'N/A';
+                const followUpDate = requirement.follow_up_date || 'N/A';
 
-            return `
-                <tr>
-                    <td>${course || degree}</td>
-                    <td>${school}</td>
-                    <td>${year}</td>
-                    <td>${degree}</td>
-                </tr>
-            `;
-        }).join('');
+                return `
+                    <tr>
+                        <td>${requirementName}</td>
+                        <td>${renderRequirementStatus(status)}</td>
+                        <td>${remarks}</td>
+                        <td>${submittedDate}</td>
+                        <td>${followUpDate}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
         modal.classList.add('show');
     }
@@ -324,9 +444,99 @@ function initFacultyManagementPage() {
         modal.classList.remove('show');
     }
 
-    document.querySelectorAll('.view-profile-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const row = this.closest('tr');
+    function openEngagementDetailsModal(engagementData, employeeData) {
+        console.log('');
+        console.log('=== openEngagementDetailsModal() CALLED ===');
+        console.log('  engagementData:', engagementData);
+        console.log('  employeeData:', employeeData);
+        
+        const modal = document.getElementById('fmEngagementDetailsModal');
+        console.log('Modal element (#fmEngagementDetailsModal) found:', !!modal);
+        if (!modal) {
+            console.log('✗✗✗ CRITICAL ERROR: Modal #fmEngagementDetailsModal NOT FOUND in DOM!');
+            console.log('Check if modal HTML was added to faculty-management.php');
+            return;
+        }
+
+        const emptyState = document.getElementById('fmEngagementDetailsEmpty');
+        const content = document.getElementById('fmEngagementDetailsContent');
+        console.log('  emptyState (#fmEngagementDetailsEmpty) found:', !!emptyState);
+        console.log('  content (#fmEngagementDetailsContent) found:', !!content);
+        
+        if (!engagementData || !employeeData) {
+            console.log('WARNING: No data provided, showing empty state');
+            if (emptyState) emptyState.style.display = 'block';
+            if (content) content.style.display = 'none';
+            modal.classList.add('show');
+            console.log('Modal classes after add:', modal.className);
+            console.log('Computed display (should be flex/block):', window.getComputedStyle(modal).display);
+            console.log('Computed visibility:', window.getComputedStyle(modal).visibility);
+            console.log('Computed opacity:', window.getComputedStyle(modal).opacity);
+            return;
+        }
+
+        const facultyName = `${employeeData.first_name || ''} ${employeeData.middle_name || ''} ${employeeData.last_name || ''}`.trim();
+        console.log('Faculty name constructed:', facultyName);
+        console.log('Setting content fields...');
+        
+        try {
+            document.getElementById('fmEngagementDetailsEmployeeId').textContent = employeeData.employee_id || 'N/A';
+            document.getElementById('fmEngagementDetailsFacultyName').textContent = facultyName || 'N/A';
+            document.getElementById('fmEngagementDetailsType').textContent = engagementData.engagement_type || 'N/A';
+            document.getElementById('fmEngagementDetailsStatus').textContent = engagementData.status || 'N/A';
+            document.getElementById('fmEngagementDetailsTitle').textContent = engagementData.title || 'N/A';
+            document.getElementById('fmEngagementDetailsOrganization').textContent = engagementData.organization || 'N/A';
+            document.getElementById('fmEngagementDetailsStartDate').textContent = engagementData.start_date || 'N/A';
+            document.getElementById('fmEngagementDetailsEndDate').textContent = engagementData.end_date || 'N/A';
+            console.log('✓ All text content fields set successfully');
+        } catch (error) {
+            console.log('✗ Error setting text content:', error.message);
+        }
+
+        const certGenContainer = document.getElementById('fmEngagementDetailsCertGenContainer');
+        if (engagementData.certificate_generated_at && engagementData.certificate_generated_at !== 'N/A' && engagementData.certificate_generated_at !== '') {
+            if (certGenContainer) certGenContainer.style.display = 'block';
+            document.getElementById('fmEngagementDetailsCertGenDate').textContent = engagementData.certificate_generated_at;
+            console.log('✓ Certificate section shown with date:', engagementData.certificate_generated_at);
+        } else {
+            if (certGenContainer) certGenContainer.style.display = 'none';
+            console.log('Certificate section hidden (no date)');
+        }
+
+        if (emptyState) emptyState.style.display = 'none';
+        if (content) content.style.display = 'block';
+        
+        console.log('');
+        console.log('=== ADDING "show" CLASS TO MODAL ===');
+        console.log('Modal classes BEFORE:', modal.className);
+        console.log('Modal display BEFORE:', window.getComputedStyle(modal).display);
+        
+        modal.classList.add('show');
+        
+        console.log('Modal classes AFTER:', modal.className);
+        console.log('Modal display AFTER:', window.getComputedStyle(modal).display);
+        console.log('Modal visibility AFTER:', window.getComputedStyle(modal).visibility);
+        console.log('Modal opacity AFTER:', window.getComputedStyle(modal).opacity);
+        console.log('Modal position AFTER:', window.getComputedStyle(modal).position);
+        console.log('Modal z-index AFTER:', window.getComputedStyle(modal).zIndex);
+        console.log('');
+        console.log('✓✓✓ Modal should now be visible ✓✓✓');
+    }
+
+    function closeEngagementDetailsModal() {
+        const modal = document.getElementById('fmEngagementDetailsModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+    }
+
+    // Use event delegation for table action buttons so listeners survive DOM re-renders
+    // Credentials table: handle profile view
+    const credentialsTable = document.getElementById('credentialsTable');
+    if (credentialsTable) {
+        credentialsTable.addEventListener('click', function (e) {
+            const btn = e.target.closest('.view-profile-btn');
+            if (!btn) return;
+            const row = btn.closest('tr');
             if (!row) return;
 
             openProfileModal({
@@ -340,12 +550,18 @@ function initFacultyManagementPage() {
                 employmentStatus: row.dataset.employmentStatus || row.cells[5]?.textContent || ''
             });
         });
-    });
+    }
 
-    document.querySelectorAll('.view-attainment-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const row = this.closest('tr');
+    // Attainment table: handle attainment view
+    const attainmentTable = document.getElementById('attainmentTable');
+    if (attainmentTable) {
+        attainmentTable.addEventListener('click', function (e) {
+            const btn = e.target.closest('.view-attainment-btn');
+            if (!btn) return;
+            const row = btn.closest('tr');
             if (!row) return;
+
+            const employeeId = row.dataset.employeeId || row.dataset.employeeCode || row.cells[0]?.textContent || '';
 
             let records = [];
             try {
@@ -354,36 +570,185 @@ function initFacultyManagementPage() {
                 records = [];
             }
 
-            openEducationModal(
+            const fallbackOpen = () => openEducationModal(
                 row.dataset.employeeCode || row.cells[0]?.textContent || 'N/A',
                 row.dataset.facultyName || row.cells[1]?.textContent || 'N/A',
                 row.dataset.department || 'Not provided',
-                records
+                records,
+                []
             );
-        });
-    });
 
-    document.querySelectorAll('.view-training-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const row = this.closest('tr');
-            if (!row) return;
-
-            let records = [];
-            try {
-                records = JSON.parse(row.dataset.records || '[]');
-            } catch (error) {
-                records = [];
+            if (!employeeId) {
+                fallbackOpen();
+                return;
             }
 
-            openTrainingModal(
-                row.dataset.employeeCode || row.cells[0]?.textContent || 'N/A',
-                row.dataset.facultyName || row.cells[1]?.textContent || 'N/A',
-                row.dataset.employmentType || 'N/A',
-                row.dataset.employmentStatus || 'N/A',
-                records
-            );
+            fetch(window.location.href, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: new URLSearchParams({
+                    action: 'get_faculty_education',
+                    employee_id: String(employeeId)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseRecords = Array.isArray(data && data.records) ? data.records : records;
+                const responseRequirements = Array.isArray(data && data.requirements) ? data.requirements : [];
+
+                openEducationModal(
+                    row.dataset.employeeCode || row.cells[0]?.textContent || 'N/A',
+                    row.dataset.facultyName || row.cells[1]?.textContent || 'N/A',
+                    row.dataset.department || 'Not provided',
+                    responseRecords,
+                    responseRequirements
+                );
+            })
+            .catch(() => fallbackOpen());
         });
-    });
+    }
+
+    // Trainings table: delegate all training-related action buttons
+    const trainingsTable = document.getElementById('trainingsTable');
+    if (trainingsTable) {
+        trainingsTable.addEventListener('click', function (e) {
+            const btn = e.target.closest('button, a');
+            if (!btn) return;
+            const row = btn.closest('tr');
+            if (!row) return;
+
+            // View training / archived engagement details
+            if (btn.classList.contains('view-training-btn')) {
+                console.log('=== VIEW TRAINING (delegated) CLICKED ===');
+                const recordStatus = String(row.dataset.recordStatus || '').toLowerCase();
+                const recordSource = String(row.dataset.recordSource || '');
+                const engagementId = Number(row.dataset.recordId || 0);
+
+                if (recordSource === 'cc_certification_engagements' && recordStatus === 'archived' && engagementId > 0) {
+                    // Fetch engagement details and open modal
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                        body: new URLSearchParams({ action: 'get_engagement', engagement_id: String(engagementId) })
+                    })
+                    .then(response => response.text())
+                    .then(text => {
+                        let data = {};
+                        try { data = JSON.parse(text); } catch (err) { data = {}; }
+                        if (data.success && data.engagement && data.employee) {
+                            openEngagementDetailsModal(data.engagement, data.employee);
+                        } else {
+                            openEngagementDetailsModal(null, null);
+                        }
+                    })
+                    .catch(() => openEngagementDetailsModal(null, null));
+                    return;
+                }
+
+                // Non-archived: open training modal
+                let records = [];
+                try { records = JSON.parse(row.dataset.records || '[]'); } catch (err) { records = []; }
+
+                openTrainingModal(
+                    row.dataset.employeeCode || row.cells[0]?.textContent || 'N/A',
+                    row.dataset.facultyName || row.cells[1]?.textContent || 'N/A',
+                    row.dataset.employmentType || 'N/A',
+                    row.dataset.employmentStatus || 'N/A',
+                    records
+                );
+                return;
+            }
+
+            // Approve engagement
+            if (btn.classList.contains('approve-engagement-btn')) {
+                const engagementId = btn.dataset.engagementId;
+                if (!engagementId) return;
+                const confirmed = window.confirm('Approve this engagement record?');
+                if (!confirmed) return;
+                performEngagementWorkflow('approve_engagement', engagementId);
+                return;
+            }
+
+            // Complete engagement
+            if (btn.classList.contains('complete-engagement-btn')) {
+                const engagementId = btn.dataset.engagementId;
+                if (!engagementId) return;
+                const allowedOutcomes = ['Continue', 'Regularize', 'End Engagement', 'Not Applicable'];
+                const outcomeInput = window.prompt('Enter the engagement outcome: Continue, Regularize, End Engagement, or Not Applicable', 'Continue');
+                if (outcomeInput === null) return;
+                const outcome = outcomeInput.trim();
+                if (!allowedOutcomes.includes(outcome)) {
+                    alert('Invalid outcome. Please use one of: Continue, Regularize, End Engagement, Not Applicable.');
+                    return;
+                }
+                const confirmed = window.confirm('Mark this engagement as completed?');
+                if (!confirmed) return;
+                performEngagementWorkflow('mark_completed_engagement', engagementId, outcome);
+                return;
+            }
+
+            // Archive engagement
+            if (btn.classList.contains('archive-engagement-btn')) {
+                const engagementId = btn.dataset.engagementId;
+                if (!engagementId) return;
+                const confirmed = window.confirm('Archive this engagement record? This will not delete the record.');
+                if (!confirmed) return;
+                performEngagementWorkflow('archive_engagement', engagementId);
+                return;
+            }
+
+            // Shift schedule
+            if (btn.classList.contains('shift-schedule-btn')) {
+                const employeeId = Number(btn.dataset.employeeId || 0);
+                const facultyName = row.dataset.facultyName || 'N/A';
+                const department = row.dataset.department || 'Not provided';
+                if (!employeeId) { alert('Invalid faculty selected.'); return; }
+
+                fetch('/sms/modules/college-coor/pages/faculty-management.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'get_faculty_shift_schedule', employee_id: employeeId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success && data.schedule) {
+                        openShiftScheduleModal({
+                            faculty_name: data.schedule.faculty_name || facultyName,
+                            employee_id: data.schedule.employee_id || employeeId,
+                            department: data.schedule.department || department,
+                            shift_name: data.schedule.shift_name || 'N/A',
+                            shift_start_time: data.schedule.shift_start_time || 'N/A',
+                            shift_end_time: data.schedule.shift_end_time || 'N/A',
+                            break_duration: data.schedule.break_duration || 'N/A',
+                            effective_from: data.schedule.effective_from || 'N/A',
+                            effective_to: data.schedule.effective_to || 'Ongoing',
+                            status: data.schedule.status || 'Active',
+                            weekly_schedule: data.schedule.weekly_schedule || {}
+                        });
+                        return;
+                    }
+
+                    openShiftScheduleModal({ faculty_name: facultyName, employee_id: employeeId, department: department, shift_name: 'N/A' });
+                })
+                .catch(() => {
+                    openShiftScheduleModal({ faculty_name: facultyName, employee_id: employeeId, department: department, shift_name: 'N/A' });
+                });
+                return;
+            }
+
+            // Generate certificate
+            if (btn.classList.contains('generate-certificate-btn')) {
+                const engagementId = btn.dataset.engagementId;
+                if (!engagementId) return;
+                const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+                const url = origin + '/sms/modules/college-coor/pages/engagement_certificate.php?engagement_id=' + encodeURIComponent(engagementId);
+                window.open(url, '_blank');
+                return;
+            }
+        });
+    }
 
     document.querySelectorAll('#fmProfileModal .modal-close').forEach(button => {
         button.addEventListener('click', closeProfileModal);
@@ -400,6 +765,19 @@ function initFacultyManagementPage() {
     document.querySelectorAll('#fmShiftScheduleModal .modal-close').forEach(button => {
         button.addEventListener('click', closeShiftScheduleModal);
     });
+
+    document.querySelectorAll('#fmEngagementDetailsModal .modal-close').forEach(button => {
+        button.addEventListener('click', closeEngagementDetailsModal);
+    });
+
+    const engagementDetailsModal = document.getElementById('fmEngagementDetailsModal');
+    if (engagementDetailsModal) {
+        engagementDetailsModal.addEventListener('click', function (event) {
+            if (event.target === engagementDetailsModal) {
+                closeEngagementDetailsModal();
+            }
+        });
+    }
 
     // Add Engagement modal handlers
     const addEngagementBtn = document.getElementById('addEngagementBtn');
@@ -584,20 +962,6 @@ function initFacultyManagementPage() {
         });
     });
 
-    document.querySelectorAll('.generate-certificate-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const engagementId = this.dataset.engagementId;
-            if (!engagementId) return;
-
-            // Open certificate preview in a new tab/window. The preview page
-            // allows printing and provides a button to mark the certificate
-            // as generated (which will call the existing server action).
-            const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
-            const url = origin + '/sms/modules/college-coor/pages/engagement_certificate.php?engagement_id=' + encodeURIComponent(engagementId);
-            window.open(url, '_blank');
-        });
-    });
-
     document.querySelectorAll('.archive-engagement-btn').forEach(button => {
         button.addEventListener('click', function () {
             const engagementId = this.dataset.engagementId;
@@ -607,19 +971,6 @@ function initFacultyManagementPage() {
             if (!confirmed) return;
 
             performEngagementWorkflow('archive_engagement', engagementId);
-        });
-    });
-
-    document.querySelectorAll('.restore-engagement-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const engagementId = this.dataset.engagementId;
-            if (!engagementId) return;
-
-            
-            const confirmed = window.confirm('Restore this archived engagement record?');
-            if (!confirmed) return;
-
-            performEngagementWorkflow('restore_engagement', engagementId);
         });
     });
 
@@ -679,6 +1030,17 @@ function initFacultyManagementPage() {
             });
         });
     });
+
+    document.querySelectorAll('.generate-certificate-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const engagementId = this.dataset.engagementId;
+            if (!engagementId) return;
+
+            const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+            const url = origin + '/sms/modules/college-coor/pages/engagement_certificate.php?engagement_id=' + encodeURIComponent(engagementId);
+            window.open(url, '_blank');
+        });
+    });
 }
 
 function initFacultyManagementWhenReady() {
@@ -693,3 +1055,16 @@ window.addEventListener('page:loaded', function (event) {
         setTimeout(initFacultyManagementWhenReady, 100);
     }
 });
+
+function getRequirementBadgeClass(status) {
+        const normalized = String(status || '').trim().toLowerCase();
+        if (normalized === 'submitted') return 'badge badge-success';
+        if (normalized === 'missing') return 'badge badge-danger';
+        if (normalized === 'for follow-up' || normalized === 'for_follow-up') return 'badge badge-warning';
+        return 'badge badge-secondary';
+    }
+
+    function renderRequirementStatus(status) {
+        const safeStatus = status || 'N/A';
+        return `<span class="${getRequirementBadgeClass(safeStatus)}">${safeStatus}</span>`;
+    }

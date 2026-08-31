@@ -332,10 +332,6 @@ $chartDataJson = json_encode([
 
         <!-- Priority Alerts -->
         <section class="priority-alerts-section">
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                
-            </div>
-
             <div class="priority-alerts-card">
                 <h2 class="section-title" style="padding: 20px;">Priority Alerts</h2>
                 <ul class="list-group list-group-flush mb-0">

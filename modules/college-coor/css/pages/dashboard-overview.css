@@ -1,20 +1,18 @@
 /* Dashboard Overview Styles */
 
 :root {
-    --card-color: #3b82f6;
-    --primary-color: #1e3a8a;
-    --secondary-color: #64748b;
+    /* Preserved custom variables not in base theme */
+    --text-secondary: #6b7280;
+    --border-color: #e2e8f0;
     --success-color: #10b981;
     --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --info-color: #3b82f6;
-    --light-bg: #f8fafc;
-    --border-color: #e2e8f0;
-    --text-primary: #1f2937;
-    --text-secondary: #6b7280;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    
+    /* Test variable for --text-primary - using --color5 from base theme */
+    /* Will replace with var(--color5) after testing */
+    --text-primary: #080808;
 }
 
 .dashboard-container {
@@ -27,7 +25,7 @@
 .section-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--color5); /* TEST: changed from --text-primary to --color5 */
     margin-bottom: 1.5rem;
     letter-spacing: -0.5px;
 }
@@ -48,8 +46,7 @@
     background: white;
     border-radius: 0.75rem;
     padding: 1.5rem;
-    border: 1px solid var(--border-color);
-    border-left: 4px solid var(--card-color);
+    border-left: 4px solid var(--color7);
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     display: flex;
@@ -99,7 +96,7 @@
 .card-value {
     font-size: 2rem;
     font-weight: 800;
-    color: var(--text-primary);
+    color: var(--color5); /* TEST: changed from --text-primary to --color5 */
     margin: 0;
 }
 
@@ -130,7 +127,7 @@
 .chart-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--color5); /* TEST: using --color5 from base theme */
     margin-bottom: 1rem;
 }
 
@@ -156,6 +153,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     margin-bottom: 3rem;
+    align-items: stretch;
 }
 
 /* ==================== UPCOMING APPOINTMENTS & EVENTS ==================== */
@@ -166,6 +164,8 @@
     padding: 1.5rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
 }
 
 .section-header {
@@ -181,7 +181,7 @@
 }
 
 .view-all-link {
-    color: var(--info-color);
+    color: var(--color7);
     text-decoration: none;
     font-weight: 600;
     font-size: 0.9rem;
@@ -190,7 +190,7 @@
 }
 
 .view-all-link:hover {
-    color: var(--primary-color);
+    color: var(--color1);
     text-decoration: underline;
 }
 
@@ -216,7 +216,7 @@
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--color5);
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 0.5px;
@@ -241,7 +241,7 @@
 
 .appointments-table td:first-child,
 .events-table td:first-child {
-    color: var(--text-primary);
+    color: var(--color5);
     font-weight: 500;
 }
 
@@ -282,7 +282,7 @@
 
 .activity-item:hover {
     background-color: #f3f4f6;
-    border-left-color: var(--info-color);
+    border-left-color: var(--color7);
 }
 
 .activity-icon {
@@ -300,7 +300,7 @@
 .activity-title {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--color5);
     margin: 0 0 0.25rem 0;
 }
 
@@ -315,7 +315,7 @@
 }
 
 .activity-type-section {
-    border-left-color: var(--info-color);
+    border-left-color: var(--color7);
 }
 
 .activity-type-faculty {
@@ -323,7 +323,7 @@
 }
 
 .activity-type-schedule {
-    border-left-color: var(--danger-color);
+    border-left-color: var(--color10);
 }
 
 /* ==================== QUICK ACTIONS ==================== */
@@ -933,9 +933,10 @@
                 background: white;
                 border-radius: 12px;
                 box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
-                height: 100%;
-                max-height: 662px; /* matches calendar-container's rendered height */
-                overflow-y: auto;
+                overflow: hidden;
+                width: 100%;
+                flex: 1;
+                min-height: 0;
             }
 
             .alert-item {

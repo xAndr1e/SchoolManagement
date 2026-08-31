@@ -47,12 +47,30 @@ body {
     margin-bottom: 30px;
 }
 
+.employment-stats-grid,
+.document-status-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 20px;
+}
+
 .stat-card {
     background: white;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-left: 4px solid #0d6efd;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.faculty-type-card {
+    border-left-color: #0d6efd;
+}
+
+.document-status-card {
+    border-left-color: #20c997;
 }
 
 .stat-card.subjects { border-left-color: #6f42c1; }
@@ -66,12 +84,15 @@ body {
     text-transform: uppercase;
     margin-bottom: 8px;
     font-weight: 600;
+    letter-spacing: 0.04em;
 }
 
 .stat-card h3 {
     font-size: 28px;
     font-weight: 700;
     color: #1a202c;
+    line-height: 1.15;
+    margin: 0;
 }
 
 /* Tabs */
@@ -428,6 +449,7 @@ tbody tr:hover {
 
 .modal.show {
     display: flex;
+
 }
 
 .modal-dialog {
@@ -562,4 +584,147 @@ tbody tr:hover {
     .btn {
         width: 100%;
     }
+
+    .employment-stats-grid,
+    .document-status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
+
+@media (max-width: 480px) {
+    .employment-stats-grid,
+    .document-status-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Print-specific styles for engagement certificates */
+@media print {
+    /* Hide all non-print elements */
+    .sidebar,
+    .top-navigation,
+    .navbar,
+    .print-button,
+    .no-print,
+    .fm-sidebar,
+    .module-actions {
+        display: none !important;
+    }
+
+    /* Certificate container */
+    body,
+    html {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+
+    .print-container {
+        max-width: 8.5in;
+        height: 11in;
+        margin: 0 auto;
+        padding: 0.5in;
+        page-break-after: always;
+        box-shadow: none;
+        border: none;
+    }
+
+    /* Typography */
+    .school-name {
+        font-size: 18pt;
+        font-weight: bold;
+    }
+
+    .school-info {
+        font-size: 9pt;
+    }
+
+    .certificate-title {
+        font-size: 16pt;
+        font-weight: bold;
+        margin: 20pt 0;
+    }
+
+    .certificate-subtitle {
+        font-size: 12pt;
+    }
+
+    .cert-text {
+        font-size: 11pt;
+        line-height: 1.6;
+    }
+
+    .details-table {
+        font-size: 10pt;
+        border-collapse: collapse;
+    }
+
+    .details-table td {
+        padding: 6pt;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .signature-section {
+        margin-top: 30pt;
+    }
+
+    .signature-line {
+        border-top: 1px solid black;
+        padding-top: 20pt;
+        text-align: center;
+    }
+
+    .signature-title {
+        font-size: 10pt;
+        font-weight: bold;
+        margin-top: 5pt;
+    }
+
+    .signature-date {
+        font-size: 9pt;
+        margin-top: 8pt;
+    }
+
+    .footer {
+        font-size: 8pt;
+        border-top: 1px solid #ddd;
+        margin-top: 30pt;
+        padding-top: 15pt;
+    }
+
+    /* Links should not show underlines in print */
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    /* Prevent page breaks inside elements */
+    .print-container,
+    .certificate-content,
+    .signature-section {
+        page-break-inside: avoid;
+    }
+
+    /* Ensure proper color printing */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+    }
+}
+
+#fmAddEngagementModal {
+    align-items: safe center !important;
+    padding: 40px 20px !important;
+    overflow-y: auto !important;
+}
+
+#fmAddEngagementModal .modal-dialog {
+    margin: 40px auto !important;
+    max-height: none !important;
+}
+
+
+

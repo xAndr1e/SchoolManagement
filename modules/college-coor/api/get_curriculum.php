@@ -1,15 +1,33 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 require_once(__DIR__ . '/../classes/ProgramManager.php');
 require_once(__DIR__ . '/../../../database/db.php');
-header('Content-Type: application/json');
 
-$courseId = $_GET['course_id'] ?? $_GET['program_id'] ?? 0;
+header('Content-Type: application/json; charset=utf-8');
 
-error_log('get_curriculum course_id=' . var_export($courseId, true));
-
-if (!$courseId || $courseId === 'N/A' || $courseId === 'null') {
-    echo json_encode(['error' => 'Course ID required']);
+function sendJsonResponse(int $statusCode, array $payload): void {
+    http_response_code($statusCode);
+    echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+$courseIdRaw = $_GET['course_id'] ?? $_GET['program_id'] ?? null;
+if ($courseIdRaw === null || $courseIdRaw === '' || $courseIdRaw === 'N/A' || $courseIdRaw === 'null') {
+    sendJsonResponse(400, [
+        'success' => false,
+        'message' => 'Course ID is required.'
+    ]);
+}
+
+$courseId = filter_var($courseIdRaw, FILTER_VALIDATE_INT);
+if ($courseId === false || (int)$courseId <= 0) {
+    sendJsonResponse(400, [
+        'success' => false,
+        'message' => 'Invalid course ID.'
+    ]);
 }
 
 try {
@@ -17,19 +35,23 @@ try {
     $conn = $database->getConnection();
     $programManager = new ProgramManager($conn);
 
-    $courseStmt = $conn->prepare("SELECT id, name FROM rgr_courses WHERE id = ?");
-    $courseStmt->execute([$courseId]);
+    $courseStmt = $conn->prepare("SELECT id, code, name, years FROM rgr_courses WHERE id = :id");
+    $courseStmt->execute([':id' => $courseId]);
     $course = $courseStmt->fetch(PDO::FETCH_ASSOC);
 
-    error_log('course lookup result=' . json_encode($course));
-
     if (!$course) {
-        echo json_encode([
-            'debug' => [
-                'course_id' => $courseId,
-                'course_lookup' => 'not_found'
-            ],
-            'program_name' => 'No program data found',
+        sendJsonResponse(404, [
+            'success' => false,
+            'message' => 'Program not found.'
+        ]);
+    }
+
+    $curriculumRow = $programManager->getCourseCurriculum($courseId);
+    if (!$curriculumRow) {
+        sendJsonResponse(200, [
+            'success' => false,
+            'message' => 'No curriculum found for this program.',
+            'program_name' => $course['name'],
             'curriculum_name' => 'No curriculum data found',
             'effective_year' => 'No curriculum data found',
             'status' => 'No curriculum data found',
@@ -44,32 +66,17 @@ try {
                 ]
             ]
         ]);
-        exit;
     }
 
-    $curriculumStmt = $conn->prepare("SELECT
-            curriculum_name,
-            effective_year,
-            is_active
-        FROM rgr_curriculums
-        WHERE course_id = ?
-        ORDER BY effective_year DESC, id DESC
-        LIMIT 1");
-    $curriculumStmt->execute([$courseId]);
-    $curriculumRow = $curriculumStmt->fetch(PDO::FETCH_ASSOC);
-
-    error_log('curriculum lookup result=' . json_encode($curriculumRow));
-
-    $curriculum = $programManager->getCurriculum($courseId);
-    error_log('subject flow count=' . count($curriculum));
+    $curriculumId = (int)($curriculumRow['id'] ?? 0);
+    $curriculum = $programManager->getCurriculum($courseId, $curriculumId);
 
     $subjectCountStmt = $conn->prepare("SELECT COUNT(*) AS subject_count
         FROM rgr_curriculum_subjects cs
         INNER JOIN rgr_curriculums cu ON cu.id = cs.curriculum_id
-        WHERE cu.course_id = ?");
-    $subjectCountStmt->execute([$courseId]);
+        WHERE cu.course_id = :courseId AND cs.curriculum_id = :curriculumId");
+    $subjectCountStmt->execute([':courseId' => $courseId, ':curriculumId' => $curriculumId]);
     $subjectCountRow = $subjectCountStmt->fetch(PDO::FETCH_ASSOC);
-    error_log('mapped subject count=' . ($subjectCountRow['subject_count'] ?? 0));
 
     $summaryStmt = $conn->prepare("SELECT
             SUM(CASE WHEN CAST(es.year_level AS UNSIGNED) = 1 THEN 1 ELSE 0 END) AS first_year_count,
@@ -78,29 +85,22 @@ try {
             SUM(CASE WHEN CAST(es.year_level AS UNSIGNED) = 4 THEN 1 ELSE 0 END) AS fourth_year_count,
             COUNT(*) AS total_enrolled_students
         FROM enr_students es
-        WHERE es.course_id = ?
+        WHERE es.course_id = :courseId
           AND es.enrollment_status = 'enrolled'");
-    $summaryStmt->execute([$courseId]);
+    $summaryStmt->execute([':courseId' => $courseId]);
     $summaryRow = $summaryStmt->fetch(PDO::FETCH_ASSOC);
 
     $unitSummaryStmt = $conn->prepare("SELECT
             cs.year_level,
             COALESCE(SUM(rs.units), 0) AS total_curriculum_units
-        FROM rgr_curriculums cu
-        INNER JOIN rgr_curriculum_subjects cs ON cs.curriculum_id = cu.id
+        FROM rgr_curriculum_subjects cs
         INNER JOIN rgr_subjects rs ON rs.id = cs.subject_id
-        WHERE cu.course_id = ?
+        WHERE cs.curriculum_id = :curriculumId
         GROUP BY cs.year_level");
-    $unitSummaryStmt->execute([$courseId]);
+    $unitSummaryStmt->execute([':curriculumId' => $curriculumId]);
     $unitSummaryRows = $unitSummaryStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $yearUnitMap = [
-        1 => 0,
-        2 => 0,
-        3 => 0,
-        4 => 0
-    ];
-
+    $yearUnitMap = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
     foreach ($unitSummaryRows as $row) {
         $yearLevel = (int)($row['year_level'] ?? 0);
         if (isset($yearUnitMap[$yearLevel])) {
@@ -108,21 +108,13 @@ try {
         }
     }
 
-    $programName = $course['name'] ?? 'No program data found';
-    $curriculumName = $curriculumRow['curriculum_name'] ?? 'No curriculum data found';
-    $effectiveYear = $curriculumRow['effective_year'] ?? 'No curriculum data found';
-    $status = $curriculumRow['is_active'] == 1 ? 'Active' : ($curriculumRow['is_active'] == 0 ? 'Inactive' : 'No curriculum data found');
+    $status = ((int)($curriculumRow['is_active'] ?? 0) === 1) ? 'Active' : 'Inactive';
 
-    echo json_encode([
-        'debug' => [
-            'course_id' => $courseId,
-            'course_lookup' => 'found',
-            'curriculum_lookup' => $curriculumRow ? 'found' : 'not_found',
-            'mapped_subject_count' => (int)($subjectCountRow['subject_count'] ?? 0)
-        ],
-        'program_name' => $programName,
-        'curriculum_name' => $curriculumName,
-        'effective_year' => $effectiveYear,
+    sendJsonResponse(200, [
+        'success' => true,
+        'program_name' => $course['name'],
+        'curriculum_name' => $curriculumRow['curriculum_name'] ?? 'No curriculum data found',
+        'effective_year' => (string)($curriculumRow['effective_year'] ?? 'No curriculum data found'),
         'status' => $status,
         'subject_flow' => $curriculum,
         'enrollment_summary' => [
@@ -145,10 +137,19 @@ try {
                     'total_curriculum_units' => (int)$yearUnitMap[4]
                 ]
             ]
+        ],
+        'debug' => [
+            'course_id' => $courseId,
+            'curriculum_id' => $curriculumId,
+            'curriculum_lookup' => 'found',
+            'mapped_subject_count' => (int)($subjectCountRow['subject_count'] ?? 0)
         ]
     ]);
-} catch (Exception $e) {
-    error_log('get_curriculum exception=' . $e->getMessage());
-    echo json_encode(['error' => $e->getMessage()]);
+} catch (Throwable $e) {
+    error_log('get_curriculum exception: ' . $e->getMessage());
+    sendJsonResponse(500, [
+        'success' => false,
+        'message' => 'Unable to load curriculum details.'
+    ]);
 }
 ?>

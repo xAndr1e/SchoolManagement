@@ -685,4 +685,58 @@ class FacultyProfileManager {
             'weekly_schedule_available' => !empty($weeklySchedule),
         ];
     }
+
+    public function getFacultyRequirementStatusSummary() {
+        $sql = "SELECT er.status, COUNT(*) AS total
+                FROM employee_requirements er
+                INNER JOIN cc_faculty cf ON cf.employee_id = er.employee_id
+                GROUP BY er.status
+                ORDER BY er.status ASC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $summary = [
+            'Complete' => 0,
+            'Pending' => 0,
+            'Incomplete / Missing' => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $status = trim((string)($row['status'] ?? ''));
+            $count = (int)($row['total'] ?? 0);
+
+            if ($status === 'Submitted') {
+                $summary['Complete'] = $count;
+            } elseif ($status === 'For Follow-up') {
+                $summary['Pending'] = $count;
+            } elseif ($status === 'Missing') {
+                $summary['Incomplete / Missing'] = $count;
+            }
+        }
+
+        $hasData = array_sum($summary) > 0;
+        return $hasData ? $summary : [];
+    }
+
+    public function getFacultyRequirements($employeeId) {
+        $sql = "SELECT
+                    requirement_id,
+                    employee_id,
+                    document_id,
+                    requirement_name,
+                    status,
+                    remarks,
+                    submitted_date,
+                    follow_up_date
+                FROM employee_requirements
+                WHERE employee_id = :employee_id
+                ORDER BY requirement_name ASC, requirement_id DESC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':employee_id', $employeeId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

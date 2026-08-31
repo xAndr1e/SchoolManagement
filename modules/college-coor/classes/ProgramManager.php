@@ -24,24 +24,62 @@ class ProgramManager {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getCurriculum($courseId) {
+    public function getCourseCurriculum($courseId) {
+        $courseId = (int) $courseId;
+        if ($courseId <= 0) {
+            return null;
+        }
+
         $stmt = $this->conn->prepare("SELECT
+                id,
+                course_id,
+                curriculum_name,
+                effective_year,
+                is_active
+            FROM rgr_curriculums
+            WHERE course_id = :courseId
+            ORDER BY is_active DESC, effective_year DESC, id DESC
+            LIMIT 1");
+        $stmt->execute([':courseId' => $courseId]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function getCurriculum($courseId, $curriculumId = null) {
+        $courseId = (int) $courseId;
+        if ($courseId <= 0) {
+            return [];
+        }
+
+        $sql = "SELECT
                 cs.year_level,
                 cs.semester,
                 s.code,
                 s.name,
                 s.units
-            FROM rgr_curriculums cu
-            INNER JOIN rgr_curriculum_subjects cs ON cs.curriculum_id = cu.id
+            FROM rgr_curriculum_subjects cs
             INNER JOIN rgr_subjects s ON s.id = cs.subject_id
-            WHERE cu.course_id = ?
-            ORDER BY cs.year_level, cs.semester, s.code");
-        $stmt->execute([$courseId]);
+            INNER JOIN rgr_curriculums cu ON cu.id = cs.curriculum_id
+            WHERE cu.course_id = :courseId";
+
+        $params = [':courseId' => $courseId];
+
+        if ($curriculumId !== null) {
+            $sql .= " AND cs.curriculum_id = :curriculumId";
+            $params[':curriculumId'] = (int) $curriculumId;
+        } else {
+            $sql .= " AND cu.is_active = 1";
+        }
+
+        $sql .= " ORDER BY cs.year_level, cs.semester, s.code";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $curriculum = [];
         foreach ($rows as $row) {
-            $year = $row['year_level'];
+            $year = (int)($row['year_level'] ?? 0);
             $sem = $row['semester'];
             if (!isset($curriculum[$year])) {
                 $curriculum[$year] = [];
@@ -52,7 +90,7 @@ class ProgramManager {
             $curriculum[$year][$sem][] = [
                 'code' => $row['code'],
                 'name' => $row['name'],
-                'units' => $row['units']
+                'units' => (int)($row['units'] ?? 0)
             ];
         }
 

@@ -173,13 +173,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 : ['success' => false, 'message' => 'Unable to mark engagement as completed.'];
         }
 
-        if ($action === 'generate_engagement_certificate' && isset($input['engagement_id'])) {
-            $engagementId = (int)$input['engagement_id'];
-            $response = $facultyManager->generateEngagementCertificate($engagementId)
-                ? ['success' => true, 'message' => 'Certificate timestamp saved successfully.']
-                : ['success' => false, 'message' => 'Unable to generate certificate.'];
-        }
-
         if ($action === 'archive_engagement' && isset($input['engagement_id'])) {
             $engagementId = (int)$input['engagement_id'];
             $response = $facultyManager->archiveEngagement($engagementId)
@@ -192,6 +185,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $response = $facultyManager->restoreEngagement($engagementId)
                 ? ['success' => true, 'message' => 'Engagement restored successfully.']
                 : ['success' => false, 'message' => 'Unable to restore engagement.'];
+        }
+
+        if ($action === 'get_engagement' && isset($input['engagement_id'])) {
+            $engagementId = (int)$input['engagement_id'];
+            $engagement = $facultyManager->getEngagementById($engagementId);
+
+            if ($engagement) {
+                $employeeId = (int)($engagement['employee_id'] ?? 0);
+                $employee = $employeeId > 0 ? $facultyManager->getEmployeeById($employeeId) : null;
+
+                $response = [
+                    'success' => true,
+                    'engagement' => $engagement,
+                    'employee' => $employee
+                ];
+            } else {
+                $response = ['success' => false, 'message' => 'Engagement not found.'];
+            }
         }
 
         if ($action === 'get_faculty_education' && isset($input['employee_id'])) {
@@ -213,10 +224,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            $facultyRequirements = [];
+            $parsedEmployeeId = (int)$employeeId;
+            if ($parsedEmployeeId > 0) {
+                $facultyRequirements = $facultyManager->getFacultyRequirements($parsedEmployeeId) ?? [];
+            }
+
             if ($matchedEducation) {
-                $response = ['success' => true, 'records' => $matchedEducation['records'] ?? []];
+                $response = [
+                    'success' => true,
+                    'records' => $matchedEducation['records'] ?? [],
+                    'requirements' => $facultyRequirements,
+                ];
             } else {
-                $response = ['success' => false, 'message' => 'No records found.'];
+                $response = [
+                    'success' => true,
+                    'records' => [],
+                    'requirements' => $facultyRequirements,
+                    'message' => 'No records found.'
+                ];
             }
         }
 
@@ -298,10 +324,44 @@ $facultyList = $facultyManager->getAllFacultyCredentials() ?? [];
 $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
 $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
 $eligibleEmployees = $facultyManager->getEligibleEngagementEmployees() ?? [];
+$requirementStatusSummary = $facultyManager->getFacultyRequirementStatusSummary() ?? [];
 
-$stats = [
-    'faculty' => count($facultyList)
+$employmentTypeStats = [
+    'Full-time' => 0,
+    'Part-time' => 0,
+    'OJT / Training' => 0,
 ];
+
+foreach ($facultyList as $faculty) {
+    $employmentType = trim((string)($faculty['employment_type'] ?? ''));
+
+    if ($employmentType === 'Full-time') {
+        $employmentTypeStats['Full-time']++;
+    } elseif ($employmentType === 'Part-time') {
+        $employmentTypeStats['Part-time']++;
+    } elseif ($employmentType === 'OJT/Training') {
+        $employmentTypeStats['OJT / Training']++;
+    }
+}
+
+$documentStatusStats = [];
+if (!empty($requirementStatusSummary)) {
+    $statusLabels = [
+        'Complete' => 'Complete',
+        'Pending' => 'Pending',
+        'Incomplete / Missing' => 'Incomplete / Missing',
+    ];
+
+    foreach ($statusLabels as $statusKey => $label) {
+        $count = (int)($requirementStatusSummary[$statusKey] ?? 0);
+        if ($count > 0) {
+            $documentStatusStats[] = [
+                'label' => $label,
+                'count' => $count,
+            ];
+        }
+    }
+}
 
 function normalizeFacultySearchText($value) {
     return strtolower(trim(strip_tags((string)$value)));
@@ -347,7 +407,7 @@ function renderAttainmentRow($education) {
 
     ob_start();
     ?>
-    <tr data-record-type="education" data-employee-code="<?= htmlspecialchars($education['employee_code']) ?>" data-faculty-name="<?= htmlspecialchars($education['faculty_name']) ?>" data-department="<?= htmlspecialchars($education['department'] ?? 'Not provided') ?>" data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
+    <tr data-record-type="education" data-employee-code="<?= htmlspecialchars($education['employee_code']) ?>" data-employee-id="<?= (int)($education['employee_id'] ?? 0) ?>" data-faculty-name="<?= htmlspecialchars($education['faculty_name']) ?>" data-department="<?= htmlspecialchars($education['department'] ?? 'Not provided') ?>" data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
         <td><?= htmlspecialchars($education['employee_code']) ?></td>
         <td><?= htmlspecialchars($education['faculty_name']) ?></td>
         <td><?= htmlspecialchars($education['highest_degree']) ?></td>
@@ -395,8 +455,6 @@ function renderTrainingRow($training) {
                     } elseif ($statusValue === 'Completed') {
                         $workflowButtons .= '<button type="button" class="btn btn-sm btn-primary generate-certificate-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Generate Certificate</button>';
                         $workflowButtons .= '<button type="button" class="btn btn-sm btn-secondary archive-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Archive</button>';
-                    } elseif ($statusValue === 'Archived') {
-                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-success restore-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Restore</button>';
                     }
 
                     echo $workflowButtons;
@@ -672,33 +730,46 @@ function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
     </div>
 
     <div class="module-content">
-        <div class="stats-grid">
-        <div class="stat-card faculty">
-            <h6>Faculty Members</h6>
-            <h3><?php echo $stats['faculty']; ?></h3>
+        <div class="stats-grid employment-stats-grid">
+            <?php foreach ($employmentTypeStats as $label => $count): ?>
+                <div class="stat-card faculty-type-card">
+                    <h6><?= htmlspecialchars($label) ?></h6>
+                    <h3><?= (int)$count ?></h3>
+                </div>
+            <?php endforeach; ?>
         </div>
+
+        <?php if (!empty($documentStatusStats)): ?>
+            <div class="stats-grid document-status-grid">
+                <?php foreach ($documentStatusStats as $status): ?>
+                    <div class="stat-card document-status-card">
+                        <h6><?= htmlspecialchars($status['label']) ?></h6>
+                        <h3><?= (int)$status['count'] ?></h3>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="academics-tabs">
+            <button class="academics-tab active" data-fm-tab="credentials">
+                <i class="fas fa-id-badge"></i> Faculty Credentials
+            </button>
+            <button class="academics-tab" data-fm-tab="attainment">
+                <i class="fas fa-graduation-cap"></i> Educational Attainment
+            </button>
+            <button class="academics-tab" data-fm-tab="trainings">
+                <i class="fas fa-certificate"></i> Trainings & Certifications
+            </button>
+        </div>
+
+        <?php echo renderCredentialsPanel($facultyList); ?>
+
+        <?php echo renderAttainmentPanel($educationSummary); ?>
+
+        <?php echo renderTrainingsPanel($trainingSummary, $eligibleEmployees); ?>
     </div>
 
-    <div class="academics-tabs">
-        <button class="academics-tab active" data-fm-tab="credentials">
-            <i class="fas fa-id-badge"></i> Faculty Credentials
-        </button>
-        <button class="academics-tab" data-fm-tab="attainment">
-            <i class="fas fa-graduation-cap"></i> Educational Attainment
-        </button>
-        <button class="academics-tab" data-fm-tab="trainings">
-            <i class="fas fa-certificate"></i> Trainings & Certifications
-        </button>
-    </div>
-
-    <?php echo renderCredentialsPanel($facultyList); ?>
-
-    <?php echo renderAttainmentPanel($educationSummary); ?>
-
-    <?php echo renderTrainingsPanel($trainingSummary, $eligibleEmployees); ?>
-</div>
-
-<div id="fmAddEngagementModal" class="modal">
+    <div id="fmAddEngagementModal" class="modal">
     <div class="modal-dialog" style="max-width:560px;">
         <div class="modal-header">
             <h5 class="modal-title">Add Engagement</h5>
@@ -817,6 +888,26 @@ function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
                         <tbody id="fmEducationHistoryBody">
                             <tr>
                                 <td colspan="4" class="text-center text-muted" style="padding: 18px;">No educational attainment records found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h6 style="font-weight: 700; margin: 20px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">FACULTY REQUIREMENTS</h6>
+                <div class="table-responsive">
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>Requirement</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                                <th>Submitted Date</th>
+                                <th>Follow-up Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fmEducationRequirementsBody">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted" style="padding: 18px;">No faculty requirement records found.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -965,6 +1056,72 @@ function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
     </div>
 </div>
 
-    
+<div id="fmEngagementDetailsModal" class="modal">
+    <div class="modal-dialog" style="max-width: 700px;">
+        <div class="modal-header">
+            <h5 class="modal-title">Engagement Details</h5>
+            <button type="button" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="fmEngagementDetailsEmpty" class="text-muted" style="display:none; padding:18px; text-align:center;">Unable to load engagement details. Please try again.</div>
+            
+            <div id="fmEngagementDetailsContent" style="display:none;">
+                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
+                    <div>
+                        <small style="color:#666;">Employee ID</small>
+                        <div id="fmEngagementDetailsEmployeeId" style="font-weight:600;">N/A</div>
+                    </div>
+                    <div>
+                        <small style="color:#666;">Faculty Name</small>
+                        <div id="fmEngagementDetailsFacultyName" style="font-weight:600;">N/A</div>
+                    </div>
+                    <div>
+                        <small style="color:#666;">Engagement Type</small>
+                        <div id="fmEngagementDetailsType" style="font-weight:600;">N/A</div>
+                    </div>
+                    <div>
+                        <small style="color:#666;">Status</small>
+                        <div id="fmEngagementDetailsStatus" style="font-weight:600;">N/A</div>
+                    </div>
+                </div>
 
-<link rel="stylesheet" href="css/pages/faculty-management.css">
+                <h6 style="font-weight: 700; margin: 15px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">ENGAGEMENT INFORMATION</h6>
+                <div style="display:grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
+                    <div>
+                        <small style="color:#666;">Title</small>
+                        <div id="fmEngagementDetailsTitle" style="font-weight:600;">N/A</div>
+                    </div>
+                    <div>
+                        <small style="color:#666;">Organization</small>
+                        <div id="fmEngagementDetailsOrganization" style="font-weight:600;">N/A</div>
+                    </div>
+                </div>
+
+                <h6 style="font-weight: 700; margin: 15px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">DATES</h6>
+                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
+                    <div>
+                        <small style="color:#666;">Start Date</small>
+                        <div id="fmEngagementDetailsStartDate" style="font-weight:600;">N/A</div>
+                    </div>
+                    <div>
+                        <small style="color:#666;">End Date</small>
+                        <div id="fmEngagementDetailsEndDate" style="font-weight:600;">N/A</div>
+                    </div>
+                </div>
+
+                <div id="fmEngagementDetailsCertGenContainer" style="display:none; margin-bottom:18px; font-size:14px;">
+                    <h6 style="font-weight: 700; margin: 15px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">CERTIFICATE</h6>
+                    <div>
+                        <small style="color:#666;">Certificate Generated Date</small>
+                        <div id="fmEngagementDetailsCertGenDate" style="font-weight:600;">N/A</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary modal-close">Close</button>
+        </div>
+    </div>
+</div>
+
+

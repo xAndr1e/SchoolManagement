@@ -29,7 +29,7 @@ class Approval extends Model
 
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-    $where = " WHERE 1=1 ";
+    $where = " WHERE submit_by = 1003 ";
     $params = [];
 
 

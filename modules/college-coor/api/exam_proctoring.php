@@ -38,8 +38,16 @@ try {
         respond(['success' => true, 'subjects' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     }
 
+    if ($action === 'curriculum-subjects') {
+        $stmt = $db->query("SELECT cur.course_id, cs.year_level, cs.subject_id
+            FROM rgr_curriculum_subjects cs
+            JOIN rgr_curriculums cur ON cur.id = cs.curriculum_id
+            WHERE cur.is_active = 1");
+        respond(['success' => true, 'curriculum_subjects' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    }
+
     if ($action === 'sections') {
-        $stmt = $db->query('SELECT id, section_code FROM cc_sections ORDER BY section_code');
+        $stmt = $db->query('SELECT id, section_code, program_id, grade_level FROM cc_sections ORDER BY section_code');
         respond(['success' => true, 'sections' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     }
 

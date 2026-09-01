@@ -174,6 +174,9 @@ let proctorExamSchedules = [];
 let allProctorExamSchedules = [];
 let proctorFaculty = [];
 let proctorExams = [];
+let proctorAllSections = [];
+let proctorAllSubjects = [];
+let proctorCurriculumSubjects = [];
 
 function proctorEscape(value) {
     return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
@@ -202,12 +205,13 @@ function selectedProctorPeriodParams() {
 
 async function loadProctorReferenceData() {
     const params = selectedProctorPeriodParams();
-    const [scheduleResponse, facultyResponse, examResponse, subjectResponse, sectionResponse, roomResponse] = await Promise.all([
+    const [scheduleResponse, facultyResponse, examResponse, subjectResponse, sectionResponse, curriculumSubjectResponse, roomResponse] = await Promise.all([
         fetch(`${proctorApi}?action=exam-schedules&${params}`),
         fetch(`${proctorApi}?action=faculties`),
         fetch(`${proctorApi}?action=exams`),
         fetch(`${proctorApi}?action=subjects`),
         fetch(`${proctorApi}?action=sections`),
+        fetch(`${proctorApi}?action=curriculum-subjects`),
         fetch(`${proctorApi}?action=rooms`)
     ]);
     const scheduleData = await scheduleResponse.json();
@@ -215,8 +219,9 @@ async function loadProctorReferenceData() {
     const examData = await examResponse.json();
     const subjectData = await subjectResponse.json();
     const sectionData = await sectionResponse.json();
+    const curriculumSubjectData = await curriculumSubjectResponse.json();
     const roomData = await roomResponse.json();
-    if (!scheduleData.success || !facultyData.success || !examData.success || !subjectData.success || !sectionData.success || !roomData.success) throw new Error('Unable to load proctoring reference data.');
+    if (!scheduleData.success || !facultyData.success || !examData.success || !subjectData.success || !sectionData.success || !curriculumSubjectData.success || !roomData.success) throw new Error('Unable to load proctoring reference data.');
     allProctorExamSchedules = scheduleData.exam_schedules || [];
     proctorExamSchedules = allProctorExamSchedules.filter(item => item.schedule_type === 'Exam');
     proctorFaculty = facultyData.faculties || [];
@@ -279,30 +284,58 @@ async function loadProctorReferenceData() {
         const select = document.getElementById(id);
         if (select) select.innerHTML = `<option value="">${placeholder}</option>` + items.map(item => `<option value="${item.id}">${proctorEscape(label(item))}</option>`).join('');
     };
-    fillSelect('scheduleSubjectId', 'Select Subject', subjectData.subjects || [], item => `${item.code} - ${item.name}`);
-    fillSelect('scheduleSectionId', 'Select Section', sectionData.sections || [], item => item.section_code);
+    proctorAllSubjects = subjectData.subjects || [];
+    proctorCurriculumSubjects = curriculumSubjectData.curriculum_subjects || [];
+    updateScheduleSubjectOptions();
+    proctorAllSections = sectionData.sections || [];
+    updateScheduleSectionOptions();
     fillSelect('scheduleRoomId', 'Select Room', roomData.rooms || [], item => item.room_name);
 }
 
-async function loadProctorAssignments() {
-    const body = document.getElementById('proctorAssignmentsBody');
-    if (!body) return;
-    body.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading assignments...</td></tr>';
-    const params = selectedProctorPeriodParams();
-    params.set('action', 'list');
-    params.set('exam_id', document.getElementById('proctorExamFilter')?.value || '');
-    params.set('status', document.getElementById('proctorStatusFilter')?.value || '');
-    try {
-        const data = await (await fetch(`${proctorApi}?${params}`)).json();
-        if (!data.success) throw new Error(data.message);
-        body.innerHTML = data.assignments.length ? data.assignments.map(item => `<tr>
-            <td>${proctorEscape(item.exam_name)}</td><td>${proctorEscape(item.subject_codes || '')}</td><td>${proctorEscape(item.section_code || '')}</td><td>${proctorEscape(item.room_name || '')}</td>
-            <td>${proctorEscape(formatProctorDate(item.exam_date))}</td><td>${proctorEscape(formatProctorTime(item.start_time))} - ${proctorEscape(formatProctorTime(item.end_time))}</td>
-            <td>${proctorEscape(`${item.last_name || ''}, ${item.first_name || ''}`)}</td><td>${proctorEscape(item.role)}</td><td>${proctorEscape(item.status)}</td>
-            <td><button type="button" class="btn btn-primary btn-sm" onclick="editProctor(${Number(item.id)})"><i class="fas fa-edit"></i></button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="cancelProctor(${Number(item.id)})"><i class="fas fa-ban"></i></button></td></tr>`).join('') : '<tr><td colspan="10" style="text-align:center;">No proctor assignments found.</td></tr>';
-        window.proctorAssignments = data.assignments;
-    } catch (error) { body.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#b00020;">${proctorEscape(error.message)}</td></tr>`; }
+function updateScheduleSectionOptions() {
+    const courseId = document.getElementById('scheduleCourseId')?.value || '';
+    const yearLevel = document.getElementById('scheduleYearLevel')?.value || '';
+    const filtered = proctorAllSections.filter(sec => {
+        const matchesCourse = !courseId || String(sec.program_id) === String(courseId);
+        const matchesYear = !yearLevel || sec.grade_level === yearLevel;
+        return matchesCourse && matchesYear;
+    });
+    const select = document.getElementById('scheduleSectionId');
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Select Section</option>' + filtered.map(item => `<option value="${item.id}">${proctorEscape(item.section_code)}</option>`).join('');
+    if (filtered.some(item => String(item.id) === currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+function yearLevelTextToNumber(text) {
+    const map = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4 };
+    return map[text] || null;
+}
+
+function updateScheduleSubjectOptions() {
+    const courseId = document.getElementById('scheduleCourseId')?.value || '';
+    const yearLevel = document.getElementById('scheduleYearLevel')?.value || '';
+    const yearLevelNum = yearLevelTextToNumber(yearLevel);
+
+    let allowedSubjectIds = null;
+    if (courseId || yearLevelNum) {
+        allowedSubjectIds = new Set(
+            proctorCurriculumSubjects
+                .filter(cs => (!courseId || String(cs.course_id) === String(courseId)) && (!yearLevelNum || Number(cs.year_level) === yearLevelNum))
+                .map(cs => String(cs.subject_id))
+        );
+    }
+
+    const filtered = allowedSubjectIds ? proctorAllSubjects.filter(s => allowedSubjectIds.has(String(s.id))) : proctorAllSubjects;
+    const select = document.getElementById('scheduleSubjectId');
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Select Subject</option>' + filtered.map(item => `<option value="${item.id}">${proctorEscape(item.code)} - ${proctorEscape(item.name)}</option>`).join('');
+    if (filtered.some(item => String(item.id) === currentValue)) {
+        select.value = currentValue;
+    }
 }
 
 async function printProctorSchedule() {
@@ -320,7 +353,6 @@ async function printProctorSchedule() {
         return;
     }
 
-    // Use current filters for schedules as well.
     const scheduleFilters = selectedProctorPeriodParams();
     if (examId) scheduleFilters.set('exam_id', examId);
     const scheduleResponse = await fetch(`${proctorApi}?action=exam-schedules&${scheduleFilters}`);
@@ -357,29 +389,14 @@ async function printProctorSchedule() {
         groupedByDate[dateKey].push(item);
     });
 
-    // buildTimeSlots(group): collect ALL exam-schedule entries that belong to the same
-    // group (same exam_id and exam_date) and that are tied to the same room OR section.
-    // Intentionally include all exam-type entries (GE101, PE101, etc.) and any Break Time
-    // entries that apply to the group's room/section. Do NOT rely on a single
-    // assignment's exam_schedule_id — use the broader set of schedules from the
-    // `schedules` array so that the print includes every related timeslot.
     const buildTimeSlots = group => {
         const groupSchedules = schedules.filter(item => {
             if (item.exam_id !== group.exam_id || item.exam_date !== group.exam_date) return false;
-
-            // Consider schedules that match either the room OR the section for the group.
-            // This handles cases where different schedules in the same exam group may
-            // have the same exam/date but vary slightly in room or section fields.
             const roomMatches = String(item.room_id || '') === String(group.room_id || '');
             const sectionMatches = String(item.section_id || '') === String(group.section_id || '');
-
-            // Include Break Time entries only if they explicitly match room OR section
-            // (we allow OR here to be more forgiving if records vary), and include all
-            // other exam entries that match by room or section.
             return roomMatches || sectionMatches;
         });
 
-        // Deduplicate by id (in case of duplicates) and sort by start_time
         const unique = [];
         const seen = new Set();
         groupSchedules.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).forEach(s => {
@@ -392,7 +409,7 @@ async function printProctorSchedule() {
         return unique;
     };
 
-    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[ch]));
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
     const formatProctorDate = value => {
         if (!value) return '';
         const date = new Date(`${value}T00:00:00`);
@@ -404,25 +421,49 @@ async function printProctorSchedule() {
         return;
     }
 
-    const rowsHtml = Object.keys(groupedByDate).sort().map(dateKey => {
-        const dateItems = groupedByDate[dateKey];
-        const headerHtml = `<div class="print-section-header"><div class="print-section-date">${escapeHtml(formatProctorDate(dateKey))}</div></div>`;
-        const groupRows = dateItems.sort((a, b) => {
-            if (a.exam_name !== b.exam_name) return a.exam_name.localeCompare(b.exam_name);
-            if (a.room_name !== b.room_name) return a.room_name.localeCompare(b.room_name);
-            return a.section_code.localeCompare(b.section_code);
-        }).map(group => {
-            const slots = buildTimeSlots(group);
-            const cells = slots.map(slot => {
-                if (slot.schedule_type === 'Break Time') {
-                    return `<td class="break-time-cell">BREAK TIME</td>`;
-                }
-                return `<td>${escapeHtml(slot.subject_code || slot.subject_name || '')}</td>`;
+    // Build rows grouped by date, then by course, then by exam/room/section
+    const dateKeys = Object.keys(groupedByDate).sort();
+    const rowsHtml = dateKeys.map((dateKey, dateIndex) => {
+        const dateItems = groupedByDate[dateKey] || [];
+
+        // Per-day color cycling classes: day-color-0, day-color-1, day-color-2
+        const colorClass = `day-color-${dateIndex % 3}`;
+        const headerHtml = `<div class="print-section-header ${colorClass}"><div class="print-section-date">${escapeHtml(formatProctorDate(dateKey))}</div></div>`;
+
+        // Group items by course code (prefix before first '-')
+        const courses = {};
+        dateItems.forEach(item => {
+            const raw = String(item.section_code || '');
+            const courseCode = raw.split('-')[0] || 'Unknown';
+            if (!courses[courseCode]) courses[courseCode] = [];
+            courses[courseCode].push(item);
+        });
+
+        const orderedCourseKeys = Object.keys(courses).sort((a, b) => a.localeCompare(b));
+
+        const courseBlocks = orderedCourseKeys.map(courseCode => {
+            const items = (courses[courseCode] || []).sort((a, b) => {
+                if (a.exam_name !== b.exam_name) return a.exam_name.localeCompare(b.exam_name);
+                if (a.room_name !== b.room_name) return (a.room_name || '').localeCompare(b.room_name || '');
+                return (a.section_code || '').localeCompare(b.section_code || '');
+            });
+
+            const groupRows = items.map(group => {
+                const slots = buildTimeSlots(group);
+                const cells = slots.map(slot => {
+                    if (slot.schedule_type === 'Break Time') {
+                        return `<td class="break-time-cell">BREAK TIME</td>`;
+                    }
+                    return `<td>${escapeHtml(slot.subject_code || slot.subject_name || '')}</td>`;
+                }).join('');
+                const timeHeaders = slots.map(slot => `<th>${escapeHtml(formatProctorTime(slot.start_time))} - ${escapeHtml(formatProctorTime(slot.end_time))}</th>`).join('');
+                return `<div class="group-block"><div class="group-title"><strong>${escapeHtml(group.exam_name)}</strong> | ${escapeHtml(group.room_name)} | ${escapeHtml(group.section_code)}</div><table class="print-table"><thead><tr><th>PROCTOR</th><th>ROOM</th><th>SECTION</th>${timeHeaders}</tr></thead><tbody><tr><td>${escapeHtml(`${group.last_name || ''}, ${group.first_name || ''}`)}</td><td>${escapeHtml(group.room_name)}</td><td>${escapeHtml(group.section_code)}</td>${cells}</tr></tbody></table></div>`;
             }).join('');
-            const timeHeaders = slots.map(slot => `<th>${escapeHtml(formatProctorTime(slot.start_time))} - ${escapeHtml(formatProctorTime(slot.end_time))}</th>`).join('');
-            return `<div class="group-block"><div class="group-title"><strong>${escapeHtml(group.exam_name)}</strong> | ${escapeHtml(group.room_name)} | ${escapeHtml(group.section_code)}</div><table class="print-table"><thead><tr><th>PROCTOR</th><th>ROOM</th><th>SECTION</th>${timeHeaders}</tr></thead><tbody><tr><td>${escapeHtml(`${group.last_name || ''}, ${group.first_name || ''}`)}</td><td>${escapeHtml(group.room_name)}</td><td>${escapeHtml(group.section_code)}</td>${cells}</tr></tbody></table></div>`;
+
+            return `<div class="print-course-header">${escapeHtml(courseCode)}</div>${groupRows}`;
         }).join('');
-        return `${headerHtml}${groupRows}`;
+
+        return `${headerHtml}${courseBlocks}`;
     }).join('');
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Exam Proctoring Schedule</title><style>
@@ -437,8 +478,13 @@ async function printProctorSchedule() {
         .document-title { font-size: 16px; font-weight: bold; margin: 8px 0 0; text-transform: uppercase; letter-spacing: 0.5px; }
         .report-info { margin: 14px 0 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px; }
         .report-info div { line-height: 1.4; }
-        .print-section-header { margin-top: 24px; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+        .print-section-header { margin-top: 24px; margin-bottom: 8px; border-bottom: 1px solid #333; padding: 8px 12px; border-radius: 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .print-section-date { font-size: 14px; font-weight: bold; }
+        /* Day color variants (cycled): 0=Orange, 1=Yellow, 2=Green */
+        .print-section-header.day-color-0 { background-color: #fdc568; }
+        .print-section-header.day-color-1 { background-color: #fff59d; }
+        .print-section-header.day-color-2 { background-color: #a8e6a3; }
+        .print-course-header { font-size: 12px; font-weight: 700; padding: 6px 8px; margin: 8px 0 6px; background-color: rgba(0,0,0,0.03); border-radius: 3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .group-block { margin-bottom: 24px; }
         .group-title { font-size: 13px; margin-bottom: 6px; }
         .print-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
@@ -479,7 +525,6 @@ async function printProctorSchedule() {
     setTimeout(() => printWindow.print(), 300);
 }
 
-// Retained as a fallback reference for the previous row-based output.
 async function printSchedule() {
     const selectedFaculty = document.getElementById('facultySelector').value;
     if (!selectedFaculty) {
@@ -767,7 +812,6 @@ async function printSchedule() {
     }
 }
 
-// Delete schedule via AJAX
 function deleteSchedule(scheduleId) {
     if (!confirm('Delete this schedule? This will also delete attendance records.')) {
         return;
@@ -926,6 +970,8 @@ function openExamScheduleModal() {
     updateExamScheduleTypeFields();
     loadProctorReferenceData().then(() => {
         updateExamScheduleTypeFields();
+        updateScheduleSectionOptions();
+        updateScheduleSubjectOptions();
         const modal = document.getElementById('examScheduleModal');
         if (modal) modal.style.display = 'flex';
     }).catch(error => alert(error.message));
@@ -968,12 +1014,6 @@ function updateExamScheduleTypeFields() {
         if (subjectField) { subjectField.disabled = true; subjectField.required = false; subjectField.value = ''; subjectField.removeAttribute('name'); }
         if (sectionField) { sectionField.disabled = false; sectionField.required = true; sectionField.setAttribute('name', 'section_id'); }
         if (roomField) { roomField.disabled = false; roomField.required = true; roomField.setAttribute('name', 'room_id'); }
-        // TEMP DEBUG: log the state when Break Time is toggled in the Add Exam Schedule modal
-        console.log('Break Time toggled. scheduleSubjectId state:', {
-            disabled: subjectField?.disabled,
-            hasName: typeof subjectField?.hasAttribute === 'function' ? subjectField.hasAttribute('name') : false,
-            value: subjectField?.value
-        });
     } else {
         fields.style.display = 'none';
         [subjectField, sectionField, roomField].forEach(f => {
@@ -1104,6 +1144,17 @@ function initProctoringTab() {
         scheduleTypeModal.addEventListener('change', updateExamScheduleTypeFields);
     }
 
+    ['scheduleCourseId', 'scheduleYearLevel'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && !el.dataset.listenerAttached) {
+            el.dataset.listenerAttached = 'true';
+            el.addEventListener('change', function () {
+                updateScheduleSectionOptions();
+                updateScheduleSubjectOptions();
+            });
+        }
+    });
+
     ['proctorSemesterFilter', 'proctorSchoolYearFilter'].forEach(function (id) {
         const el = document.getElementById(id);
         if (el && !el.dataset.listenerAttached) {
@@ -1147,3 +1198,24 @@ const classSchedulingExports = [
 ];
 
 classSchedulingExports.forEach((name) => exposeGlobal(name, window[name] ?? eval(name)));
+
+async function loadProctorAssignments() {
+    const body = document.getElementById('proctorAssignmentsBody');
+    if (!body) return;
+    body.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading assignments...</td></tr>';
+    const params = selectedProctorPeriodParams();
+    params.set('action', 'list');
+    params.set('exam_id', document.getElementById('proctorExamFilter')?.value || '');
+    params.set('status', document.getElementById('proctorStatusFilter')?.value || '');
+    try {
+        const data = await (await fetch(`${proctorApi}?${params}`)).json();
+        if (!data.success) throw new Error(data.message);
+        body.innerHTML = data.assignments.length ? data.assignments.map(item => `<tr>
+            <td>${proctorEscape(item.exam_name)}</td><td>${proctorEscape(item.subject_codes || '')}</td><td>${proctorEscape(item.section_code || '')}</td><td>${proctorEscape(item.room_name || '')}</td>
+            <td>${proctorEscape(formatProctorDate(item.exam_date))}</td><td>${proctorEscape(formatProctorTime(item.start_time))} - ${proctorEscape(formatProctorTime(item.end_time))}</td>
+            <td>${proctorEscape(`${item.last_name || ''}, ${item.first_name || ''}`)}</td><td>${proctorEscape(item.role)}</td><td>${proctorEscape(item.status)}</td>
+            <td><button type="button" class="btn btn-primary btn-sm" onclick="editProctor(${Number(item.id)})"><i class="fas fa-edit"></i></button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="cancelProctor(${Number(item.id)})"><i class="fas fa-ban"></i></button></td></tr>`).join('') : '<tr><td colspan="10" style="text-align:center;">No proctor assignments found.</td></tr>';
+        window.proctorAssignments = data.assignments;
+    } catch (error) { body.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#b00020;">${proctorEscape(error.message)}</td></tr>`; }
+}

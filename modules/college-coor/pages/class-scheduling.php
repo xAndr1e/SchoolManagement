@@ -288,6 +288,7 @@ $all_rooms = $db->query("SELECT id AS room_id, room_name AS room FROM cc_room WH
 
 // Get data for dropdowns
 $all_faculty = $db->query("SELECT id, faculty_code, first_name, last_name FROM cc_faculty ORDER BY last_name")->fetchAll();
+$all_courses = $db->query("SELECT id, code, name FROM rgr_courses ORDER BY code")->fetchAll(PDO::FETCH_ASSOC);
 $all_sections = $db->query("SELECT cs.id, cs.section_code, cs.grade_level, c.code AS program FROM cc_sections cs LEFT JOIN rgr_courses c ON cs.program_id = c.id ORDER BY cs.section_code")->fetchAll();
 
 // Calculate statistics using the new method
@@ -722,6 +723,12 @@ $school_year_map = array_column($school_years, 'name', 'id');
                     <div class="form-group" style="grid-column:1/-1;"><label for="scheduleExamId">Exam</label><select name="exam_id" id="scheduleExamId" required></select><small id="scheduleExamContext" style="display:block;margin-top:5px;color:#666;"></small></div>
                     <div class="form-group"><label for="scheduleType">Schedule Type</label><select name="schedule_type" id="scheduleType" required><option value="Exam">Exam</option><option value="Break Time">Break Time</option></select></div>
                     <div id="examScheduleClassFields" style="display: contents;">
+                        <div class="form-group"><label for="scheduleCourseId">Course</label><select id="scheduleCourseId"><option value="">Select Course</option>
+<?php foreach ($all_courses as $course): ?>
+<option value="<?= (int)$course['id'] ?>"><?= htmlspecialchars($course['code']) ?> - <?= htmlspecialchars($course['name']) ?></option>
+<?php endforeach; ?>
+</select></div>
+                        <div class="form-group"><label for="scheduleYearLevel">Year Level</label><select id="scheduleYearLevel"><option value="">Select Year Level</option><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="3rd Year">3rd Year</option><option value="4th Year">4th Year</option></select></div>
                         <div class="form-group"><label for="scheduleSubjectId">Subject</label><select name="subject_id" id="scheduleSubjectId" required></select></div>
                         <div class="form-group"><label for="scheduleSectionId">Section</label><select name="section_id" id="scheduleSectionId" required></select></div>
                         <div class="form-group"><label for="scheduleRoomId">Room</label><select name="room_id" id="scheduleRoomId" required></select></div>

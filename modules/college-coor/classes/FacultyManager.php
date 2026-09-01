@@ -23,20 +23,15 @@ class FacultyManager {
              INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
              INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
              WHERE fl.faculty_id = f.id) AS assigned_subjects,
-            (SELECT COALESCE(SUM(s.units), 0)
-             FROM cc_faculty_load fl
-             LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
-             INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
-             INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
-             WHERE fl.faculty_id = f.id) AS teaching_units,
-            15 AS max_load,
-            (SELECT COALESCE(SUM(s2.units), 0)
-             FROM cc_faculty_load fl2
-             LEFT JOIN rgr_subjects s2 ON fl2.subject_id = s2.id
-             INNER JOIN rgr_school_years sy2 ON fl2.school_year_id = sy2.id AND sy2.is_active = 1
-             INNER JOIN rgr_semesters sem2 ON fl2.semester_id = sem2.id AND sem2.is_active = 1
-             WHERE fl2.faculty_id = f.id) AS total_units
+            COALESCE(fls.total_units, 0) AS teaching_units,
+            COALESCE(fls.max_load, 15) AS max_load,
+            COALESCE(fls.total_units, 0) AS total_units,
+            COALESCE(fls.load_status, 'Underloaded') AS load_status
         FROM cc_faculty f
+        LEFT JOIN cc_faculty_load_summary fls ON f.id = fls.faculty_id
+        LEFT JOIN rgr_school_years sy ON fls.school_year_id = sy.id AND sy.is_active = 1
+        LEFT JOIN rgr_semesters sem ON fls.semester_id = sem.id AND sem.is_active = 1
+        WHERE sy.id IS NOT NULL OR fls.id IS NULL
         ORDER BY f.first_name, f.last_name";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
@@ -61,15 +56,16 @@ class FacultyManager {
              INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
              INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
              WHERE fl.faculty_id = f.id) AS assigned_subjects,
-            (SELECT COALESCE(SUM(s.units), 0)
-             FROM cc_faculty_load fl
-             LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
-             INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
-             INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
-             WHERE fl.faculty_id = f.id) AS teaching_units,
-            15 AS max_load
+            COALESCE(fls.total_units, 0) AS teaching_units,
+            COALESCE(fls.max_load, 15) AS max_load,
+            COALESCE(fls.total_units, 0) AS total_units,
+            COALESCE(fls.load_status, 'Underloaded') AS load_status
         FROM cc_faculty f
-        WHERE f.id = :faculty_id";
+        LEFT JOIN cc_faculty_load_summary fls ON f.id = fls.faculty_id
+        LEFT JOIN rgr_school_years sy ON fls.school_year_id = sy.id AND sy.is_active = 1
+        LEFT JOIN rgr_semesters sem ON fls.semester_id = sem.id AND sem.is_active = 1
+        WHERE f.id = :faculty_id
+          AND (sy.id IS NOT NULL OR fls.id IS NULL)";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':faculty_id', $facultyId);
         $stmt->execute();
@@ -299,6 +295,29 @@ class FacultyManager {
             }
 
             $this->conn->commit();
+            
+            // Regenerate faculty load summary for all affected school year/semester combinations
+            // Collect unique school_year_id and semester_id combos that were touched
+            $affectedPeriods = [];
+            foreach ($assignments as $assignment) {
+                $sectionId = (int)$assignment['section_id'];
+                $sectionStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
+                $sectionStmt->execute();
+                $section = $sectionStmt->fetch(PDO::FETCH_ASSOC);
+                if ($section) {
+                    $key = $section['school_year_id'] . '-' . $section['semester_id'];
+                    $affectedPeriods[$key] = [
+                        'school_year_id' => (int)$section['school_year_id'],
+                        'semester_id' => (int)$section['semester_id']
+                    ];
+                }
+            }
+            
+            // Regenerate summary for each unique school_year_id/semester_id pair
+            foreach ($affectedPeriods as $period) {
+                $this->generateFacultyLoadSummary($period['school_year_id'], $period['semester_id']);
+            }
+            
             return ['success' => true, 'message' => 'Assignments saved successfully'];
         } catch (Exception $e) {
             $this->conn->rollBack();
@@ -321,10 +340,95 @@ class FacultyManager {
     }
 
     public function deleteAssignment($facultyLoadId) {
-        $sql = "DELETE FROM cc_faculty_load WHERE id = :id";
+        try {
+            // First, retrieve the assignment details before deletion
+            $selectSql = "SELECT faculty_id, school_year_id, semester_id FROM cc_faculty_load WHERE id = :id";
+            $selectStmt = $this->conn->prepare($selectSql);
+            $selectStmt->bindParam(':id', $facultyLoadId);
+            $selectStmt->execute();
+            $assignment = $selectStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Delete the assignment
+            $deleteSql = "DELETE FROM cc_faculty_load WHERE id = :id";
+            $deleteStmt = $this->conn->prepare($deleteSql);
+            $deleteStmt->bindParam(':id', $facultyLoadId);
+            $deleteStmt->execute();
+            
+            // Regenerate faculty load summary for the affected period
+            if ($assignment) {
+                $this->generateFacultyLoadSummary((int)$assignment['school_year_id'], (int)$assignment['semester_id']);
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function generateFacultyLoadSummary($schoolYearId, $semesterId) {
+        try {
+            $sql = "INSERT INTO cc_faculty_load_summary 
+                    (faculty_id, school_year_id, semester_id, total_units, max_load, load_status, computed_at)
+                    SELECT 
+                        f.id,
+                        fl.school_year_id,
+                        fl.semester_id,
+                        COALESCE(SUM(s.units), 0) AS total_units,
+                        COALESCE(f.max_load, 15) AS max_load,
+                        CASE 
+                            WHEN COALESCE(SUM(s.units), 0) > COALESCE(f.max_load, 15) THEN 'Overloaded'
+                            WHEN COALESCE(SUM(s.units), 0) = COALESCE(f.max_load, 15) THEN 'Normal Load'
+                            ELSE 'Underloaded'
+                        END AS load_status,
+                        NOW() AS computed_at
+                    FROM cc_faculty f
+                    LEFT JOIN cc_faculty_load fl ON f.id = fl.faculty_id
+                    LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+                    WHERE fl.school_year_id = :school_year_id
+                      AND fl.semester_id = :semester_id
+                    GROUP BY f.id, fl.school_year_id, fl.semester_id
+                    ON DUPLICATE KEY UPDATE 
+                        total_units = VALUES(total_units),
+                        load_status = VALUES(load_status),
+                        computed_at = VALUES(computed_at)";
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':school_year_id', $schoolYearId, PDO::PARAM_INT);
+            $stmt->bindParam(':semester_id', $semesterId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return ['success' => true, 'message' => 'Faculty load summary generated successfully'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error generating faculty load summary: ' . $e->getMessage()];
+        }
+    }
+
+    public function getFacultyLoadSummary($schoolYearId, $semesterId) {
+        $sql = "SELECT 
+            fls.id,
+            fls.faculty_id,
+            fls.school_year_id,
+            fls.semester_id,
+            fls.total_units,
+            fls.max_load,
+            fls.load_status,
+            fls.computed_at,
+            f.faculty_code,
+            f.first_name,
+            f.last_name,
+            f.department
+        FROM cc_faculty_load_summary fls
+        INNER JOIN cc_faculty f ON fls.faculty_id = f.id
+        WHERE fls.school_year_id = :school_year_id
+          AND fls.semester_id = :semester_id
+        ORDER BY f.first_name, f.last_name";
+        
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':id', $facultyLoadId);
-        return $stmt->execute();
+        $stmt->bindParam(':school_year_id', $schoolYearId, PDO::PARAM_INT);
+        $stmt->bindParam(':semester_id', $semesterId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

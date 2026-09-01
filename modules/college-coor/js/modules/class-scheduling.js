@@ -357,16 +357,39 @@ async function printProctorSchedule() {
         groupedByDate[dateKey].push(item);
     });
 
+    // buildTimeSlots(group): collect ALL exam-schedule entries that belong to the same
+    // group (same exam_id and exam_date) and that are tied to the same room OR section.
+    // Intentionally include all exam-type entries (GE101, PE101, etc.) and any Break Time
+    // entries that apply to the group's room/section. Do NOT rely on a single
+    // assignment's exam_schedule_id — use the broader set of schedules from the
+    // `schedules` array so that the print includes every related timeslot.
     const buildTimeSlots = group => {
         const groupSchedules = schedules.filter(item => {
             if (item.exam_id !== group.exam_id || item.exam_date !== group.exam_date) return false;
-            // Include Break Time only if it explicitly matches this group's room and section
-            if (item.schedule_type === 'Break Time') {
-                return String(item.room_id || '') === String(group.room_id || '') && String(item.section_id || '') === String(group.section_id);
-            }
-            return String(item.room_id || '') === String(group.room_id || '') && String(item.section_id || '') === String(group.section_id);
+
+            // Consider schedules that match either the room OR the section for the group.
+            // This handles cases where different schedules in the same exam group may
+            // have the same exam/date but vary slightly in room or section fields.
+            const roomMatches = String(item.room_id || '') === String(group.room_id || '');
+            const sectionMatches = String(item.section_id || '') === String(group.section_id || '');
+
+            // Include Break Time entries only if they explicitly match room OR section
+            // (we allow OR here to be more forgiving if records vary), and include all
+            // other exam entries that match by room or section.
+            return roomMatches || sectionMatches;
         });
-        return groupSchedules.sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+        // Deduplicate by id (in case of duplicates) and sort by start_time
+        const unique = [];
+        const seen = new Set();
+        groupSchedules.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).forEach(s => {
+            if (!seen.has(s.id)) {
+                seen.add(s.id);
+                unique.push(s);
+            }
+        });
+
+        return unique;
     };
 
     const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[ch]));
@@ -374,13 +397,6 @@ async function printProctorSchedule() {
         if (!value) return '';
         const date = new Date(`${value}T00:00:00`);
         return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    };
-    const formatTimeLabel = value => {
-        const [hour, minute] = String(value || '').split(':').map(Number);
-        if (Number.isNaN(hour)) return value;
-        const suffix = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
-        return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
     };
     const printWindow = window.open('', '', 'width=1400,height=900');
     if (!printWindow) {
@@ -403,7 +419,7 @@ async function printProctorSchedule() {
                 }
                 return `<td>${escapeHtml(slot.subject_code || slot.subject_name || '')}</td>`;
             }).join('');
-            const timeHeaders = slots.map(slot => `<th>${escapeHtml(formatTimeLabel(slot.start_time))} - ${escapeHtml(formatTimeLabel(slot.end_time))}</th>`).join('');
+            const timeHeaders = slots.map(slot => `<th>${escapeHtml(formatProctorTime(slot.start_time))} - ${escapeHtml(formatProctorTime(slot.end_time))}</th>`).join('');
             return `<div class="group-block"><div class="group-title"><strong>${escapeHtml(group.exam_name)}</strong> | ${escapeHtml(group.room_name)} | ${escapeHtml(group.section_code)}</div><table class="print-table"><thead><tr><th>PROCTOR</th><th>ROOM</th><th>SECTION</th>${timeHeaders}</tr></thead><tbody><tr><td>${escapeHtml(`${group.last_name || ''}, ${group.first_name || ''}`)}</td><td>${escapeHtml(group.room_name)}</td><td>${escapeHtml(group.section_code)}</td>${cells}</tr></tbody></table></div>`;
         }).join('');
         return `${headerHtml}${groupRows}`;
@@ -500,104 +516,90 @@ async function printSchedule() {
 
         const faculty_name = facultyInfo.last_name ? (facultyInfo.first_name + ', ' + facultyInfo.last_name) : 'N/A';
         const faculty_code = facultyInfo.faculty_code || 'N/A';
-        const timeSlots = [
-            { label: '7:00 AM - 8:00 AM', start: '07:00', end: '08:00' },
-            { label: '8:00 AM - 9:00 AM', start: '08:00', end: '09:00' },
-            { label: '9:00 AM - 10:00 AM', start: '09:00', end: '10:00' },
-            { label: '10:00 AM - 11:00 AM', start: '10:00', end: '11:00' },
-            { label: '11:00 AM - 12:00 PM', start: '11:00', end: '12:00' },
-            { label: '12:00 PM - 1:00 PM', start: '12:00', end: '13:00' },
-            { label: '1:00 PM - 2:00 PM', start: '13:00', end: '14:00' },
-            { label: '2:00 PM - 3:00 PM', start: '14:00', end: '15:00' },
-            { label: '3:00 PM - 4:00 PM', start: '15:00', end: '16:00' },
-            { label: '4:00 PM - 5:00 PM', start: '16:00', end: '17:00' }
-        ];
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const timeToMinutes = (timeStr) => {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + (minutes || 0);
+            const [hours, minutes] = String(timeStr || '00:00').split(':').map(Number);
+            return (hours || 0) * 60 + (minutes || 0);
         };
-        const slotStarts = timeSlots.map(ts => timeToMinutes(ts.start));
-        const slotEnds = timeSlots.map(ts => timeToMinutes(ts.end));
 
-        function getSlotRange(sch) {
-            const s = timeToMinutes(sch.start_time);
-            const e = timeToMinutes(sch.end_time);
-            let startIdx = null, endIdx = null;
-            for (let i = 0; i < timeSlots.length; i++) {
-                const slotStart = slotStarts[i];
-                const slotEnd = slotEnds[i];
-                if (s < slotEnd && e > slotStart) {
-                    if (startIdx === null) startIdx = i;
-                    endIdx = i;
-                }
+        const minutesToLabel = minutes => {
+            const hour = Math.floor(minutes / 60);
+            const minute = minutes % 60;
+            const suffix = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12;
+            return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
+        };
+
+        const earliestMinute = timeToMinutes('07:00');
+        const latestMinute = timeToMinutes('17:00');
+        const boundaryMinutes = new Set([earliestMinute, latestMinute]);
+
+        schedules.forEach(sch => {
+            const startMinutes = timeToMinutes(sch.start_time);
+            const endMinutes = timeToMinutes(sch.end_time);
+            if (startMinutes >= earliestMinute && endMinutes <= latestMinute) {
+                boundaryMinutes.add(startMinutes);
+                boundaryMinutes.add(endMinutes);
             }
-            return { startIdx, endIdx };
+        });
+
+        const sortedBoundaries = [...boundaryMinutes]
+            .filter(minutes => minutes >= earliestMinute && minutes <= latestMinute)
+            .sort((a, b) => a - b);
+
+        const timeSlots = [];
+        for (let i = 0; i < sortedBoundaries.length - 1; i++) {
+            const startMinutes = sortedBoundaries[i];
+            const endMinutes = sortedBoundaries[i + 1];
+            if (endMinutes <= startMinutes) continue;
+            timeSlots.push({
+                start: `${String(Math.floor(startMinutes / 60)).padStart(2, '0')}:${String(startMinutes % 60).padStart(2, '0')}`,
+                end: `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`,
+                label: `${minutesToLabel(startMinutes)} - ${minutesToLabel(endMinutes)}`
+            });
         }
 
-        const dayBuckets = days.map(() => []);
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const daySchedules = days.map(() => []);
+
         schedules.forEach(sch => {
             const dayIndex = days.indexOf(sch.day_of_week);
             if (dayIndex === -1) return;
-            const range = getSlotRange(sch);
-            if (range.startIdx === null) return;
-            sch._startIdx = range.startIdx;
-            sch._endIdx = range.endIdx;
-            dayBuckets[dayIndex].push(sch);
+
+            const startMinutes = timeToMinutes(sch.start_time);
+            const endMinutes = timeToMinutes(sch.end_time);
+            if (startMinutes < earliestMinute || endMinutes > latestMinute) return;
+
+            let startIdx = null;
+            for (let i = 0; i < timeSlots.length; i++) {
+                const slotStart = timeToMinutes(timeSlots[i].start);
+                const slotEnd = timeToMinutes(timeSlots[i].end);
+                if (startMinutes >= slotStart && startMinutes < slotEnd) {
+                    startIdx = i;
+                    break;
+                }
+            }
+
+            let endIdx = null;
+            for (let i = timeSlots.length - 1; i >= 0; i--) {
+                const slotStart = timeToMinutes(timeSlots[i].start);
+                const slotEnd = timeToMinutes(timeSlots[i].end);
+                if (endMinutes > slotStart && endMinutes <= slotEnd) {
+                    endIdx = i;
+                    break;
+                }
+            }
+
+            if (startIdx === null || endIdx === null || startIdx > endIdx) return;
+
+            daySchedules[dayIndex].push({
+                ...sch,
+                startIdx,
+                endIdx
+            });
         });
 
-        function createSegment(sch) {
-            return {
-                type: sch.schedule_type,
-                start_time: sch.start_time,
-                end_time: sch.end_time,
-                subject_code: sch.subject_code,
-                section_code: sch.section_code,
-                room_full: sch.room_full
-            };
-        }
-
-        const mergedDayBlocks = dayBuckets.map(bucket => {
-            bucket.sort((a, b) => (a._startIdx - b._startIdx) || (timeToMinutes(a.start_time) - timeToMinutes(b.start_time)));
-            const merged = [];
-            for (let i = 0; i < bucket.length; i++) {
-                const s = bucket[i];
-                const cur = {
-                    subject_code: s.subject_code,
-                    subject_name: s.subject_name,
-                    section_code: s.section_code,
-                    room_full: s.room_full,
-                    startIdx: s._startIdx,
-                    endIdx: s._endIdx,
-                    segments: [createSegment(s)]
-                };
-                let j = i + 1;
-                while (j < bucket.length) {
-                    const n = bucket[j];
-                    const sameIdentifiers = (n.subject_code === cur.subject_code && n.section_code === cur.section_code && n.room_full === cur.room_full);
-                    const adjacentOrOverlap = (n._startIdx <= cur.endIdx + 1);
-                    const curIsBreakOnly = cur.segments.length === 1 && cur.segments[0].type === 'Break Time';
-                    const nextIsBreak = n.schedule_type === 'Break Time';
-                    const mergeWithBreak = adjacentOrOverlap && (nextIsBreak || curIsBreakOnly);
-
-                    if ((sameIdentifiers && adjacentOrOverlap) || mergeWithBreak) {
-                        cur.endIdx = Math.max(cur.endIdx, n._endIdx);
-                        cur.segments.push(createSegment(n));
-                        if (curIsBreakOnly && !nextIsBreak) {
-                            cur.subject_code = n.subject_code;
-                            cur.subject_name = n.subject_name;
-                            cur.section_code = n.section_code;
-                            cur.room_full = n.room_full;
-                        }
-                        j++;
-                    } else {
-                        break;
-                    }
-                }
-                merged.push(cur);
-                i = j - 1;
-            }
-            return merged;
+        daySchedules.forEach(bucket => {
+            bucket.sort((a, b) => (a.startIdx - b.startIdx) || (a.endIdx - b.endIdx));
         });
 
         let totalUnits = 0;
@@ -618,8 +620,9 @@ async function printSchedule() {
             const timeSlot = timeSlots[timeIndex];
             timetableHtml += `<tr><td class="time-cell">${timeSlot.label}</td>`;
             for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
-                const blocks = mergedDayBlocks[dayIndex] || [];
+                const blocks = daySchedules[dayIndex] || [];
                 const startingBlock = blocks.find(b => b.startIdx === timeIndex);
+
                 if (startingBlock) {
                     const rowspan = (startingBlock.endIdx - startingBlock.startIdx) + 1;
                     const blockStartMin = timeToMinutes(timeSlots[startingBlock.startIdx].start);
@@ -628,11 +631,21 @@ async function printSchedule() {
                     const totalHeightPx = rowspan * 45;
 
                     let content = `<div style="position:relative; height:${totalHeightPx}px;">`;
-                    startingBlock.segments.forEach(seg => {
+                    const segments = [{
+                        type: startingBlock.schedule_type,
+                        start_time: startingBlock.start_time,
+                        end_time: startingBlock.end_time,
+                        subject_code: startingBlock.subject_code,
+                        section_code: startingBlock.section_code,
+                        room_full: startingBlock.room_full
+                    }];
+
+                    segments.forEach(seg => {
                         const segStart = timeToMinutes(seg.start_time);
                         const segEnd = timeToMinutes(seg.end_time);
-                        const topPx = ((segStart - blockStartMin) / totalMin) * totalHeightPx;
-                        const heightPx = ((segEnd - segStart) / totalMin) * totalHeightPx;
+                        const topPx = totalMin > 0 ? ((segStart - blockStartMin) / totalMin) * totalHeightPx : 0;
+                        const heightPx = totalMin > 0 ? ((segEnd - segStart) / totalMin) * totalHeightPx : totalHeightPx;
+
                         if (seg.type === 'Break Time') {
                             content += `<div class="break-time" style="position:absolute; left:0; right:0; top:${topPx}px; height:${heightPx}px;">BREAK TIME</div>`;
                         } else {
@@ -644,6 +657,7 @@ async function printSchedule() {
                             </div>`;
                         }
                     });
+
                     content += '</div>';
                     timetableHtml += `<td class="schedule-cell" rowspan="${rowspan}">${content}</td>`;
                 } else {
@@ -689,7 +703,21 @@ async function printSchedule() {
                     .schedule-cell { background: white; overflow: hidden; }
                     .schedule-entry { font-size: 8px; line-height: 1.2; }
                     .schedule-entry strong { display: block; font-weight: bold; }
-                    .break-time { background: #fff3cd; border: 1px solid #ffc107; color: #856404; font-weight: bold; text-align: center; padding: 8px 2px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+                    .break-time {
+                        background: #fdf3e0;
+                        color: #b8860b;
+                        font-weight: bold;
+                        text-align: center;
+                        padding: 8px 2px;
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 8px;
+                        border: none;
+                        box-shadow: none;
+                        outline: none;
+                    }
                     .summary-section { margin-top: 10px; font-size: 10px; }
                     .footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #000; }
                     .footer-row { display: flex; justify-content: space-between; gap: 20px; margin-top: 20px; }

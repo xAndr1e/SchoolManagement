@@ -1400,16 +1400,14 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function calculateLoadStatus(totalUnits, maxLoad) {
-    totalUnits = parseInt(totalUnits) || 0;
-
-    if (totalUnits <= 8) {
-        return { status: 'Underloaded', badge: 'badge-warning' };
-    } else if (totalUnits >= 9 && totalUnits <= 15) {
-        return { status: 'Normal Load', badge: 'badge-success' };
-    } else {
-        return { status: 'Overloaded', badge: 'badge-danger' };
-    }
+function calculateLoadStatus(loadStatusString) {
+    const badgeMap = {
+        'Underloaded': 'badge-warning',
+        'Normal Load': 'badge-success',
+        'Overloaded': 'badge-danger'
+    };
+    const status = loadStatusString || 'Underloaded';
+    return { status: status, badge: badgeMap[status] || 'badge-secondary' };
 }
 
 function loadFacultyLoadData() {
@@ -1434,7 +1432,7 @@ function loadFacultyLoadData() {
                 const assignedSubjects = parseInt(fac.assigned_subjects) || 0;
                 const teachingUnits = parseInt(fac.teaching_units) || 0;
                 const maxLoad = parseInt(fac.max_load) || 15;
-                const loadStatusData = calculateLoadStatus(teachingUnits, maxLoad);
+                const loadStatusData = calculateLoadStatus(fac.load_status);
 
                 return `
                     <tr data-faculty-id="${fac.id}" data-faculty-name="${escapeHtml(fac.faculty_name)}" data-max-load="${maxLoad}" data-teaching-units="${teachingUnits}" data-assigned-sections="${assignedSections}" data-assigned-subjects="${assignedSubjects}" data-department="${escapeHtml(fac.department)}">
@@ -1480,7 +1478,7 @@ function updateFacultyLoadValues(facultyId) {
                 const classesAssigned = parseInt(fac.classes_assigned) || 0;
                 const totalUnits = parseInt(fac.total_units) || 0;
                 const maxLoad = parseInt(fac.max_load) || 15;
-                const loadStatusData = calculateLoadStatus(totalUnits, maxLoad);
+                const loadStatusData = calculateLoadStatus(fac.load_status);
 
                 const classesCell = row.querySelector('.faculty-classes-assigned');
                 if (classesCell) classesCell.textContent = classesAssigned;

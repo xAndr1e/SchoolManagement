@@ -398,7 +398,7 @@ $stats = [
             </div>
             <select class="filter-select" id="filterLoadStatus">
                 <option value="">All Status</option>
-                <option value="Fully Loaded">Fully Loaded</option>
+                <option value="Normal Load">Normal Load</option>
                 <option value="Underloaded">Underloaded</option>
                 <option value="Overloaded">Overloaded</option>
             </select>
@@ -431,19 +431,15 @@ $stats = [
                                     <td><?php echo intval($fac['max_load'] ?? 15); ?></td>
                                     <td>
                                         <?php
-                                        $teachingUnits = intval($fac['teaching_units'] ?? 0);
-                                        if ($teachingUnits <= 8) {
-                                            $loadStatus = 'Underloaded';
-                                            $badgeClass = 'badge-warning';
-                                        } elseif ($teachingUnits >= 9 && $teachingUnits <= 15) {
-                                            $loadStatus = 'Normal Load';
-                                            $badgeClass = 'badge-success';
-                                        } else {
-                                            $loadStatus = 'Overloaded';
-                                            $badgeClass = 'badge-danger';
-                                        }
+                                        $loadStatus = $fac['load_status'] ?? 'Underloaded';
+                                        $badgeClassMap = [
+                                            'Underloaded' => 'badge-warning',
+                                            'Normal Load' => 'badge-success',
+                                            'Overloaded' => 'badge-danger'
+                                        ];
+                                        $badgeClass = $badgeClassMap[$loadStatus] ?? 'badge-secondary';
                                         ?>
-                                        <span class="badge <?php echo $badgeClass; ?>"><?php echo $loadStatus; ?></span>
+                                        <span class="badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($loadStatus); ?></span>
                                     </td>
                                     <td>
                                         <div class="actions">

@@ -1403,7 +1403,7 @@ function escapeHtml(text) {
 function calculateLoadStatus(loadStatusString) {
     const badgeMap = {
         'Underloaded': 'badge-warning',
-        'Normal Load': 'badge-success',
+        'Fully Loaded': 'badge-success',
         'Overloaded': 'badge-danger'
     };
     const status = loadStatusString || 'Underloaded';
@@ -1584,6 +1584,9 @@ function initAcademicsManagementBindings() {
                 alert('Subject assignment saved successfully');
                 closeAssignFacultySubjectModal();
                 loadFacultyLoadData();
+                // Trigger dashboard overview refresh
+                sessionStorage.setItem('refreshFacultyLoad', 'true');
+                window.dispatchEvent(new CustomEvent('facultyLoadUpdated', { detail: { type: 'subject_assigned' } }));
             } else {
                 alert('Error: ' + (responseData.message || 'Failed to save subject assignment'));
             }

@@ -36,7 +36,6 @@ try {
     $conn->beginTransaction();
 
     $checkStmt = $conn->prepare("SELECT COUNT(*) AS count FROM cc_section_faculty WHERE section_id = :section_id AND faculty_id = :faculty_id AND role = 'Instructor' AND school_year_id = :school_year_id AND semester_id = :semester_id AND (status = 'Active' OR status IS NULL)");
-    $replaceStmt = $conn->prepare("UPDATE cc_section_faculty SET status = 'Reassigned', ended_at = NOW(), updated_at = NOW() WHERE section_id = :section_id AND role = 'Instructor' AND school_year_id = :school_year_id AND semester_id = :semester_id AND (status = 'Active' OR status IS NULL) AND faculty_id <> :faculty_id");
     $insertStmt = $conn->prepare("INSERT INTO cc_section_faculty (section_id, faculty_id, role, school_year_id, semester_id, status, assigned_at, created_at, updated_at) VALUES (:section_id, :faculty_id, 'Instructor', :school_year_id, :semester_id, 'Active', NOW(), NOW(), NOW())");
 
     $inserted = 0;
@@ -79,11 +78,8 @@ try {
             exit;
         }
 
-        $replaceStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
-        $replaceStmt->bindParam(':faculty_id', $facultyId, PDO::PARAM_INT);
-        $replaceStmt->bindParam(':school_year_id', $schoolYearId, PDO::PARAM_INT);
-        $replaceStmt->bindParam(':semester_id', $semesterId, PDO::PARAM_INT);
-        $replaceStmt->execute();
+        // Note: do not automatically update existing instructor assignments to 'Reassigned'.
+        // Multiple instructors may be active for a section; only insert the new assignment.
 
         $insertStmt->bindParam(':section_id', $sectionId, PDO::PARAM_INT);
         $insertStmt->bindParam(':faculty_id', $facultyId, PDO::PARAM_INT);

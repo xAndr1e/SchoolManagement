@@ -23,15 +23,27 @@ class FacultyManager {
              INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
              INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
              WHERE fl.faculty_id = f.id) AS assigned_subjects,
-            COALESCE(fls.total_units, 0) AS teaching_units,
-            COALESCE(fls.max_load, 15) AS max_load,
-            COALESCE(fls.total_units, 0) AS total_units,
-            COALESCE(fls.load_status, 'Underloaded') AS load_status
+            COALESCE(t.teaching_units, 0) AS teaching_units,
+            COALESCE(t.max_load, f.max_load, 15) AS max_load,
+            COALESCE(t.teaching_units, 0) AS total_units,
+            CASE
+                WHEN COALESCE(t.teaching_units, 0) > COALESCE(t.max_load, f.max_load, 15) THEN 'Overloaded'
+                WHEN COALESCE(t.teaching_units, 0) = COALESCE(t.max_load, f.max_load, 15) THEN 'Fully Loaded'
+                ELSE 'Underloaded'
+            END AS load_status
         FROM cc_faculty f
-        LEFT JOIN cc_faculty_load_summary fls ON f.id = fls.faculty_id
-        LEFT JOIN rgr_school_years sy ON fls.school_year_id = sy.id AND sy.is_active = 1
-        LEFT JOIN rgr_semesters sem ON fls.semester_id = sem.id AND sem.is_active = 1
-        WHERE sy.id IS NOT NULL OR fls.id IS NULL
+        LEFT JOIN (
+            SELECT 
+                fl.faculty_id,
+                COALESCE(fac.max_load, 15) AS max_load,
+                COALESCE(SUM(COALESCE(s.units, 0)), 0) AS teaching_units
+            FROM cc_faculty_load fl
+            INNER JOIN cc_faculty fac ON fac.id = fl.faculty_id
+            INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+            INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+            LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+            GROUP BY fl.faculty_id, fac.max_load
+        ) t ON t.faculty_id = f.id
         ORDER BY f.first_name, f.last_name";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
@@ -56,16 +68,29 @@ class FacultyManager {
              INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
              INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
              WHERE fl.faculty_id = f.id) AS assigned_subjects,
-            COALESCE(fls.total_units, 0) AS teaching_units,
-            COALESCE(fls.max_load, 15) AS max_load,
-            COALESCE(fls.total_units, 0) AS total_units,
-            COALESCE(fls.load_status, 'Underloaded') AS load_status
+            COALESCE(t.teaching_units, 0) AS teaching_units,
+            COALESCE(t.max_load, f.max_load, 15) AS max_load,
+            COALESCE(t.teaching_units, 0) AS total_units,
+            CASE
+                WHEN COALESCE(t.teaching_units, 0) > COALESCE(t.max_load, f.max_load, 15) THEN 'Overloaded'
+                WHEN COALESCE(t.teaching_units, 0) = COALESCE(t.max_load, f.max_load, 15) THEN 'Fully Loaded'
+                ELSE 'Underloaded'
+            END AS load_status
         FROM cc_faculty f
-        LEFT JOIN cc_faculty_load_summary fls ON f.id = fls.faculty_id
-        LEFT JOIN rgr_school_years sy ON fls.school_year_id = sy.id AND sy.is_active = 1
-        LEFT JOIN rgr_semesters sem ON fls.semester_id = sem.id AND sem.is_active = 1
-        WHERE f.id = :faculty_id
-          AND (sy.id IS NOT NULL OR fls.id IS NULL)";
+        LEFT JOIN (
+            SELECT 
+                fl.faculty_id,
+                COALESCE(fac.max_load, 15) AS max_load,
+                COALESCE(SUM(COALESCE(s.units, 0)), 0) AS teaching_units
+            FROM cc_faculty_load fl
+            INNER JOIN cc_faculty fac ON fac.id = fl.faculty_id
+            INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
+            INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
+            LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
+            WHERE fl.faculty_id = :faculty_id
+            GROUP BY fl.faculty_id, fac.max_load
+        ) t ON t.faculty_id = f.id
+        WHERE f.id = :faculty_id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':faculty_id', $facultyId);
         $stmt->execute();
@@ -377,7 +402,7 @@ class FacultyManager {
                         COALESCE(f.max_load, 15) AS max_load,
                         CASE 
                             WHEN COALESCE(SUM(s.units), 0) > COALESCE(f.max_load, 15) THEN 'Overloaded'
-                            WHEN COALESCE(SUM(s.units), 0) = COALESCE(f.max_load, 15) THEN 'Normal Load'
+                            WHEN COALESCE(SUM(s.units), 0) = COALESCE(f.max_load, 15) THEN 'Fully Loaded'
                             ELSE 'Underloaded'
                         END AS load_status,
                         NOW() AS computed_at

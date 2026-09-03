@@ -398,7 +398,7 @@ $stats = [
             </div>
             <select class="filter-select" id="filterLoadStatus">
                 <option value="">All Status</option>
-                <option value="Normal Load">Normal Load</option>
+                <option value="Fully Loaded">Fully Loaded</option>
                 <option value="Underloaded">Underloaded</option>
                 <option value="Overloaded">Overloaded</option>
             </select>
@@ -434,7 +434,7 @@ $stats = [
                                         $loadStatus = $fac['load_status'] ?? 'Underloaded';
                                         $badgeClassMap = [
                                             'Underloaded' => 'badge-warning',
-                                            'Normal Load' => 'badge-success',
+                                            'Fully Loaded' => 'badge-success',
                                             'Overloaded' => 'badge-danger'
                                         ];
                                         $badgeClass = $badgeClassMap[$loadStatus] ?? 'badge-secondary';

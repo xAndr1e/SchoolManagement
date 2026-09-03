@@ -360,16 +360,34 @@
 
     async function refreshFacultyLoadChart() {
         try {
-            const response = await fetch('/sms/modules/college-coor/api/get_faculty_load.php', {credentials:'same-origin'});
-            if (!response.ok) throw new Error('Failed to load faculty load data');
-            const rows = await response.json();
-            const maxLoad = rows.length ? Number(rows[0].max_load) || 15 : 15;
-            const counts = computeLoadCounts(rows.map(row => row.total_units), maxLoad);
+            // Use optimized API endpoint for distribution data
+            const response = await fetch('/sms/modules/college-coor/api/get_faculty_load_distribution.php', {credentials:'same-origin'});
+            if (!response.ok) throw new Error('Failed to load faculty load distribution');
+            const distribution = await response.json();
+            
+            // Handle error response from API
+            if (distribution.error) {
+                throw new Error(distribution.error);
+            }
+            
+            // Update chart with distribution data
+            const counts = {
+                under: distribution.underloaded || 0,
+                full: distribution.fully_loaded || 0,
+                over: distribution.overloaded || 0
+            };
+            
             updateFaultyLoadSummary(counts);
+            
+            // Initialize chart if it doesn't exist
             if (!facultyLoadChart) {
-                initFacultyLoadChart(rows.map(row => row.total_units), maxLoad);
+                initFacultyLoadChart([]);
+                facultyLoadChart.data.datasets[0].data = [counts.under, counts.full, counts.over];
+                facultyLoadChart.update();
                 return;
             }
+            
+            // Update chart data
             facultyLoadChart.data.datasets[0].data = [counts.under, counts.full, counts.over];
             facultyLoadChart.update();
         } catch (error) {

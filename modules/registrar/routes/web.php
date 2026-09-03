@@ -314,10 +314,10 @@ $r->get('/class-list/{id:\d+}/schedule',[ClassController::class,'sectionSchedule
 // academic records 
 
 $r->get('/academic-records',[AcademicRecordsController::class,'index']);
+$r->get('/students/view/{id:\d+}/academic-records',[AcademicRecordsController::class,'show']);
 
 
 // for all 
-
    
     $r->post('/cleaner', function() {
 

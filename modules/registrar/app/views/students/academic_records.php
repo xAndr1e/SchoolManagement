@@ -186,11 +186,10 @@
 
     </div>
   </div>
-</di
+ </div>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js"></script>
-
-<script>   const BASE_URL = "<?php echo BASE_URL ?>" </script>
+<script>const BASE_URL = "<?php echo BASE_URL ?>" </script>
 <script src="<?php echo BASE_URL ?>/js/academic_records.js"></script>
 
 <?php include  __DIR__ .'/../partials/footer.php'; ?>

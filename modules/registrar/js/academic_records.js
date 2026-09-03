@@ -261,17 +261,19 @@
         </button>
 
         <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-              <a class="dropdown-item" href="${BASE_URL}/students/show/${student.student_id}">
-                View Academic Records
-            </a>
-            </li>
 
             <li>
+               <a class="dropdown-item" href="${BASE_URL}/students/view/${student.student_id}/academic-records">
+                  View Academic Records
+               </a>
+            </li>
+            
+            <li>
                 <a class="dropdown-item" onclick="getPdf(${student.student_id}); return false;" target="_blank">
-                    Export to PDF
+                  Export to PDF
                 </a>
             </li>
+
         </ul>
     </div>
                             

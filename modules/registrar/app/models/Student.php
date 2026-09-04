@@ -59,7 +59,8 @@
     }
 
 
-     protected function allEnrollmentsByStudent(int $id)
+
+     protected function allEnrollmentsByStudentCurrrentSem(int $id)
     {
 
         $sql = "

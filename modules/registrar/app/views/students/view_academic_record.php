@@ -69,16 +69,6 @@
                         Academic History
                     </button>
                 </li>
-
-                <li class="nav-item">
-                    <button
-                        class="nav-link"
-                        data-bs-toggle="tab"
-                        data-bs-target="#grades">
-                        Grades
-                    </button>
-                </li>
-
                
             </ul>
 
@@ -91,8 +81,11 @@
                 <!-- Overview -->
                  
                  <?php include VIEW_PATH . '/academic-overviews/overview.php'; ?>
+
+                <!-- History -->
+                 
+                 <?php include VIEW_PATH . '/academic-overviews/academic_history.php'; ?>
               
-            
 
             </div>
 

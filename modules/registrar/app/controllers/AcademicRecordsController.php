@@ -50,7 +50,7 @@
         $allCourses = Course::all();
         $section = Student::sectionById($enrollee['student_id']);
         $totalUnitPerSem = Student::totalUnitByStudentPerSemester($enrollee['student_id']);
-        $enrollment = Student::allEnrollmentsByStudent($enrollee['student_id']);
+        $enrollment = Student::allEnrollmentsByStudentCurrrentSem($enrollee['student_id']);
         $enrollHistory = Student::allEnrollmentHistory($enrollee['student_id']);
 
         $groupedCurriculum = [];

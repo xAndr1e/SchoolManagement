@@ -356,32 +356,27 @@ Matches Student Monitoring / User Management styling.
 }
 
 .badge-submitted {
-    border-color: #17a2b8;
-    background: rgba(23, 162, 184, 0.08);
-    color: #17a2b8;
+    background: var(--color1);
+    color: var(--color3);
 }
 
 .badge-reviewed {
-    border-color: #b8860b;
-    background: rgba(255, 193, 7, 0.1);
-    color: #b8860b;
+    background: #b8860b;
+    color: var(--color3);
 }
 
 .badge-open {
-    border-color: var(--color9);
     color: var(--color5);
 }
 
 .badge-resolved {
-    border-color: #16a34a;
-    background: rgba(22, 163, 74, 0.08);
-    color: #16a34a;
+    background: #16a34a;
+    color: var(--color3);
 }
 
 .badge-dismissed {
-    border-color: var(--color10);
-    background: rgba(229, 62, 62, 0.08);
-    color: var(--color10);
+    background: var(--color10);
+    color: var(--color3);
 }
 
 /* ── Notes ────────────────────────────────────────── */

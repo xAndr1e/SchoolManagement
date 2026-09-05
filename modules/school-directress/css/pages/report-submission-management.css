@@ -278,18 +278,18 @@
 }
 
 .rsm-status-reviewed {
-    background: rgba(255, 193, 7, 0.15);
-    color: #b8860b;
+    background: #b8860b;
+    color: var(--color3);
 }
 
 .rsm-status-approved {
-    background: rgba(40, 167, 69, 0.12);
-    color: #28a745;
+    background: #28a745;
+    color: var(--color3);
 }
 
 .rsm-status-rejected {
-    background: rgba(220, 53, 69, 0.12);
-    color: #dc3545;
+    background: #dc3545;
+    color: var(--color3);
 }
 
 /* ── Modal ─────────────────────────────────────────────── */

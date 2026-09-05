@@ -338,21 +338,18 @@ School Directress — Approval & Decision Support
 }
 
 .approval-module .badge-reviewed {
-    color: #b8860b;
-    border-color: #b8860b;
-    background: rgba(255, 193, 7, 0.1);
+    background: #b8860b;
+    color: var(--color3);
 }
 
 .approval-module .badge-approved {
-    color: #16a34a;
-    border-color: #16a34a;
-    background: rgba(22, 163, 74, 0.08);
+    background: #16a34a;
+    color: var(--color3);
 }
 
 .approval-module .badge-rejected {
-    color: var(--color10);
-    border-color: var(--color10);
-    background: rgba(229, 62, 62, 0.08);
+    background: var(--color10);
+    color: var(--color3);
 }
 
 /* ── Attachment / inline text links ───────────────────── */

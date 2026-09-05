@@ -2,12 +2,15 @@
 // Check if user is logged in
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header('Location: /');
+    header('Location: /index.php');
     exit;
 }
 
-$registrationUrl = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . '/register';
-$timeoutUrl = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . '/timeout';
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$registrationUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.php?page=register';
+$timeoutUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.php?page=timeout';
 ?>
 <!DOCTYPE html>
 <html lang="en">

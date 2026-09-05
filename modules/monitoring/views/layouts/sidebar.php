@@ -42,7 +42,10 @@
         </div>
         
         <!-- Main Navigation -->
-        <?php $monitoringBase = '/modules/monitoring/public/index.php'; ?>
+        <?php
+            $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+            $monitoringBase = ($scriptDir === '' ? '' : $scriptDir) . '/index.php';
+        ?>
         <nav class="nav flex-column">
             
             <!-- SECTION 1 -->
@@ -135,16 +138,16 @@
         </nav>
         
         <!-- Footer / Logout Section -->
-        <div class="user-info mt-auto">
-            <hr class="divider">
-            <a href="#" class="logout-btn" id="logoutBtn">
-                <i class="bi bi-box-arrow-right"></i> 
-                <span>Sign Out</span>
-            </a>
-            <div class="sidebar-footer">
-                <small>&copy; <?php echo date('Y'); ?> MonitorPro Portal</small>
-            </div>
-        </div>
+         <div class="user-info mt-auto">
+    <hr class="divider">
+    <a href="<?php echo $monitoringBase; ?>?api=auth/logout" class="logout-btn" id="logoutBtn">
+        <i class="bi bi-box-arrow-right"></i> 
+        <span>Sign Out</span>
+    </a>
+    <div class="sidebar-footer">
+        <small>&copy; <?php echo date('Y'); ?> MonitorPro Portal</small>
+    </div>
+</div>
     </div>
 </div>
 
@@ -469,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Are you sure you want to log out?')) {
-                window.location.href = 'api/auth/logout';
+                window.location.href = this.href;
             }
         });
     }

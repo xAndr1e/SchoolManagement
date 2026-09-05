@@ -9,10 +9,16 @@ class Model {
         date_default_timezone_set('Asia/Manila');
         
         try {
+            $host = getenv('DB_HOST') ?: '127.0.0.1';
+            $port = getenv('DB_PORT') ?: '3306';
+            $database = getenv('DB_DATABASE') ?: 'sms';
+            $user = getenv('DB_USER') ?: 'root';
+            $password = getenv('DB_PASSWORD');
+
             $this->db = new PDO(
-                "mysql:host=127.0.0.1;dbname=sms;charset=utf8mb4",
-                "root",
-                "",
+                "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
+                $user,
+                $password === false ? '' : $password,
                 [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

@@ -3,6 +3,16 @@ require_once __DIR__ . '/../models/User.php';
 
 class AuthController {
     private $userModel;
+
+    private function getMonitoringPublicUrl(string $page = ''): string {
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $basePath = rtrim($scriptDir, '/');
+        $path = 'index.php';
+        if ($page !== '') {
+            $path .= '?page=' . urlencode(trim($page, '/'));
+        }
+        return ($basePath === '' ? '' : $basePath) . '/' . $path;
+    }
     
     public function __construct() {
         $this->userModel = new User();
@@ -60,7 +70,7 @@ class AuthController {
                 return [
                     'success' => true, 
                     'user' => $user,
-                    'redirect' => '/modules/monitoring/public/index.php?page=' . urlencode($redirect)
+                    'redirect' => $this->getMonitoringPublicUrl($redirect)
                 ];
             }
             return ['success' => false, 'message' => 'Invalid username or password'];

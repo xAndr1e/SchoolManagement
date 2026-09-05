@@ -34,7 +34,8 @@ set_exception_handler(function($exception) {
     }
     echo "<h1>500 Internal Server Error</h1>";
     echo "<p>An unexpected error occurred. Please try again later.</p>";
-    if ($_SERVER['HTTP_HOST'] === 'localhost' || $_SERVER['HTTP_HOST'] === '127.0.0.1') {
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if ($host === 'localhost' || $host === '127.0.0.1') {
         echo "<pre>" . htmlspecialchars($exception->getMessage()) . "</pre>";
         echo "<pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
     }

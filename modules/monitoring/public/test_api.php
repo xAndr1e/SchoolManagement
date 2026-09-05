@@ -17,7 +17,13 @@ function testEndpoint($url, $method = 'GET', $data = null) {
     return json_decode($response, true);
 }
 
-$baseUrl = 'http://localhost/Monitoring3/public';
+$baseUrl = rtrim(getenv('MONITORING_BASE_URL') ?: '', '/');
+if ($baseUrl === '') {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+    $baseUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/public';
+}
 
 echo "<h3>Testing Attendance Schedules</h3>";
 $result = testEndpoint($baseUrl . '/attendance/schedules?date=2024-01-15');

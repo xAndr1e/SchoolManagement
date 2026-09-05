@@ -1,5 +1,43 @@
 <?php
 define('MONITORING_ROOT', dirname(__DIR__));
+define('MONITORING_PUBLIC_ROOT', __DIR__);
+
+if (!function_exists('monitoringBasePath')) {
+    function monitoringBasePath(): string {
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        return rtrim($scriptDir, '/');
+    }
+}
+
+if (!function_exists('monitoringUrl')) {
+    function monitoringUrl(string $path = ''): string {
+        $base = monitoringBasePath();
+        $path = ltrim($path, '/');
+        return ($base === '' ? '' : $base) . '/' . $path;
+    }
+}
+
+if (!function_exists('monitoringRedirectToApp')) {
+    function monitoringRedirectToApp(string $page): void {
+        $target = monitoringUrl('index.php?page=' . urlencode(trim($page, '/')));
+        header('Location: ' . $target);
+        exit;
+    }
+}
+
+if (!function_exists('monitoringLoginUrl')) {
+    function monitoringLoginUrl(): string {
+        $scriptDir = monitoringBasePath();
+        $moduleSuffix = '/modules/monitoring/public';
+
+        if (substr($scriptDir, -strlen($moduleSuffix)) === $moduleSuffix) {
+            $root = substr($scriptDir, 0, -strlen($moduleSuffix));
+            return ($root === '' ? '' : $root) . '/index.php';
+        }
+
+        return '/index.php';
+    }
+}
 // Start session for authentication
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -118,10 +156,10 @@ if (!$isApiRequest && $controller === 'home' && $action === 'index') {
     header('Pragma: no-cache');
     header('Expires: 0');
     if ($hasValidSession) {
-        header('Location: /dashboard');
+        header('Location: ' . monitoringUrl('index.php?page=dashboard'));
         exit;
     }
-    header('Location: /');
+    header('Location: ' . monitoringLoginUrl());
     exit;
 }
 
@@ -132,7 +170,7 @@ if (!$isApiRequest && $controller === 'login') {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
     header('Expires: 0');
-    header('Location: /');
+    header('Location: ' . monitoringLoginUrl());
     exit;
 }
 
@@ -167,7 +205,7 @@ if (!$isApiRequest && $hasValidSession) {
             if ($id) {
                 $redirect .= '/' . $id;
             }
-            header('Location: /?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
+            header('Location: ' . monitoringLoginUrl() . '?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
             exit;
         }
 
@@ -184,7 +222,7 @@ if (!$isApiRequest && $hasValidSession) {
             if ($id) {
                 $redirect .= '/' . $id;
             }
-            header('Location: /?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
+            header('Location: ' . monitoringLoginUrl() . '?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
             exit;
         }
         $_SESSION['sensitive_last_activity'] = time();
@@ -205,7 +243,7 @@ if (!$isApiRequest && !$hasValidSession && !$isPublicMobileRoute) {
     if ($id) {
         $redirect .= '/' . $id;
     }
-    header('Location: /?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
+    header('Location: ' . monitoringLoginUrl() . '?redirect=' . urlencode('modules/monitoring/public/index.php?page=' . $redirect));
     exit;
 }
 
@@ -283,10 +321,10 @@ if ($isApiRequest) {
             } elseif ($action === 'logout' && ($method === 'GET' || $method === 'POST')) {
                 $authController->logout();
                 if ($method === 'GET') {
-                    header('Location: /');
+                    header('Location: ' . monitoringLoginUrl());
                     exit;
                 }
-                echo json_encode(['success' => true]);
+                echo json_encode(['success' => true, 'redirect' => monitoringLoginUrl()]);
             }
             break;
             
@@ -611,8 +649,7 @@ if ($controller === 'home' || $controller === '') {
     if (isset($_SESSION['user_id'])) {
         $viewFile = MONITORING_ROOT . '/views/dashboard.php';
     } else {
-        header('Location: /');
-        exit;
+        header('Location: ' . monitoringLoginUrl());
         exit;
     }
 } elseif (in_array($controller, $allowedViews)) {
@@ -623,8 +660,7 @@ if ($controller === 'home' || $controller === '') {
     if (isset($_SESSION['user_id'])) {
         $viewFile = MONITORING_ROOT . '/views/dashboard.php';
     } else {
-        header('Location: /');
-        exit;
+        header('Location: ' . monitoringLoginUrl());
         exit;
     }
 }

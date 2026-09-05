@@ -1,113 +1,232 @@
 <?php
-include_once __DIR__ . '/../../../auth/session.php';
-include_once __DIR__ . '/../classes/Report.php';
-include_once __DIR__ . '/../classes/Department.php';
-include_once __DIR__ . '/../classes/User.php';
+// Buffer everything from this point on. If ANY warning/notice/deprecation gets
+// printed by an include below, it lands in this buffer instead of corrupting
+// the JSON response — we discard the buffer right before echoing our own JSON.
+ob_start();
+ini_set('display_errors', '0'); // never leak raw PHP errors into the JSON response
+error_reporting(E_ALL);
 
 header('Content-Type: application/json');
 
-// ── Guard: only accept XHR / fetch ───────────────────────────────────────────
-$userClass = new User();
-$userInfo  = $userClass->userSession();
-
-if (!$userInfo) {
-    echo json_encode(['success' => false, 'message' => 'Session expired.']);
+function rsm_respond($payload) {
+    if (ob_get_length() !== false) {
+        ob_end_clean();
+    }
+    echo json_encode($payload);
     exit;
 }
 
-$reportClass = new Report();
-$action      = $_REQUEST['action'] ?? '';
-
-// ── Router ────────────────────────────────────────────────────────────────────
-switch ($action) {
-
-    // ------------------------------------------------------------------
-    // GET  list (optionally filtered by department)
-    // ------------------------------------------------------------------
-    case 'list':
-        $departmentId = isset($_GET['department_id']) && $_GET['department_id'] !== ''
-            ? (int) $_GET['department_id']
-            : null;
-
-        // School Directress sees all; others scoped to their department
-        if ($userInfo['role'] !== 'School Directress' && $departmentId === null) {
-            $departmentId = $_SESSION['department_id'] ?? null;
+// Last-resort safety net: catches fatals that happen even outside try/catch
+// (e.g. a parse error while including a file, or memory exhaustion) so the
+// response is always valid JSON instead of an empty/HTML body.
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (ob_get_length() !== false) {
+            ob_end_clean();
         }
-
-        $reports = $reportClass->getReports($departmentId);
-        echo json_encode(['success' => true, 'data' => $reports]);
-        break;
-
-    // ------------------------------------------------------------------
-    // POST submit a new report
-    // ------------------------------------------------------------------
-    case 'submit':
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
-            exit;
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
         }
+        echo json_encode([
+            'success' => false,
+            'message' => 'A fatal server error occurred.',
+            // TEMP debug info — remove the "debug" key once this is fixed.
+            'debug' => $error['message'] . ' in ' . $error['file'] . ':' . $error['line'],
+        ]);
+    }
+});
 
-        $title      = trim($_POST['title']       ?? '');
-        $description = trim($_POST['description'] ?? '');
-        $reportType = (int) ($_POST['report_type'] ?? 0);
+try {
+    // Includes are inside the try so a parse/fatal error in any of these files
+    // gets caught below and returned as JSON instead of an empty 500 response.
+    include_once __DIR__ . '/../../../auth/session.php';
+    include_once __DIR__ . '/../classes/Report.php';
+    include_once __DIR__ . '/../classes/Department.php';
+    include_once __DIR__ . '/../classes/User.php';
 
-        if ($title === '') {
-            echo json_encode(['success' => false, 'message' => 'Title is required.']);
-            exit;
-        }
-        if ($reportType === 0) {
-            echo json_encode(['success' => false, 'message' => 'Please select a report type.']);
-            exit;
-        }
+    // ── Guard ──────────────────────────────────────────────────────────────
+    $userClass = new User();
+    $userInfo  = $userClass->userSession();
 
-        // File validation
-        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(['success' => false, 'message' => 'A valid file upload is required.']);
-            exit;
-        }
+    if (!$userInfo) {
+        rsm_respond(['success' => false, 'message' => 'Session expired.']);
+    }
 
-        $allowedMimes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ];
-        $allowedExts  = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
-        $maxSizeBytes = 10 * 1024 * 1024;
+    $reportClass  = new Report();
+    $action       = $_REQUEST['action'] ?? '';
+    $isDirectress = ($userInfo['role'] === 'School Directress');
 
-        $fileExt  = strtolower(pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION));
-        $fileMime = mime_content_type($_FILES['file']['tmp_name']);
+    // ── Router ─────────────────────────────────────────────────────────────
+    switch ($action) {
 
-        if (!in_array($fileExt, $allowedExts, true) || !in_array($fileMime, $allowedMimes, true)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid file type. Only PDF, Word, and Excel files are allowed.']);
-            exit;
-        }
-        if ($_FILES['file']['size'] > $maxSizeBytes) {
-            echo json_encode(['success' => false, 'message' => 'File exceeds the 10 MB size limit.']);
-            exit;
-        }
+        // ------------------------------------------------------------------
+        // GET list (optionally filtered by department / status)
+        // ------------------------------------------------------------------
+        case 'list':
+            $departmentId = isset($_GET['department_id']) && $_GET['department_id'] !== ''
+                ? (int) $_GET['department_id']
+                : null;
+            $status = isset($_GET['status']) && $_GET['status'] !== ''
+                ? $_GET['status']
+                : null;
 
-        $uploadDir = __DIR__ . '/../../../uploads/reports/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
+            if (!$isDirectress && $departmentId === null) {
+                $departmentId = $_SESSION['department_id'] ?? null;
+            }
 
-        $uniqueName = uniqid('report_', true) . '.' . $fileExt;
-        $destPath   = $uploadDir . $uniqueName;
+            $reports = $reportClass->getReports($departmentId, $status);
+            rsm_respond(['success' => true, 'data' => $reports]);
+            break;
 
-        if (!move_uploaded_file($_FILES['file']['tmp_name'], $destPath)) {
-            echo json_encode(['success' => false, 'message' => 'Failed to save the uploaded file.']);
-            exit;
-        }
+        // ------------------------------------------------------------------
+        // GET single report (for the detail/review modal)
+        // ------------------------------------------------------------------
+        case 'get':
+            $reportId = (int) ($_GET['report_id'] ?? 0);
+            if (!$reportId) {
+                rsm_respond(['success' => false, 'message' => 'Report ID is required.']);
+            }
+            $report = $reportClass->getReportById($reportId);
+            if (!$report) {
+                rsm_respond(['success' => false, 'message' => 'Report not found.']);
+            }
+            rsm_respond(['success' => true, 'data' => $report]);
+            break;
 
-        $filePath = 'uploads/reports/' . $uniqueName;
-        $reportId = $reportClass->submitReport($title, $description, $filePath, $reportType);
+        // ------------------------------------------------------------------
+        // POST save as draft
+        // ------------------------------------------------------------------
+        case 'save_draft':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                rsm_respond(['success' => false, 'message' => 'Method not allowed.']);
+            }
+            $validated = validateReportInput($_POST);
+            if (!$validated['valid']) {
+                rsm_respond(['success' => false, 'message' => $validated['message']]);
+            }
+            $reportId = (int) ($_POST['report_id'] ?? 0) ?: null;
+            $newId    = $reportClass->saveDraft($validated['fields'], $reportId);
 
-        echo json_encode(['success' => true, 'message' => 'Report submitted successfully.', 'data' => ['report_id' => $reportId]]);
-        break;
+            rsm_respond(['success' => true, 'message' => 'Draft saved.', 'data' => ['report_id' => $newId]]);
+            break;
 
-    default:
-        echo json_encode(['success' => false, 'message' => 'Unknown action.']);
-        break;
+        // ------------------------------------------------------------------
+        // POST submit a report — creates/promotes to 'submitted' and auto-generates the PDF.
+        // PDF generation failure never blocks the submission itself.
+        // ------------------------------------------------------------------
+        case 'submit':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                rsm_respond(['success' => false, 'message' => 'Method not allowed.']);
+            }
+            $validated = validateReportInput($_POST);
+            if (!$validated['valid']) {
+                rsm_respond(['success' => false, 'message' => $validated['message']]);
+            }
+            $reportId = (int) ($_POST['report_id'] ?? 0) ?: null;
+            $newId    = $reportClass->submitReport($validated['fields'], $reportId);
+
+            $pdfPath = null;
+            $message = 'Report submitted successfully.';
+            try {
+                $pdfPath = $reportClass->generatePdf($newId);
+            } catch (\Throwable $e) {
+                error_log('[ReportController] PDF generation failed for report ' . $newId . ': ' . $e->getMessage());
+                $message = 'Report submitted, but the PDF could not be generated. Contact your administrator (PDF library may not be installed).';
+            }
+
+            rsm_respond([
+                'success' => true,
+                'message' => $message,
+                'data'    => ['report_id' => $newId, 'pdf_path' => $pdfPath],
+            ]);
+            break;
+
+        // ------------------------------------------------------------------
+        // POST Directress marks a submitted report as reviewed
+        // ------------------------------------------------------------------
+        case 'review':
+            if (!$isDirectress) {
+                rsm_respond(['success' => false, 'message' => 'Only the School Directress can review reports.']);
+            }
+            $reportId = (int) ($_POST['report_id'] ?? 0);
+            $notes    = trim($_POST['notes'] ?? '');
+            if (!$reportId) {
+                rsm_respond(['success' => false, 'message' => 'Report ID is required.']);
+            }
+            $ok = $reportClass->markReviewed($reportId, $userInfo['employee_id'], $notes !== '' ? $notes : null);
+            rsm_respond(['success' => $ok, 'message' => $ok ? 'Report marked as reviewed.' : 'Unable to review this report.']);
+            break;
+
+        // ------------------------------------------------------------------
+        // POST Directress approves/rejects a reviewed report
+        // ------------------------------------------------------------------
+        case 'decide':
+            if (!$isDirectress) {
+                rsm_respond(['success' => false, 'message' => 'Only the School Directress can decide on reports.']);
+            }
+            $reportId = (int) ($_POST['report_id'] ?? 0);
+            $decision = $_POST['decision'] ?? '';
+            $notes    = trim($_POST['notes'] ?? '');
+            if (!$reportId || !in_array($decision, ['approved', 'rejected'], true)) {
+                rsm_respond(['success' => false, 'message' => 'A valid report ID and decision are required.']);
+            }
+            $ok = $reportClass->decide($reportId, $userInfo['employee_id'], $decision, $notes !== '' ? $notes : null);
+            rsm_respond(['success' => $ok, 'message' => $ok ? "Report {$decision}." : 'Unable to decide on this report.']);
+            break;
+
+        // ------------------------------------------------------------------
+        // POST/GET generate an AI summary for a report
+        // ------------------------------------------------------------------
+        case 'summarize':
+            $reportId = (int) ($_REQUEST['report_id'] ?? 0);
+            if (!$reportId) {
+                rsm_respond(['success' => false, 'message' => 'Report ID is required.']);
+            }
+            $result = $reportClass->generateAiSummary($reportId);
+            rsm_respond($result);
+            break;
+
+        default:
+            rsm_respond(['success' => false, 'message' => 'Unknown action.']);
+            break;
+    }
+} catch (\Throwable $e) {
+    error_log('[ReportController] Unhandled error: ' . $e->getMessage());
+    rsm_respond([
+        'success' => false,
+        'message' => 'An unexpected server error occurred.',
+        // TEMP debug info — remove the "debug" key once things are stable.
+        'debug' => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(),
+    ]);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function validateReportInput($post) {
+    $title           = trim($post['title'] ?? '');
+    $reportType      = (int) ($post['report_type'] ?? 0);
+    $summary         = trim($post['summary'] ?? '');
+    $findings        = trim($post['findings'] ?? '');
+    $recommendations = trim($post['recommendations'] ?? '');
+
+    if ($title === '') {
+        return ['valid' => false, 'message' => 'Title is required.'];
+    }
+    if ($reportType === 0) {
+        return ['valid' => false, 'message' => 'Please select a report type.'];
+    }
+    if ($summary === '') {
+        return ['valid' => false, 'message' => 'Summary is required.'];
+    }
+
+    return [
+        'valid'  => true,
+        'fields' => [
+            'title'           => $title,
+            'report_type'     => $reportType,
+            'summary'         => $summary,
+            'findings'        => $findings,
+            'recommendations' => $recommendations,
+        ],
+    ];
 }

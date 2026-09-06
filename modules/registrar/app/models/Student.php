@@ -82,7 +82,7 @@
             JOIN rgr_subjects rs ON rs.id = ccs.subject_id
             JOIN cc_room ccr ON ccr.id = ccs.room_id
             JOIN cc_faculty_load ccfl ON ccfl.id = ccs.faculty_load_id
-            JOIN cc_faculty ccf ON ccf.id = ccfl.id
+            JOIN cc_faculty ccf ON ccf.id = ccfl.faculty_id
             WHERE ens.student_id = :studentId
             AND rsem.is_active = 1
             AND rsy.is_active = 1                                                               

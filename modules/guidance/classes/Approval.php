@@ -155,7 +155,7 @@
 
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
         public function generatePdf($approval_id) {
-            $autoload = __DIR__ . '/../../../vendor/autoload.php';
+            $autoload = __DIR__ . '/../vendor/autoload.php';
             if (!file_exists($autoload)) {
                 throw new \RuntimeException('PDF library not installed. Run: composer require dompdf/dompdf');
             }

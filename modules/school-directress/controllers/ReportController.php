@@ -128,16 +128,20 @@ try {
 
             $pdfPath = null;
             $message = 'Report submitted successfully.';
+            $debug   = null;
             try {
                 $pdfPath = $reportClass->generatePdf($newId);
             } catch (\Throwable $e) {
                 error_log('[ReportController] PDF generation failed for report ' . $newId . ': ' . $e->getMessage());
                 $message = 'Report submitted, but the PDF could not be generated. Contact your administrator (PDF library may not be installed).';
+                // TEMP debug info — remove once things are stable.
+                $debug = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
             }
 
             rsm_respond([
                 'success' => true,
                 'message' => $message,
+                'debug'   => $debug,
                 'data'    => ['report_id' => $newId, 'pdf_path' => $pdfPath],
             ]);
             break;

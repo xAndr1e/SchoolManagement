@@ -177,7 +177,7 @@
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
         // composer require dompdf/dompdf
         public function generatePdf($report_id) {
-            $autoload = __DIR__ . '/../../../vendor/autoload.php';
+            $autoload = __DIR__ . '/../vendor/autoload.php';
             if (!file_exists($autoload)) {
                 // Thrown as a normal Exception (not a fatal require error) so callers
                 // can catch it and still return a valid JSON response.

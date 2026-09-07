@@ -1,6 +1,8 @@
-#environment
+# environment
 .env
-#composer package
+
+# composer package
 /vendor/
-#twig
+
+# twig
 /twig/

@@ -256,7 +256,7 @@ class FacultyProfileManager {
                     'employment_type' => $employee['employment_type'] ?? 'N/A',
                     'employment_status' => $employee['employment_status'] ?? 'N/A',
                     'record_type' => 'training',
-                    'record_source' => 'employee_certifications',
+                    'record_source' => 'em_certifications',
                     'record_id' => $record['cert_id'] ?? null,
                     'outcome' => null,
                     'records' => [$record],
@@ -321,7 +321,7 @@ class FacultyProfileManager {
                     expiry_date,
                     created_at,
                     updated_at
-                FROM employee_certifications
+                FROM em_certifications
                 WHERE employee_id = :employee_id
                 ORDER BY date_issued DESC, cert_id DESC";
 
@@ -688,7 +688,7 @@ class FacultyProfileManager {
 
     public function getFacultyRequirementStatusSummary() {
         $sql = "SELECT er.status, COUNT(*) AS total
-                FROM employee_requirements er
+                FROM em_requirements er
                 INNER JOIN cc_faculty cf ON cf.employee_id = er.employee_id
                 GROUP BY er.status
                 ORDER BY er.status ASC";
@@ -730,7 +730,7 @@ class FacultyProfileManager {
                     remarks,
                     submitted_date,
                     follow_up_date
-                FROM employee_requirements
+                FROM em_requirements
                 WHERE employee_id = :employee_id
                 ORDER BY requirement_name ASC, requirement_id DESC";
 

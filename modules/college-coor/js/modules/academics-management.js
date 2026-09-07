@@ -632,14 +632,18 @@ function viewFacultyLoadDetails(facultyId, facultyName, teachingUnits, maxLoad, 
                 ? data.assignments.map(assignment => {
                     const status = assignment.schedule_status || 'Not Yet Scheduled';
                     const statusBadgeClass = status === 'Scheduled' ? 'badge-success' : 'badge-warning';
+                    const dayOfWeek = assignment.day_of_week || '-';
+                    const timeRange = assignment.time_range || '-';
+                    const roomCode = assignment.room_code || '-';
+                    
                     return `
                         <tr>
                             <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${assignment.subject_code || 'N/A'}</td>
                             <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${assignment.section_code || 'N/A'}</td>
                             <td style="padding: 12px; border-bottom: 1px solid #dee2e6; text-align: center;"><span class="badge ${statusBadgeClass}">${status}</span></td>
-                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">-</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">-</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">-</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${dayOfWeek}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${timeRange}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${roomCode}</td>
                         </tr>
                     `;
                 }).join('')

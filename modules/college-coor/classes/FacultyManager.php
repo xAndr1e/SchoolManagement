@@ -98,6 +98,7 @@ class FacultyManager {
     }
 
     public function getFacultyAssignments($facultyId) {
+        // First, get all faculty load assignments
         $sql = "SELECT 
             fl.id,
             fl.section_id,
@@ -108,7 +109,6 @@ class FacultyManager {
             COALESCE(s.lecture_hours, 0) AS lecture_hours,
             COALESCE(s.lab_hours, 0) AS lab_hours,
             'Assigned' AS assignment_status,
-            'Not Yet Scheduled' AS schedule_status,
             sy.name AS school_year,
             sem.name AS semester
         FROM cc_faculty_load fl
@@ -117,11 +117,54 @@ class FacultyManager {
         INNER JOIN rgr_school_years sy ON fl.school_year_id = sy.id AND sy.is_active = 1
         INNER JOIN rgr_semesters sem ON fl.semester_id = sem.id AND sem.is_active = 1
         WHERE fl.faculty_id = :faculty_id
-        ORDER BY sy.name DESC, sem.name DESC, sec.section_code, subject_code";
+        ORDER BY sy.name DESC, sem.name DESC, sec.section_code, s.code";
+        
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':faculty_id', $facultyId);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $assignments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // For each assignment, fetch its schedules
+        $scheduleSql = "SELECT 
+            day_of_week,
+            start_time,
+            end_time,
+            r.room_code
+        FROM cc_schedule cs
+        LEFT JOIN cc_room r ON cs.room_id = r.id
+        WHERE cs.faculty_load_id = :faculty_load_id 
+        AND cs.status = 'Scheduled'
+        ORDER BY FIELD(cs.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'),
+                 cs.start_time";
+        
+        $scheduleStmt = $this->conn->prepare($scheduleSql);
+        
+        // Enrich assignments with schedule data
+        foreach ($assignments as &$assignment) {
+            $scheduleStmt->bindParam(':faculty_load_id', $assignment['id']);
+            $scheduleStmt->execute();
+            $schedules = $scheduleStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (!empty($schedules)) {
+                $assignment['schedule_status'] = 'Scheduled';
+                $days = array_map(function($s) { return $s['day_of_week']; }, $schedules);
+                $times = array_map(function($s) { 
+                    return date("H:i", strtotime($s['start_time'])) . '-' . date("H:i", strtotime($s['end_time'])); 
+                }, $schedules);
+                $rooms = array_map(function($s) { return $s['room_code'] ?: '-'; }, $schedules);
+                
+                $assignment['day_of_week'] = implode(', ', array_unique($days));
+                $assignment['time_range'] = implode(', ', $times);
+                $assignment['room_code'] = implode(', ', array_unique($rooms));
+            } else {
+                $assignment['schedule_status'] = 'Not Yet Scheduled';
+                $assignment['day_of_week'] = '-';
+                $assignment['time_range'] = '-';
+                $assignment['room_code'] = '-';
+            }
+        }
+        
+        return $assignments;
     }
 
     public function getFacultyAssignmentsHistory($facultyId) {

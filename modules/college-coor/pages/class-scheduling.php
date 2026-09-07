@@ -119,13 +119,12 @@ $room = isset($_GET['room_id']) ? (int)$_GET['room_id'] : 0;
 
 // Handle form submissions - FIXED HERE
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Check if this is an add schedule submission (either by button or by having room field)
-    if (isset($_POST['add_schedule']) || isset($_POST['room_id'])) {
+    if (isset($_POST['add_schedule'])) {
         try {
             // Convert time format from HH:MM to HH:MM:SS
             $start_time = $_POST['start_time'] . ':00';
             $end_time = $_POST['end_time'] . ':00';
-            
+
             // Add new schedule using Schedule class
             $schedule->room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : null;
             $schedule->start_time = $start_time;
@@ -196,9 +195,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $schedule->semester_id = (int)$fld['semester_id'];
                 $schedule->school_year_id = (int)$fld['school_year_id'];
             }
-            
+
             if ($schedule->create()) {
-                echo "<script>alert('Schedule added successfully!'); sessionStorage.setItem('refreshFacultyLoad', 'true'); window.location.href=window.location.href;</script>";
+                $persistedFacultyId = isset($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : 0;
+                echo "<script>
+                    sessionStorage.setItem('refreshFacultyLoad', 'true');
+                    if ({$persistedFacultyId}) {
+                        sessionStorage.setItem('schedulePrintFacultyId', '{$persistedFacultyId}');
+                    }
+                    window.location.href=window.location.href;
+                </script>";
                 exit;
             } else {
                 $errorInfo = $db->errorInfo();
@@ -207,14 +213,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "');</script>";
         }
-    }
-    
-    if (isset($_POST['update_schedule'])) {
+    } elseif (isset($_POST['update_schedule'])) {
         try {
             // Convert time format from HH:MM to HH:MM:SS
             $start_time = $_POST['start_time'] . ':00';
             $end_time = $_POST['end_time'] . ':00';
-            
+
             // Update schedule using Schedule class
             $schedule->id = (int)$_POST['schedule_id'];
             $schedule->room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : null;
@@ -228,6 +232,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $schedule->school_year_id = isset($_POST['school_year_id']) ? (int)$_POST['school_year_id'] : 0;
             $schedule->schedule_type = isset($_POST['schedule_type']) ? trim($_POST['schedule_type']) : 'Class';
             $schedule->faculty_load_id = isset($_POST['faculty_load_id']) ? (int)$_POST['faculty_load_id'] : 0;
+
+            if ($schedule->schedule_type === 'Break Time') {
+                $schedule->faculty_load_id = 0;
+                $schedule->subject_id = 0;
+                $schedule->grade_section_id = 0;
+            }
 
             // If a faculty load was selected, auto-fill faculty, subject, section
             if ($schedule->schedule_type === 'Class') {
@@ -246,9 +256,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $schedule->semester_id = (int)$fld['semester_id'];
                 $schedule->school_year_id = (int)$fld['school_year_id'];
             }
-            
+
             if ($schedule->update()) {
-                echo "<script>alert('Schedule updated successfully!'); sessionStorage.setItem('refreshFacultyLoad', 'true'); window.location.href=window.location.href;</script>";
+                $persistedFacultyId = isset($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : 0;
+                echo "<script>
+                    sessionStorage.setItem('refreshFacultyLoad', 'true');
+                    if ({$persistedFacultyId}) {
+                        sessionStorage.setItem('schedulePrintFacultyId', '{$persistedFacultyId}');
+                    }
+                    window.location.href=window.location.href;
+                </script>";
                 exit;
             } else {
                 $errorInfo = $db->errorInfo();
@@ -257,9 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "');</script>";
         }
-    }
-    
-    if (isset($_POST['delete_schedule'])) {
+    } elseif (isset($_POST['delete_schedule'])) {
         try {
             $schedule->id = (int)$_POST['schedule_id'];
             if ($schedule->delete()) {
@@ -430,7 +445,7 @@ $school_year_map = array_column($school_years, 'name', 'id');
         <div id="add-tab" class="tab-content <?= isset($_GET['action']) && $_GET['action'] == 'add' ? 'active' : '' ?>">
             <h2><i class="fas fa-plus-circle"></i> Add New Schedule</h2>
             
-            <form method="POST" class="form-grid" onsubmit="return validateForm()">
+            <form id="addForm" method="POST" class="form-grid" data-custom-submit onsubmit="return validateForm()">
                 <div class="form-card">
                     <h3>Basic Information</h3>
                     <div class="form-group schedule-type-field" id="add-room-field">
@@ -474,7 +489,6 @@ $school_year_map = array_column($school_years, 'name', 'id');
                             <option value="Thursday">Thursday</option>
                             <option value="Friday">Friday</option>
                             <option value="Saturday">Saturday</option>
-                            <option value="Sunday">Sunday</option>
                         </select>
                     </div>
                     
@@ -582,11 +596,14 @@ $school_year_map = array_column($school_years, 'name', 'id');
                                     foreach ($schedules as $schedule) {
                                         $faculty_key = (int)($schedule['faculty_id'] ?? 0);
                                         if ($faculty_key && !isset($faculty_list[$faculty_key])) {
-                                            $faculty_list[$faculty_key] = $schedule['faculty_code'] ?? 'Unknown';
+                                            $first_name = $schedule['first_name'] ?? '';
+                                            $last_name = $schedule['last_name'] ?? '';
+                                            $faculty_name = trim($first_name . ' ' . $last_name);
+                                            $faculty_list[$faculty_key] = $faculty_name ?: 'Unknown';
                                         }
                                     }
-                                    foreach ($faculty_list as $fac_id => $fac_code) {
-                                        echo '<option value="' . $fac_id . '">' . htmlspecialchars($fac_code) . '</option>';
+                                    foreach ($faculty_list as $fac_id => $fac_name) {
+                                        echo '<option value="' . $fac_id . '">' . htmlspecialchars($fac_name) . '</option>';
                                     }
                                 ?>
                             </select>
@@ -638,11 +655,6 @@ $school_year_map = array_column($school_years, 'name', 'id');
                                         <button class="btn btn-primary btn-sm" onclick='editSchedule(<?= json_encode($row) ?>)'>
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-danger btn-sm" 
-                                                onclick="deleteSchedule(<?= $row['id'] ?>)"
-                                                title="Delete Schedule">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -685,11 +697,11 @@ $school_year_map = array_column($school_years, 'name', 'id');
                     <div class="filter-item"><button type="button" class="btn btn-primary" onclick="loadProctorAssignments()"><i class="fas fa-filter"></i> Apply Filters</button> <button type="button" class="btn btn-warning" onclick="clearProctorFilters()"><i class="fas fa-times"></i> Clear</button></div>
                 </div>
             </div>
-            <div class="table-container"><table class="data-table" style="min-width: 1250px;"><thead><tr>
+            <div class="table-container"><table class="data-table"><thead><tr>
                 <th>Exam</th><th>Subject</th><th>Section</th><th>Room</th><th>Exam Date</th><th>Time</th><th>Proctor</th><th>Role</th><th>Status</th><th>Actions</th>
             </tr></thead><tbody id="proctorAssignmentsBody"><tr><td colspan="10" style="text-align:center;">Loading assignments...</td></tr></tbody></table></div>
             <h3 style="margin: 25px 0 12px;"><i class="fas fa-calendar-alt"></i> Exam Schedule List</h3>
-            <div class="table-container"><table class="data-table" style="min-width: 900px;"><thead><tr>
+            <div class="table-container"><table class="data-table"><thead><tr>
                 <th>Type</th><th>Exam</th><th>Subject</th><th>Section</th><th>Room</th><th>Date</th><th>Time</th><th>Status</th>
             </tr></thead><tbody id="examSchedulesBody"><tr><td colspan="8" style="text-align:center;">Loading schedules...</td></tr></tbody></table></div>
         </div>
@@ -768,7 +780,7 @@ $school_year_map = array_column($school_years, 'name', 'id');
                 <h2><i class="fas fa-edit"></i> Edit Schedule</h2>
                 <button class="close-modal" onclick="closeEditModal()">&times;</button>
             </div>
-            <form method="POST" id="editForm" class="form-grid" onsubmit="return validateEditForm()">
+            <form method="POST" id="editForm" class="form-grid" data-custom-submit onsubmit="return validateEditForm()">
                 <input type="hidden" name="schedule_id" id="edit_schedule_id">
                 
                 <div class="form-card">
@@ -820,7 +832,7 @@ $school_year_map = array_column($school_years, 'name', 'id');
                     
                     <div class="form-group">
                         <label>Subject</label>
-                        <select name="subject_id" id="edit_subject_id" required>
+                        <select name="subject_id" id="edit_subject_id">
                             <option value="">Select Subject</option>
                             <?php foreach ($subjects as $sub): ?>
                                 <option value="<?= (int)$sub['id'] ?>"><?= htmlspecialchars($sub['code']) ?> - <?= htmlspecialchars($sub['name']) ?></option>
@@ -830,7 +842,7 @@ $school_year_map = array_column($school_years, 'name', 'id');
                     
                     <div class="form-group">
                         <label>Section</label>
-                        <select name="grade_section_id" id="edit_grade_section_id" required>
+                        <select name="grade_section_id" id="edit_grade_section_id">
                             <?php foreach ($all_sections as $sec): ?>
                                 <option value="<?= $sec['id'] ?>">
                                     <?= htmlspecialchars($sec['section_code']) ?> (<?= htmlspecialchars($sec['grade_level']) ?> - <?= htmlspecialchars($sec['program']) ?>)

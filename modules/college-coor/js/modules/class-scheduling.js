@@ -382,31 +382,22 @@ async function printProctorSchedule() {
     const schoolYearName = schoolYearSelect ? schoolYearSelect.options[schoolYearSelect.selectedIndex]?.text || 'All School Years' : 'All School Years';
     const generatedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-    const groupedByDate = {};
-    assignments.forEach(item => {
-        const dateKey = item.exam_date || 'Unknown';
-        if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
-        groupedByDate[dateKey].push(item);
-    });
+    // Helper functions for new layout
+    const extractYearLevelFromSection = sectionCode => {
+        const parts = String(sectionCode || '').split('-');
+        if (parts.length < 2) return 'Unspecified';
+        const digit = parts[1].charAt(0);
+        const map = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year' };
+        return map[digit] || 'Unspecified';
+    };
 
-    const buildTimeSlots = group => {
-        const groupSchedules = schedules.filter(item => {
-            if (item.exam_id !== group.exam_id || item.exam_date !== group.exam_date) return false;
-            const roomMatches = String(item.room_id || '') === String(group.room_id || '');
-            const sectionMatches = String(item.section_id || '') === String(group.section_id || '');
-            return roomMatches || sectionMatches;
-        });
+    const extractCourseFromSection = sectionCode => {
+        return String(sectionCode || '').split('-')[0] || 'Unknown';
+    };
 
-        const unique = [];
-        const seen = new Set();
-        groupSchedules.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || '')).forEach(s => {
-            if (!seen.has(s.id)) {
-                seen.add(s.id);
-                unique.push(s);
-            }
-        });
-
-        return unique;
+    const timeToMinutes = timeStr => {
+        const [h, m] = String(timeStr || '00:00').split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
     };
 
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
@@ -415,56 +406,185 @@ async function printProctorSchedule() {
         const date = new Date(`${value}T00:00:00`);
         return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     };
+
+    const groupedByRoomSection = {};
+    assignments.forEach(item => {
+        const key = `${item.room_id || ''}|${item.section_id || ''}`;
+        if (!groupedByRoomSection[key]) {
+            groupedByRoomSection[key] = {
+                roomId: item.room_id || '',
+                sectionId: item.section_id || '',
+                room: item.room_name || '',
+                section: item.section_code || '',
+                proctors: new Set()
+            };
+        }
+
+        const proctorName = `${item.last_name || ''}, ${item.first_name || ''}`.trim();
+        if (proctorName) groupedByRoomSection[key].proctors.add(proctorName);
+    });
+
+    const rows = Object.values(groupedByRoomSection)
+        .sort((a, b) => {
+            const sectionA = String(a.sectionId || a.section_id || '');
+            const sectionB = String(b.sectionId || b.section_id || '');
+            if (sectionA !== sectionB) return sectionA.localeCompare(sectionB);
+            return String(a.roomId || a.room_id || '').localeCompare(String(b.roomId || b.room_id || ''));
+        })
+        .map(entry => ({
+            roomId: entry.roomId,
+            sectionId: entry.sectionId,
+            proctor: [...entry.proctors].sort().join(', '),
+            room: entry.room,
+            section: entry.section
+        }));
+
+    const groupedByYearLevel = {};
+    rows.forEach(row => {
+        const yearLevel = extractYearLevelFromSection(row.section);
+        const courseCode = extractCourseFromSection(row.section);
+        const groupKey = `${yearLevel}|${courseCode}`;
+        if (!groupedByYearLevel[groupKey]) {
+            groupedByYearLevel[groupKey] = { yearLevel, courseCode, rows: [] };
+        }
+        groupedByYearLevel[groupKey].rows.push(row);
+    });
+
     const printWindow = window.open('', '', 'width=1400,height=900');
     if (!printWindow) {
         alert('Please allow pop-ups to print the schedule.');
         return;
     }
 
-    // Build rows grouped by date, then by course, then by exam/room/section
-    const dateKeys = Object.keys(groupedByDate).sort();
-    const rowsHtml = dateKeys.map((dateKey, dateIndex) => {
-        const dateItems = groupedByDate[dateKey] || [];
+    const yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    const yearLevelIndex = level => {
+        const idx = yearLevelOrder.indexOf(level);
+        return idx === -1 ? 999 : idx;
+    };
 
-        // Per-day color cycling classes: day-color-0, day-color-1, day-color-2
-        const colorClass = `day-color-${dateIndex % 3}`;
-        const headerHtml = `<div class="print-section-header ${colorClass}"><div class="print-section-date">${escapeHtml(formatProctorDate(dateKey))}</div></div>`;
+    // Build a single table per year-level group with date groups as side-by-side column clusters
+    const rowsHtml = Object.values(groupedByYearLevel)
+        .sort((a, b) => {
+            const yearDiff = yearLevelIndex(a.yearLevel) - yearLevelIndex(b.yearLevel);
+            if (yearDiff !== 0) return yearDiff;
+            return String(a.courseCode || '').localeCompare(String(b.courseCode || ''));
+        })
+        .map(group => {
+            const { yearLevel, courseCode, rows: groupRows } = group;
+            const heading = `${yearLevel} (${courseCode})`;
 
-        // Group items by course code (prefix before first '-')
-        const courses = {};
-        dateItems.forEach(item => {
-            const raw = String(item.section_code || '');
-            const courseCode = raw.split('-')[0] || 'Unknown';
-            if (!courses[courseCode]) courses[courseCode] = [];
-            courses[courseCode].push(item);
-        });
+            const groupSectionIds = new Set(groupRows.map(r => String(r.sectionId)));
+            const groupDateMap = {};
 
-        const orderedCourseKeys = Object.keys(courses).sort((a, b) => a.localeCompare(b));
+            assignments
+                .filter(a => groupSectionIds.has(String(a.section_id)))
+                .forEach(assignment => {
+                    const dateKey = assignment.exam_date || 'Unknown';
+                    if (!groupDateMap[dateKey]) groupDateMap[dateKey] = new Set();
 
-        const courseBlocks = orderedCourseKeys.map(courseCode => {
-            const items = (courses[courseCode] || []).sort((a, b) => {
-                if (a.exam_name !== b.exam_name) return a.exam_name.localeCompare(b.exam_name);
-                if (a.room_name !== b.room_name) return (a.room_name || '').localeCompare(b.room_name || '');
-                return (a.section_code || '').localeCompare(b.section_code || '');
+                    schedules.forEach(schedule => {
+                        if (String(schedule.exam_date) !== String(dateKey)) return;
+                        if (!groupSectionIds.has(String(schedule.section_id))) return;
+                        const slotKey = `${schedule.start_time}|${schedule.end_time}`;
+                        groupDateMap[dateKey].add(slotKey);
+                    });
+                });
+
+            const groupSortedDates = Object.keys(groupDateMap).sort();
+            groupSortedDates.forEach(dateKey => {
+                const slots = [...groupDateMap[dateKey]].map(slotKey => {
+                    const [start, end] = slotKey.split('|');
+                    return { start_time: start, end_time: end };
+                });
+                slots.sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+                groupDateMap[dateKey] = slots;
             });
 
-            const groupRows = items.map(group => {
-                const slots = buildTimeSlots(group);
-                const cells = slots.map(slot => {
-                    if (slot.schedule_type === 'Break Time') {
-                        return `<td class="break-time-cell">BREAK TIME</td>`;
-                    }
-                    return `<td>${escapeHtml(slot.subject_code || slot.subject_name || '')}</td>`;
-                }).join('');
-                const timeHeaders = slots.map(slot => `<th>${escapeHtml(formatProctorTime(slot.start_time))} - ${escapeHtml(formatProctorTime(slot.end_time))}</th>`).join('');
-                return `<div class="group-block"><div class="group-title"><strong>${escapeHtml(group.exam_name)}</strong> | ${escapeHtml(group.room_name)} | ${escapeHtml(group.section_code)}</div><table class="print-table"><thead><tr><th>PROCTOR</th><th>ROOM</th><th>SECTION</th>${timeHeaders}</tr></thead><tbody><tr><td>${escapeHtml(`${group.last_name || ''}, ${group.first_name || ''}`)}</td><td>${escapeHtml(group.room_name)}</td><td>${escapeHtml(group.section_code)}</td>${cells}</tr></tbody></table></div>`;
+            const allSlots = [];
+            groupSortedDates.forEach(dateKey => {
+                (groupDateMap[dateKey] || []).forEach(slot => allSlots.push(slot));
+            });
+            const minTime = allSlots.length > 0 ? Math.min(...allSlots.map(s => timeToMinutes(s.start_time))) : 0;
+            const maxTime = allSlots.length > 0 ? Math.max(...allSlots.map(s => timeToMinutes(s.end_time))) : 0;
+            const timeLabel = `TIME: ${escapeHtml(formatProctorTime(String(Math.floor(minTime / 60)).padStart(2, '0') + ':' + String(minTime % 60).padStart(2, '0')))} - ${escapeHtml(formatProctorTime(String(Math.floor(maxTime / 60)).padStart(2, '0') + ':' + String(maxTime % 60).padStart(2, '0')))}`;
+
+            let dateHeaderHtml = '<tr><th rowspan="2">PROCTOR</th><th rowspan="2">ROOM</th><th rowspan="2">SECTION</th>';
+            let timeHeaderHtml = '<tr>';
+
+            groupSortedDates.forEach(dateKey => {
+                const slots = groupDateMap[dateKey] || [];
+                if (!slots.length) return;
+                dateHeaderHtml += `<th colspan="${slots.length}">${escapeHtml(formatProctorDate(dateKey))}</th>`;
+                slots.forEach((slot, idx) => {
+                    const isLastSlot = idx === slots.length - 1;
+                    timeHeaderHtml += `<th${isLastSlot ? ' class="last-slot-col"' : ''}>${escapeHtml(formatProctorTime(slot.start_time))} - ${escapeHtml(formatProctorTime(slot.end_time))}</th>`;
+                });
+            });
+            dateHeaderHtml += '</tr>';
+            timeHeaderHtml += '</tr>';
+
+            const dataRowsHtml = groupRows.map(row => {
+                const rowCellMap = {};
+                groupSortedDates.forEach(dateKey => {
+                    const slots = groupDateMap[dateKey] || [];
+                    slots.forEach((slot, slotIdx) => {
+                        const cellKey = `${dateKey}::${slotIdx}`;
+                        const matchingSchedule = schedules.find(s =>
+                            String(s.exam_date) === String(dateKey) &&
+                            String(s.start_time) === String(slot.start_time) &&
+                            String(s.end_time) === String(slot.end_time) &&
+                            String(s.room_id) === String(row.roomId) &&
+                            String(s.section_id) === String(row.sectionId)
+                        );
+
+                        if (!matchingSchedule) {
+                            rowCellMap[cellKey] = { type: 'empty', value: '' };
+                            return;
+                        }
+
+                        if (matchingSchedule.schedule_type === 'Break Time') {
+                            rowCellMap[cellKey] = { type: 'break', value: 'BREAK TIME' };
+                        } else {
+                            rowCellMap[cellKey] = { type: 'exam', value: matchingSchedule.subject_code || '' };
+                        }
+                    });
+                });
+
+                let cellsHtml = '';
+                groupSortedDates.forEach(dateKey => {
+                    const slots = groupDateMap[dateKey] || [];
+                    slots.forEach((slot, slotIdx) => {
+                        const isLastSlot = slotIdx === slots.length - 1;
+                        const cellKey = `${dateKey}::${slotIdx}`;
+                        const cell = rowCellMap[cellKey] || { type: 'empty', value: '' };
+                        const lastSlotClass = isLastSlot ? ' last-slot-col' : '';
+                        if (cell.type === 'break') {
+                            cellsHtml += `<td class="break-time-cell${lastSlotClass}">${escapeHtml(cell.value)}</td>`;
+                        } else {
+                            cellsHtml += `<td class="${lastSlotClass.trim()}">${escapeHtml(cell.value)}</td>`;
+                        }
+                    });
+                });
+
+                return `<tr><td>${escapeHtml(row.proctor)}</td><td>${escapeHtml(row.room)}</td><td>${escapeHtml(row.section)}</td>${cellsHtml}</tr>`;
             }).join('');
 
-            return `<div class="print-course-header">${escapeHtml(courseCode)}</div>${groupRows}`;
+            return `
+                <div style="margin-top: 20px; margin-bottom: 20px;">
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 4px;">${escapeHtml(heading)}</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 12px;">${timeLabel}</div>
+                    <table class="print-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            ${dateHeaderHtml}
+                            ${timeHeaderHtml}
+                        </thead>
+                        <tbody>
+                            ${dataRowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }).join('');
-
-        return `${headerHtml}${courseBlocks}`;
-    }).join('');
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Exam Proctoring Schedule</title><style>
         @page { size: A4 landscape; margin: 10mm; }
@@ -476,21 +596,19 @@ async function printProctorSchedule() {
         .college-address { font-size: 11px; color: #333; line-height: 1.3; margin-bottom: 3px; }
         .college-office { font-size: 12px; font-weight: bold; color: #000; margin-top: 8px; }
         .document-title { font-size: 16px; font-weight: bold; margin: 8px 0 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .report-info { margin: 14px 0 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px; }
-        .report-info div { line-height: 1.4; }
-        .print-section-header { margin-top: 24px; margin-bottom: 8px; border-bottom: 1px solid #333; padding: 8px 12px; border-radius: 4px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .print-section-date { font-size: 14px; font-weight: bold; }
-        /* Day color variants (cycled): 0=Orange, 1=Yellow, 2=Green */
-        .print-section-header.day-color-0 { background-color: #fdc568; }
-        .print-section-header.day-color-1 { background-color: #fff59d; }
-        .print-section-header.day-color-2 { background-color: #a8e6a3; }
-        .print-course-header { font-size: 12px; font-weight: 700; padding: 6px 8px; margin: 8px 0 6px; background-color: rgba(0,0,0,0.03); border-radius: 3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .group-block { margin-bottom: 24px; }
-        .group-title { font-size: 13px; margin-bottom: 6px; }
+        .report-info { margin: 14px 0 20px; display: flex; justify-content: space-between; align-items: flex-start; font-size: 12px; }
+        .report-left, .report-right { display: flex; flex-direction: column; gap: 6px; }
+        .report-right { text-align: right; }
         .print-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
         .print-table th, .print-table td { border: 1px solid #444; padding: 6px 8px; text-align: center; font-size: 11px; }
         .print-table th { background: #f2f2f2; }
         .break-time-cell { background: #fff3cd; color: #856404; font-weight: 700; }
+        .break-time-cell.last-slot-col { background: #fff3cd; color: #856404; font-weight: 700; }
+        .last-slot-col {
+            background: #e6e6e6;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
         .signatures { display: flex; justify-content: space-between; gap: 16px; margin-top: 36px; }
         .signature { flex: 1; text-align: center; font-size: 12px; }
         .signature-line { margin-top: 40px; border-top: 1px solid #111; }
@@ -508,6 +626,11 @@ async function printProctorSchedule() {
                 border-radius: 0;
                 box-shadow: none;
             }
+            .last-slot-col {
+                background: #e6e6e6 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             @page {
                 size: A4 landscape;
                 margin: 10mm;
@@ -515,10 +638,20 @@ async function printProctorSchedule() {
         }
     </style></head><body><div class="document">
         <div class="header"><div class="school-name">BESTLINK COLLEGE OF THE PHILIPPINES</div><div class="document-title">EXAMINATION PROCTORING SCHEDULE</div></div>
-        <div class="report-info"><div><strong>Exam:</strong> ${escapeHtml(examName || 'All Exams')}</div><div><strong>School Year:</strong> ${escapeHtml(schoolYearName)}</div><div><strong>Semester:</strong> ${escapeHtml(semesterName)}</div><div><strong>Generated Date:</strong> ${escapeHtml(generatedDate)}</div></div>
+        <div class="report-info">
+            <div class="report-left">
+                <div><strong>Exam:</strong> ${escapeHtml(examName || 'All Exams')}</div>
+                <div><strong>Semester:</strong> ${escapeHtml(semesterName)}</div>
+            </div>
+            <div class="report-right">
+                <div><strong>School Year:</strong> ${escapeHtml(schoolYearName)}</div>
+                <div><strong>Generated Date:</strong> ${escapeHtml(generatedDate)}</div>
+            </div>
+        </div>
         ${rowsHtml}
         <div class="signatures"><div class="signature"><div class="signature-line"></div><div class="signature-title">Prepared by</div></div><div class="signature"><div class="signature-line"></div><div class="signature-title">Checked by</div></div><div class="signature"><div class="signature-line"></div><div class="signature-title">Approved by</div></div></div>
     </div></body></html>`;
+
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();

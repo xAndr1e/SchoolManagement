@@ -648,6 +648,7 @@ try {
         </div>
     </div>
 </div>
+     </div>
 
 <!-- Toast Notification -->
 <div id="toastContainer" class="toast-container"></div>

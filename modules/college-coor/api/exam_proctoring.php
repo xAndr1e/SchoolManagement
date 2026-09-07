@@ -133,7 +133,7 @@ try {
 
     if ($action === 'exam-schedules') {
         $sql = "SELECT es.id, es.exam_id, es.schedule_type, es.subject_id, es.section_id, es.room_id,
-                    es.exam_date, es.start_time, es.end_time,
+                    es.exam_date, es.start_time, es.end_time, es.status,
                     e.exam_name, e.exam_type,
                     subj.code AS subject_code, subj.name AS subject_name,
                     sec.section_code, cr.room_name

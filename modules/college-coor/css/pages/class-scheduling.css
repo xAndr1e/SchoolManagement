@@ -163,7 +163,7 @@
 
         /* Table */
         .table-container {
-            overflow-x: auto;
+            overflow-x: visible;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             max-height: 600px;
@@ -173,7 +173,6 @@
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1200px;
         }
 
         .data-table th {
@@ -213,9 +212,10 @@
         /* Forms */
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 25px;
+            max-width: 100%;
         }
 
         .form-card {
@@ -325,6 +325,7 @@
             .filter-group { flex-direction: column; }
             .filter-item { min-width: 100%; }
             .tabs { flex-direction: column; }
+            .form-grid { grid-template-columns: 1fr; }
         }
 
         .video-background {

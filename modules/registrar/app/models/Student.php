@@ -27,9 +27,12 @@
 
         JOIN cc_schedule ccs 
             ON ccs.id = een.schedule_id
+        
+        JOIN enr_students ens 
+           ON ens.student_id = een.student_id
 
         JOIN cc_sections ccsec 
-            ON ccsec.id = een.section_id
+            ON ccsec.id = ens.section_id
 
         JOIN rgr_subjects rsec 
             ON rsec.id = ccs.subject_id

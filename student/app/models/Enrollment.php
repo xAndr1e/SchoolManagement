@@ -12,9 +12,6 @@
     public $primaryKey = 'enrollment_id';
 
 
-    
-
-
 
 
     protected function allStudentEnrolledSubject($id)

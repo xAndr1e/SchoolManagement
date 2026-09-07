@@ -20,7 +20,7 @@ class DocumentController extends Controller
     public function index()
     {
 
-        $id = Session::get('user_id');
+        $id = Session::get('student_user_id');
         $user = Users::find($id);
         $student = Student::find($user['student_id']);
         $semester = Semester::activeSemester();

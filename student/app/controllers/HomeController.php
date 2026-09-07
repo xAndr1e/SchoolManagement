@@ -21,7 +21,7 @@ use App\Models\Users;
 
     public function index()
     {   
-        $id = Session::get('user_id');
+        $id = Session::get('student_user_id');
         $user = Users::find($id);
         $semester = Semester::activeSemester();
         $schoolYear = SchoolYear::activeSchoolYear();

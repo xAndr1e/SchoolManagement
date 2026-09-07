@@ -27,7 +27,7 @@ class Auth {
     }
 
     public static function check() {
-        return Session::get('user_id') !== null;
+        return Session::get('student_user_id') !== null;
     }
 
     public static function logout() {

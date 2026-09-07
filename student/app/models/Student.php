@@ -77,7 +77,8 @@
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-       public static function __callStatic($name, $arguments)
+
+    public static function __callStatic($name, $arguments)
     {
         $instance = new self();
         return $instance->$name(...$arguments);

@@ -20,35 +20,191 @@ $schedule = new Schedule($db);
 $faculty = new Faculty($db);
 $section = new SectionManager($db);
 
-// Default filter values
-$semester = isset($_GET['semester']) ? $_GET['semester'] : '2nd Sem';
-$school_year = isset($_GET['school_year']) ? $_GET['school_year'] : '2025-2026';
+// Load active academic periods for the View Schedules filters.
+$school_years = $db->query("SELECT id, name FROM rgr_school_years WHERE is_active = 1 ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$requestedSchoolYear = isset($_GET['school_year_id']) ? (int)$_GET['school_year_id'] : 0;
+$school_year = 0;
+foreach ($school_years as $schoolYearOption) {
+    if ((int)$schoolYearOption['id'] === $requestedSchoolYear) {
+        $school_year = $requestedSchoolYear;
+        break;
+    }
+}
+$school_year = $school_year ?: (!empty($school_years) ? (int)$school_years[0]['id'] : 0);
+
+$semesterStmt = $db->prepare("SELECT id, name, school_year_id, is_active
+    FROM rgr_semesters
+    WHERE school_year_id = :school_year_id
+      AND is_active = 1
+    ORDER BY id");
+$semesterStmt->bindValue(':school_year_id', $school_year, PDO::PARAM_INT);
+$semesterStmt->execute();
+$semesters = $semesterStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$requestedSemester = isset($_GET['semester_id']) ? (int)$_GET['semester_id'] : 0;
+$semester = 0;
+foreach ($semesters as $semesterOption) {
+    if ((int)$semesterOption['id'] === $requestedSemester) {
+        $semester = $requestedSemester;
+        break;
+    }
+}
+$semester = $semester ?: (!empty($semesters) ? (int)$semesters[0]['id'] : 0);
+$subjects = $db->query("SELECT id, code, name FROM rgr_subjects ORDER BY code")->fetchAll(PDO::FETCH_ASSOC);
+$faculty_loads = $db->query("SELECT
+    fl.id,
+    fl.faculty_id,
+    fl.subject_id,
+    fl.section_id,
+    fl.semester_id,
+    fl.school_year_id,
+    CONCAT(f.first_name, ' ', f.last_name) AS faculty_name,
+    sec.section_code
+    FROM cc_faculty_load fl
+    INNER JOIN cc_faculty f ON f.id = fl.faculty_id
+    INNER JOIN cc_sections sec ON sec.id = fl.section_id
+    INNER JOIN rgr_school_years sy ON sy.id = fl.school_year_id AND sy.is_active = 1
+    INNER JOIN rgr_semesters sem ON sem.id = fl.semester_id
+        AND sem.school_year_id = fl.school_year_id
+        AND sem.is_active = 1
+    WHERE fl.school_year_id = {$school_year}
+      AND fl.semester_id = {$semester}
+      AND NOT EXISTS (
+          SELECT 1
+          FROM cc_schedule cs
+          WHERE cs.faculty_load_id = fl.id
+            AND cs.schedule_type = 'Class'
+            AND cs.status = 'Scheduled'
+      )
+    ORDER BY f.last_name, f.first_name, sec.section_code, fl.id")->fetchAll(PDO::FETCH_ASSOC);
+
+// Existing Class schedules may still need their Faculty Load displayed in Edit.
+$edit_faculty_loads_stmt = $db->prepare("SELECT
+    fl.id, fl.faculty_id, fl.subject_id, fl.section_id, fl.semester_id, fl.school_year_id,
+    CONCAT(f.first_name, ' ', f.last_name) AS faculty_name,
+    sec.section_code
+    FROM cc_faculty_load fl
+    INNER JOIN cc_faculty f ON f.id = fl.faculty_id
+    INNER JOIN cc_sections sec ON sec.id = fl.section_id
+    INNER JOIN rgr_school_years sy ON sy.id = fl.school_year_id AND sy.is_active = 1
+    INNER JOIN rgr_semesters sem ON sem.id = fl.semester_id
+        AND sem.school_year_id = fl.school_year_id
+        AND sem.is_active = 1
+    ORDER BY f.last_name, f.first_name, sec.section_code, fl.id");
+$edit_faculty_loads_stmt->execute();
+$edit_faculty_loads = $edit_faculty_loads_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$getActiveFacultyLoad = static function (PDO $db, int $facultyLoadId, int $schoolYearId, int $semesterId): ?array {
+    $stmt = $db->prepare("SELECT fl.faculty_id, fl.subject_id, fl.section_id, fl.semester_id, fl.school_year_id
+        FROM cc_faculty_load fl
+        INNER JOIN rgr_school_years sy ON sy.id = fl.school_year_id AND sy.is_active = 1
+        INNER JOIN rgr_semesters sem ON sem.id = fl.semester_id
+            AND sem.school_year_id = fl.school_year_id
+            AND sem.is_active = 1
+        WHERE fl.id = :faculty_load_id
+          AND fl.school_year_id = :school_year_id
+          AND fl.semester_id = :semester_id
+        LIMIT 1");
+    $stmt->bindValue(':faculty_load_id', $facultyLoadId, PDO::PARAM_INT);
+    $stmt->bindValue(':school_year_id', $schoolYearId, PDO::PARAM_INT);
+    $stmt->bindValue(':semester_id', $semesterId, PDO::PARAM_INT);
+    $stmt->execute();
+    $load = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $load ?: null;
+};
+
+// Remaining filter values use IDs from the selected academic period.
 $day_of_week = isset($_GET['day_of_week']) ? $_GET['day_of_week'] : '';
-$room = isset($_GET['room']) ? $_GET['room'] : '';
+$room = isset($_GET['room_id']) ? (int)$_GET['room_id'] : 0;
 
 // Handle form submissions - FIXED HERE
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Check if this is an add schedule submission (either by button or by having room field)
-    if (isset($_POST['add_schedule']) || isset($_POST['room'])) {
+    if (isset($_POST['add_schedule'])) {
         try {
             // Convert time format from HH:MM to HH:MM:SS
             $start_time = $_POST['start_time'] . ':00';
             $end_time = $_POST['end_time'] . ':00';
-            
+
             // Add new schedule using Schedule class
-            $schedule->room = trim($_POST['room']);
-            $schedule->official_time = trim($_POST['official_time']);
+            $schedule->room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : null;
             $schedule->start_time = $start_time;
             $schedule->end_time = $end_time;
             $schedule->day_of_week = trim($_POST['day_of_week']);
-            $schedule->subject_code = trim($_POST['subject_code']);
-            $schedule->grade_section_id = (int)$_POST['grade_section_id'];
-            $schedule->faculty_id = (int)$_POST['faculty_id'];
-            $schedule->semester = trim($_POST['semester']);
-            $schedule->school_year = trim($_POST['school_year']);
-            
+            $schedule->subject_id = isset($_POST['subject_id']) ? (int)$_POST['subject_id'] : null;
+            $schedule->grade_section_id = isset($_POST['grade_section_id']) ? (int)$_POST['grade_section_id'] : 0;
+            $schedule->faculty_id = isset($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : 0;
+            $schedule->semester_id = isset($_POST['semester_id']) ? (int)$_POST['semester_id'] : 0;
+            $schedule->school_year_id = isset($_POST['school_year_id']) ? (int)$_POST['school_year_id'] : 0;
+            $schedule->schedule_type = isset($_POST['schedule_type']) ? trim($_POST['schedule_type']) : 'Class';
+            $schedule->faculty_load_id = isset($_POST['faculty_load_id']) ? (int)$_POST['faculty_load_id'] : 0;
+
+            $submittedClassFields = [
+                'faculty_load_id' => 'Faculty Load',
+                'subject_id' => 'Subject',
+                'grade_section_id' => 'Section',
+                'room_id' => 'Room'
+            ];
+
+            if (empty($schedule->day_of_week) || empty($schedule->start_time) || empty($schedule->end_time)) {
+                throw new Exception('Day, start time, and end time are required.');
+            }
+
+            if ($schedule->schedule_type === 'Break Time') {
+                foreach ($submittedClassFields as $field => $label) {
+                    if ($field !== 'room_id' && array_key_exists($field, $_POST) && trim((string)$_POST[$field]) !== '') {
+                        throw new Exception("Break Time cannot include a {$label}.");
+                    }
+                }
+
+                // Break Time has no teaching-load relationships, but it may still
+                // use a selected room and must retain the directly selected faculty.
+                $schedule->faculty_load_id = 0;
+                $schedule->subject_id = 0;
+                $schedule->grade_section_id = 0;
+                $schedule->semester_id = (int)$semester;
+                $schedule->school_year_id = (int)$school_year;
+
+                if (empty($schedule->faculty_id)) {
+                    throw new Exception('Break Time requires an Assigned Faculty.');
+                }
+
+                $facultyStmt = $db->prepare('SELECT id FROM cc_faculty WHERE id = :faculty_id LIMIT 1');
+                $facultyStmt->bindValue(':faculty_id', (int)$schedule->faculty_id, PDO::PARAM_INT);
+                $facultyStmt->execute();
+                if (!$facultyStmt->fetchColumn()) {
+                    throw new Exception('The selected Assigned Faculty does not exist.');
+                }
+            } elseif (empty($schedule->room_id)) {
+                throw new Exception('Class schedules require a Room.');
+            }
+
+            // If a faculty load was selected, auto-fill faculty, subject, section
+            if ($schedule->schedule_type === 'Class') {
+                if (empty($schedule->faculty_load_id)) {
+                    throw new Exception('Class scheduling requires a Faculty Load.');
+                }
+
+                $fld = $getActiveFacultyLoad($db, $schedule->faculty_load_id, $school_year, $semester);
+                if (!$fld) {
+                    throw new Exception('Class scheduling is only available for the active school year and semester.');
+                }
+
+                $schedule->faculty_id = (int)$fld['faculty_id'];
+                $schedule->subject_id = (int)$fld['subject_id'];
+                $schedule->grade_section_id = (int)$fld['section_id'];
+                $schedule->semester_id = (int)$fld['semester_id'];
+                $schedule->school_year_id = (int)$fld['school_year_id'];
+            }
+
             if ($schedule->create()) {
-                echo "<script>alert('Schedule added successfully!'); sessionStorage.setItem('refreshFacultyLoad', 'true'); window.location.href=window.location.href;</script>";
+                $persistedFacultyId = isset($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : 0;
+                echo "<script>
+                    sessionStorage.setItem('refreshFacultyLoad', 'true');
+                    if ({$persistedFacultyId}) {
+                        sessionStorage.setItem('schedulePrintFacultyId', '{$persistedFacultyId}');
+                    }
+                    window.location.href=window.location.href;
+                </script>";
                 exit;
             } else {
                 $errorInfo = $db->errorInfo();
@@ -57,29 +213,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "');</script>";
         }
-    }
-    
-    if (isset($_POST['update_schedule'])) {
+    } elseif (isset($_POST['update_schedule'])) {
         try {
             // Convert time format from HH:MM to HH:MM:SS
             $start_time = $_POST['start_time'] . ':00';
             $end_time = $_POST['end_time'] . ':00';
-            
+
             // Update schedule using Schedule class
             $schedule->id = (int)$_POST['schedule_id'];
-            $schedule->room = trim($_POST['room']);
-            $schedule->official_time = trim($_POST['official_time']);
+            $schedule->room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : null;
             $schedule->start_time = $start_time;
             $schedule->end_time = $end_time;
             $schedule->day_of_week = trim($_POST['day_of_week']);
-            $schedule->subject_code = trim($_POST['subject_code']);
-            $schedule->grade_section_id = (int)$_POST['grade_section_id'];
-            $schedule->faculty_id = (int)$_POST['faculty_id'];
-            $schedule->semester = trim($_POST['semester']);
-            $schedule->school_year = trim($_POST['school_year']);
-            
+            $schedule->subject_id = isset($_POST['subject_id']) ? (int)$_POST['subject_id'] : null;
+            $schedule->grade_section_id = isset($_POST['grade_section_id']) ? (int)$_POST['grade_section_id'] : 0;
+            $schedule->faculty_id = isset($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : 0;
+            $schedule->semester_id = isset($_POST['semester_id']) ? (int)$_POST['semester_id'] : 0;
+            $schedule->school_year_id = isset($_POST['school_year_id']) ? (int)$_POST['school_year_id'] : 0;
+            $schedule->schedule_type = isset($_POST['schedule_type']) ? trim($_POST['schedule_type']) : 'Class';
+            $schedule->faculty_load_id = isset($_POST['faculty_load_id']) ? (int)$_POST['faculty_load_id'] : 0;
+
+            if ($schedule->schedule_type === 'Break Time') {
+                $schedule->faculty_load_id = 0;
+                $schedule->subject_id = 0;
+                $schedule->grade_section_id = 0;
+            }
+
+            // If a faculty load was selected, auto-fill faculty, subject, section
+            if ($schedule->schedule_type === 'Class') {
+                if (empty($schedule->faculty_load_id)) {
+                    throw new Exception('Class scheduling requires a Faculty Load.');
+                }
+
+                $fld = $getActiveFacultyLoad($db, $schedule->faculty_load_id, $school_year, $semester);
+                if (!$fld) {
+                    throw new Exception('Class scheduling is only available for the active school year and semester.');
+                }
+
+                $schedule->faculty_id = (int)$fld['faculty_id'];
+                $schedule->subject_id = (int)$fld['subject_id'];
+                $schedule->grade_section_id = (int)$fld['section_id'];
+                $schedule->semester_id = (int)$fld['semester_id'];
+                $schedule->school_year_id = (int)$fld['school_year_id'];
+            }
+
             if ($schedule->update()) {
-                echo "<script>alert('Schedule updated successfully!'); sessionStorage.setItem('refreshFacultyLoad', 'true'); window.location.href=window.location.href;</script>";
+                $persistedFacultyId = isset($_POST['faculty_id']) ? (int)$_POST['faculty_id'] : 0;
+                echo "<script>
+                    sessionStorage.setItem('refreshFacultyLoad', 'true');
+                    if ({$persistedFacultyId}) {
+                        sessionStorage.setItem('schedulePrintFacultyId', '{$persistedFacultyId}');
+                    }
+                    window.location.href=window.location.href;
+                </script>";
                 exit;
             } else {
                 $errorInfo = $db->errorInfo();
@@ -88,9 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "');</script>";
         }
-    }
-    
-    if (isset($_POST['delete_schedule'])) {
+    } elseif (isset($_POST['delete_schedule'])) {
         try {
             $schedule->id = (int)$_POST['schedule_id'];
             if ($schedule->delete()) {
@@ -115,10 +299,12 @@ $distinct_days = $distinct_days_result ? $distinct_days_result->fetchAll() : [];
 
 $distinct_rooms_result = $schedule->getDistinctRooms($semester, $school_year);
 $distinct_rooms = $distinct_rooms_result ? $distinct_rooms_result->fetchAll() : [];
+$all_rooms = $db->query("SELECT id AS room_id, room_name AS room FROM cc_room WHERE status = 'Available' ORDER BY room_name")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get data for dropdowns
 $all_faculty = $db->query("SELECT id, faculty_code, first_name, last_name FROM cc_faculty ORDER BY last_name")->fetchAll();
-$all_sections = $db->query("SELECT id, section_code, grade_level, program FROM cc_sections ORDER BY section_code")->fetchAll();
+$all_courses = $db->query("SELECT id, code, name FROM rgr_courses ORDER BY code")->fetchAll(PDO::FETCH_ASSOC);
+$all_sections = $db->query("SELECT cs.id, cs.section_code, cs.grade_level, c.code AS program FROM cc_sections cs LEFT JOIN rgr_courses c ON cs.program_id = c.id ORDER BY cs.section_code")->fetchAll();
 
 // Calculate statistics using the new method
 $stats = $schedule->getStatistics($semester, $school_year);
@@ -136,390 +322,19 @@ $daily_summary = [];
 foreach ($weekly_summary as $item) {
     $daily_summary[$item['day_of_week']] = $item['total_classes'];
 }
+
+// Helper maps for display
+$semester_map = array_column($semesters, 'name', 'id');
+$school_year_map = array_column($school_years, 'name', 'id');
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Management System</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3a0ca3;
-            --success: #4cc9f0;
-            --warning: #f72585;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: #f5f7ff;
-            color: var(--dark);
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .container { max-width: 1600px; margin: 0 auto; }
-
-        .header {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: var(--box-shadow);
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header h1 { color: var(--primary); margin-bottom: 10px; font-size: 2.2rem; }
-        .header p { color: #666; font-size: 1.1rem; }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover { transform: translateY(-5px); }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-
-        .stat-label { color: #666; font-size: 0.9rem; }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            background: white;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            margin-bottom: 25px;
-            box-shadow: var(--box-shadow);
-        }
-
-        .tab {
-            flex: 1;
-            padding: 15px 20px;
-            text-align: center;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #666;
-            transition: all 0.3s ease;
-        }
-
-        .tab:hover { background: #f8f9fa; }
-        .tab.active { background: var(--primary); color: white; }
-
-        /* Tab Content */
-        .tab-content {
-            display: none;
-            background: white;
-            padding: 25px;
-            border-radius: var(--border-radius);
-            margin-bottom: 25px;
-            box-shadow: var(--box-shadow);
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Filters */
-        .filters {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            margin-bottom: 25px;
-        }
-
-        .filter-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-
-        .filter-item { flex: 1; min-width: 200px; }
-
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
-
-        select, input, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-
-        .btn {
-            padding: 10px 25px;
-            border: none;
-            border-radius: 4px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--secondary); transform: translateY(-2px); }
-
-        .btn-success { background: #2ec4b6; color: white; }
-        .btn-success:hover { background: #25a195; transform: translateY(-2px); }
-
-        .btn-warning { background: #ff9f1c; color: white; }
-        .btn-warning:hover { background: #e68a00; transform: translateY(-2px); }
-
-        .btn-danger { background: #e71d36; color: white; }
-        .btn-danger:hover { background: #c81d36; transform: translateY(-2px); }
-
-        /* Table */
-        .table-container {
-            overflow-x: auto;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        .data-table th {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-        }
-
-        .data-table tr:hover { background: #f8f9fa; }
-
-        .data-table tr:nth-child(even) { background: #fafafa; }
-
-        /* Badges */
-        .badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .badge-primary { background: #e3f2fd; color: #1976d2; }
-        .badge-success { background: #e8f5e9; color: #388e3c; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-
-        /* Forms */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .form-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--primary);
-        }
-
-        .form-card h3 { margin-bottom: 15px; color: var(--primary); }
-
-        .form-group { margin-bottom: 15px; }
-
-        /* Import Section */
-        .import-box {
-            background: #f0f7ff;
-            border: 2px dashed #4cc9f0;
-            border-radius: var(--border-radius);
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .csv-template {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
-        }
-
-        /* Summary */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .summary-item {
-            background: white;
-            padding: 15px;
-            border-radius: var(--border-radius);
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .summary-day { font-weight: 600; color: var(--primary); }
-        .summary-count { font-size: 1.5rem; font-weight: 700; margin-top: 5px; }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: var(--border-radius);
-            max-width: 800px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .close-modal:hover { color: var(--danger); }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding: 20px;
-            color: #666;
-            border-top: 1px solid #eee;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .filter-group { flex-direction: column; }
-            .filter-item { min-width: 100%; }
-            .tabs { flex-direction: column; }
-        }
-
-        .video-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-            opacity: 0.15;
-        }
-        
-        .video-background video {
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            object-fit: cover;
-        }
-
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 0.875rem;
-        }
-    </style>
-</head>
-<body>
-    <div class="video-background">
-        <video autoplay muted loop playsinline>
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-college-students-walking-on-campus-47870-large.mp4" type="video/mp4">
-        </video>
-    </div>
-    
-    <div class="container">
         <!-- Header -->
-        <div class="header">
+        <div class="module-header">
             <h1><i class="fas fa-calendar-alt"></i> Schedule Management System</h1>
             <p>Office of the Safety and Security | Class Schedule Management</p>
         </div>
 
-        <!-- Statistics -->
-        <div class="stats-grid">
+        <div class="module-content">
+            <div class="stats-grid">
             <div class="stat-card">
                 <i class="fas fa-calendar-check fa-2x" style="color: #4361ee;"></i>
                 <div class="stat-value"><?= $total_schedules ?></div>
@@ -563,31 +378,32 @@ foreach ($weekly_summary as $item) {
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab <?= !isset($_GET['action']) || $_GET['action'] == 'view' ? 'active' : '' ?>" onclick="showTab('view')">
-                <i class="fas fa-eye"></i> View Schedules
-            </button>
-            <button class="tab <?= isset($_GET['action']) && $_GET['action'] == 'add' ? 'active' : '' ?>" onclick="showTab('add')">
+            <button type="button" class="tab <?= !isset($_GET['action']) || $_GET['action'] == 'add' ? 'active' : '' ?>" data-tab="add">
                 <i class="fas fa-plus-circle"></i> Add Schedule
             </button>
-            <button class="tab <?= isset($_GET['action']) && $_GET['action'] == 'import' ? 'active' : '' ?>" onclick="showTab('import')">
-                <i class="fas fa-file-import"></i> Import CSV
+            <button type="button" class="tab <?= isset($_GET['action']) && $_GET['action'] == 'proctoring' ? 'active' : '' ?>" data-tab="proctoring">
+                <i class="fas fa-user-shield"></i> Exam Proctoring
             </button>
         </div>
 
         <!-- Filters -->
-        <div class="filters">
+        <div id="classScheduleFilters" class="filters">
             <form method="GET" class="filter-group">
                 <div class="filter-item">
                     <label><i class="fas fa-graduation-cap"></i> Semester</label>
-                    <select name="semester">
-                        <option value="1st Sem" <?= $semester == '1st Sem' ? 'selected' : '' ?>>1st Semester</option>
-                        <option value="2nd Sem" <?= $semester == '2nd Sem' ? 'selected' : '' ?>>2nd Semester</option>
-                        <option value="Summer" <?= $semester == 'Summer' ? 'selected' : '' ?>>Summer</option>
+                    <select name="semester_id">
+                        <?php foreach ($semesters as $sem): ?>
+                            <option value="<?= (int)$sem['id'] ?>" <?= $semester == $sem['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sem['name']) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="filter-item">
                     <label><i class="fas fa-calendar-alt"></i> School Year</label>
-                    <input type="text" name="school_year" value="<?= htmlspecialchars($school_year) ?>" placeholder="YYYY-YYYY">
+                    <select name="school_year_id" onchange="this.form.submit()">
+                        <?php foreach ($school_years as $sy): ?>
+                            <option value="<?= (int)$sy['id'] ?>" <?= $school_year == $sy['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sy['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="filter-item">
                     <label><i class="fas fa-calendar-day"></i> Day of Week</label>
@@ -602,10 +418,10 @@ foreach ($weekly_summary as $item) {
                 </div>
                 <div class="filter-item">
                     <label><i class="fas fa-door-open"></i> Room</label>
-                    <select name="room">
+                    <select name="room_id">
                         <option value="">All Rooms</option>
                         <?php foreach ($distinct_rooms as $room_item): ?>
-                            <option value="<?= htmlspecialchars($room_item['room']) ?>" <?= $room == $room_item['room'] ? 'selected' : '' ?>>
+                            <option value="<?= (int)$room_item['room_id'] ?>" <?= $room == $room_item['room_id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($room_item['room']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -620,100 +436,8 @@ foreach ($weekly_summary as $item) {
                     </a>
                 </div>
             </form>
-        </div>
-
-        <!-- View Schedules Tab -->
-        <div id="view-tab" class="tab-content <?= !isset($_GET['action']) || $_GET['action'] == 'view' ? 'active' : '' ?>">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2><i class="fas fa-list"></i> All Schedules (<?= $total_schedules ?>)</h2>
-                <div>
-                    <button onclick="exportToCSV()" class="btn btn-success">
-                        <i class="fas fa-file-csv"></i> Export CSV
-                    </button>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <label for="facultySelector" style="margin: 0; font-weight: 600;">Select Faculty to Print:</label>
-                        <select id="facultySelector" class="form-control" style="width: 250px; flex: 0;">
-                            <option value="">-- Select Faculty --</option>
-                            <?php 
-                                $faculty_list = [];
-                                foreach ($schedules as $schedule) {
-                                    $faculty_key = $schedule['faculty_code'] ?? 'Unknown';
-                                    if (!in_array($faculty_key, $faculty_list)) {
-                                        $faculty_list[] = $faculty_key;
-                                    }
-                                }
-                                foreach ($faculty_list as $fac_code) {
-                                    echo '<option value="' . htmlspecialchars($fac_code) . '">' . htmlspecialchars($fac_code) . '</option>';
-                                }
-                            ?>
-                        </select>
-                        <button id="printScheduleBtn" onclick="printSchedule()" class="btn btn-primary">
-                            <i class="fas fa-print"></i> Print
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <?php if ($total_schedules > 0): ?>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Day</th>
-                                <th>Time Slot</th>
-                                <th>Room</th>
-                                <th>Subject</th>
-                                <th>Section</th>
-                                <th>Faculty</th>
-                                <th>Semester</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($schedules as $row): ?>
-                            <tr>
-                                <td>
-                                    <span class="badge badge-primary"><?= htmlspecialchars($row['day_of_week'] ?? '') ?></span>
-                                </td>
-                                <td>
-                                    <strong><?= htmlspecialchars($row['official_time'] ?? '') ?></strong><br>
-                                    <small><?= date('h:i A', strtotime($row['start_time'])) ?> - <?= date('h:i A', strtotime($row['end_time'])) ?></small>
-                                </td>
-                                <td><span class="badge badge-warning"><?= htmlspecialchars($row['room'] ?? '') ?></span></td>
-                                <td><strong><?= htmlspecialchars($row['subject_code'] ?? '') ?></strong></td>
-                                <td>
-                                    <?= htmlspecialchars($row['section_code'] ?? '') ?><br>
-                                    <small><?= htmlspecialchars($row['grade_level'] ?? '') ?> - <?= htmlspecialchars($row['program'] ?? '') ?></small>
-                                </td>
-                                <td>
-                                    <?= htmlspecialchars($row['last_name'] ?? '') ?>, <?= htmlspecialchars($row['first_name'] ?? '') ?><br>
-                                    <small><?= htmlspecialchars($row['faculty_code'] ?? '') ?></small>
-                                </td>
-                                <td>
-                                    <?= htmlspecialchars($row['semester'] ?? '') ?><br>
-                                    <small><?= htmlspecialchars($row['school_year'] ?? '') ?></small>
-                                </td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick='editSchedule(<?= json_encode($row) ?>)'>
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-sm" 
-                                            onclick="deleteSchedule(<?= $row['id'] ?>)"
-                                            title="Delete Schedule">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php else: ?>
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <i class="fas fa-calendar-times fa-3x" style="margin-bottom: 20px; color: #ddd;"></i>
-                    <h3>No schedules found</h3>
-                    <p>Try different filters or add new schedules</p>
-                </div>
+            <?php if ($school_year && empty($semesters)): ?>
+                <div class="alert alert-warning" style="margin-top: 12px;">The selected school year has no active semester. No schedules are available for this academic period.</div>
             <?php endif; ?>
         </div>
 
@@ -721,23 +445,24 @@ foreach ($weekly_summary as $item) {
         <div id="add-tab" class="tab-content <?= isset($_GET['action']) && $_GET['action'] == 'add' ? 'active' : '' ?>">
             <h2><i class="fas fa-plus-circle"></i> Add New Schedule</h2>
             
-            <form method="POST" class="form-grid" onsubmit="return validateForm()">
+            <form id="addForm" method="POST" class="form-grid" data-custom-submit onsubmit="return validateForm()">
                 <div class="form-card">
                     <h3>Basic Information</h3>
-                    <div class="form-group">
-                        <label for="room">Room</label>
-                        <input type="text" id="room" name="room" required placeholder="e.g., G15, A10" maxlength="20">
+                    <div class="form-group schedule-type-field" id="add-room-field">
+                        <label for="room_id">Room</label>
+                        <select id="room_id" name="room_id" required>
+                            <option value="">Select Room</option>
+                            <?php foreach ($all_rooms as $room_item): ?>
+                                <option value="<?= (int)$room_item['room_id'] ?>"><?= htmlspecialchars($room_item['room']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="official_time">Official Time Slot</label>
-                        <select id="official_time" name="official_time" required>
-                            <option value="">Select Time Slot</option>
-                            <option value="7:30-10:00">7:30-10:00 AM</option>
-                            <option value="10:00-12:30">10:00-12:30 PM</option>
-                            <option value="12:30-3:00">12:30-3:00 PM</option>
-                            <option value="3:00-5:30">3:00-5:30 PM</option>
-                            <option value="5:30-8:00">5:30-8:00 PM</option>
+                        <label for="schedule_type">Schedule Type</label>
+                        <select id="schedule_type" name="schedule_type">
+                            <option value="Class">Class</option>
+                            <option value="Break Time">Break Time</option>
                         </select>
                     </div>
                     
@@ -764,18 +489,22 @@ foreach ($weekly_summary as $item) {
                             <option value="Thursday">Thursday</option>
                             <option value="Friday">Friday</option>
                             <option value="Saturday">Saturday</option>
-                            <option value="Sunday">Sunday</option>
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="subject_code">Subject Code</label>
-                        <input type="text" id="subject_code" name="subject_code" required placeholder="e.g., OJT, PRE4, TPC5" maxlength="20">
+                    <div class="form-group schedule-type-field" id="add-subject-field">
+                        <label for="subject_id">Subject</label>
+                        <select id="subject_id" name="subject_id" required>
+                            <option value="">Select Subject</option>
+                            <?php foreach ($subjects as $sub): ?>
+                                <option value="<?= (int)$sub['id'] ?>"><?= htmlspecialchars($sub['code']) ?> - <?= htmlspecialchars($sub['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="grade_section_id">Section</label>
-                        <select id="grade_section_id" name="grade_section_id" required>
+                    <div class="form-group schedule-type-field" id="add-section-field">
+                        <label for="section_id">Section</label>
+                        <select id="section_id" name="grade_section_id" required>
                             <option value="">Select Section</option>
                             <?php foreach ($all_sections as $sec): ?>
                                 <option value="<?= $sec['id'] ?>">
@@ -788,32 +517,47 @@ foreach ($weekly_summary as $item) {
 
                 <div class="form-card">
                     <h3>Faculty & Semester</h3>
-                    <div class="form-group">
+                    <div class="form-group schedule-type-field" id="add-faculty-load-field">
+                        <label for="faculty_load_id">Faculty Load</label>
+                        <select id="faculty_load_id" name="faculty_load_id" required>
+                            <option value="">-- Select Faculty Load --</option>
+                            <?php foreach ($faculty_loads as $fl): ?>
+                                <option value="<?= (int)$fl['id'] ?>" data-faculty="<?= (int)$fl['faculty_id'] ?>" data-subject="<?= (int)$fl['subject_id'] ?>" data-section="<?= (int)$fl['section_id'] ?>" data-semester="<?= (int)$fl['semester_id'] ?>" data-school-year="<?= (int)$fl['school_year_id'] ?>">
+                                    <?= htmlspecialchars($fl['faculty_name']) ?> | <?= htmlspecialchars($fl['section_code']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group" id="add-faculty-field">
                         <label for="faculty_id">Assigned Faculty</label>
                         <select id="faculty_id" name="faculty_id" required>
                             <option value="">Select Faculty</option>
                             <?php foreach ($all_faculty as $fac): ?>
-                                <option value="<?= $fac['id'] ?>">
+                                <option value="<?= (int)$fac['id'] ?>">
                                     <?= htmlspecialchars($fac['last_name']) ?>, <?= htmlspecialchars($fac['first_name']) ?> (<?= htmlspecialchars($fac['faculty_code']) ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="semester">Semester</label>
-                        <select id="semester" name="semester" required>
-                            <option value="1st Sem">1st Semester</option>
-                            <option value="2nd Sem" selected>2nd Semester</option>
-                            <option value="Summer">Summer</option>
+                    <div class="form-group schedule-type-field" id="add-semester-field">
+                        <label for="semester_id">Semester</label>
+                        <select id="semester_id" name="semester_id" required>
+                            <option value="">Select Semester</option>
+                            <?php foreach ($semesters as $sem): ?>
+                                <option value="<?= (int)$sem['id'] ?>" <?= $semester == $sem['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sem['name']) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="school_year">School Year</label>
-                        <input type="text" id="school_year" name="school_year" 
-                               value="<?= htmlspecialchars($school_year) ?>" placeholder="YYYY-YYYY" required 
-                               pattern="\d{4}-\d{4}" title="Please enter in format YYYY-YYYY">
+                    <div class="form-group schedule-type-field" id="add-school-year-field">
+                        <label for="school_year_id">School Year</label>
+                        <select id="school_year_id" name="school_year_id" required>
+                            <option value="">Select School Year</option>
+                            <?php foreach ($school_years as $sy): ?>
+                                <option value="<?= (int)$sy['id'] ?>" <?= $school_year == $sy['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sy['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
 
@@ -828,59 +572,204 @@ foreach ($weekly_summary as $item) {
                     </button>
                 </div>
             </form>
-        </div>
+                <?php if (!empty($all_faculty)): ?>
+                    <script id="preload-scheduleAllFaculty" type="application/json">
+                        <?= json_encode(array_map(function($f){ return [
+                            'id' => (int)($f['id'] ?? $f['faculty_id'] ?? 0),
+                            'first_name' => $f['first_name'] ?? '',
+                            'last_name' => $f['last_name'] ?? '',
+                            'faculty_code' => $f['faculty_code'] ?? ''
+                        ]; }, $all_faculty), JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) ?>
+                    </script>
+                <?php endif; ?>
 
-        <!-- Import CSV Tab -->
-        <div id="import-tab" class="tab-content <?= isset($_GET['action']) && $_GET['action'] == 'import' ? 'active' : '' ?>">
-            <h2><i class="fas fa-file-import"></i> Import Schedules from CSV</h2>
-            
-            <div class="import-box">
-                <h3><i class="fas fa-cloud-upload-alt"></i> Upload CSV File</h3>
-                <p>Upload a CSV file containing schedule data</p>
-                
-                <form method="POST" enctype="multipart/form-data" style="margin: 20px 0;">
-                    <div style="margin-bottom: 15px;">
-                        <input type="file" name="csv_file" accept=".csv" required>
+            <!-- View Schedules Section -->
+            <div style="margin-top: 40px; border-top: 2px solid #dee2e6; padding-top: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2><i class="fas fa-list"></i> All Schedules (<?= $total_schedules ?>)</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label for="facultySelector" style="margin: 0; font-weight: 600;">Select Faculty to Print:</label>
+                            <select id="facultySelector" class="form-control" style="width: 250px; flex: 0;">
+                                <option value="">-- Select Faculty --</option>
+                                <?php 
+                                    $faculty_list = [];
+                                    foreach ($schedules as $schedule) {
+                                        $faculty_key = (int)($schedule['faculty_id'] ?? 0);
+                                        if ($faculty_key && !isset($faculty_list[$faculty_key])) {
+                                            $first_name = $schedule['first_name'] ?? '';
+                                            $last_name = $schedule['last_name'] ?? '';
+                                            $faculty_name = trim($first_name . ' ' . $last_name);
+                                            $faculty_list[$faculty_key] = $faculty_name ?: 'Unknown';
+                                        }
+                                    }
+                                    foreach ($faculty_list as $fac_id => $fac_name) {
+                                        echo '<option value="' . $fac_id . '">' . htmlspecialchars($fac_name) . '</option>';
+                                    }
+                                ?>
+                            </select>
+                            <button id="printScheduleBtn" onclick="printSchedule()" class="btn btn-primary">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" name="import_schedule" value="1" class="btn btn-primary">
-                        <i class="fas fa-upload"></i> Import CSV
-                    </button>
-                </form>
                 
-                <div class="csv-template">
-                    <h4>CSV Format (First row should be headers):</h4>
-                    <p>room,official_time,start_time,end_time,day_of_week,subject_code,section_code,faculty_code,semester,school_year</p>
-                    <h4>Example:</h4>
-                    <p>G15,12:30-3:00,12:30:00,15:00:00,Monday,TPC5,BSCRIM 1201,DJAURIGUE,2nd Sem,2025-2026</p>
-                    <p>A10,7:30-10:00,07:30:00,10:00:00,Tuesday,OJT,BSCRIM 3201,MCPANGILINAN,2nd Sem,2025-2026</p>
-                </div>
-                
-                <div style="margin-top: 20px; color: #666;">
-                    <p><i class="fas fa-info-circle"></i> Notes:</p>
-                    <ul style="text-align: left; max-width: 600px; margin: 10px auto;">
-                        <li>section_code must exist in the sections table</li>
-                        <li>faculty_code must exist in the faculty table</li>
-                        <li>Time format must be HH:MM:SS (24-hour format)</li>
-                        <li>Days must be spelled correctly (Monday, Tuesday, etc.)</li>
-                    </ul>
-                </div>
+                <?php if ($total_schedules > 0): ?>
+                    <div class="table-container" id="viewScheduleTableContainer">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Time Slot</th>
+                                    <th>Room</th>
+                                    <th>Subject</th>
+                                    <th>Section</th>
+                                    <th>Faculty</th>
+                                    <th>Semester</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($schedules as $row): ?>
+                                <tr data-faculty-id="<?= (int)($row['faculty_id'] ?? 0) ?>">
+                                    <td>
+                                        <span class="badge badge-primary"><?= htmlspecialchars($row['day_of_week'] ?? '') ?></span>
+                                    </td>
+                                    <td>
+                                        <small><?= date('h:i A', strtotime($row['start_time'])) ?> - <?= date('h:i A', strtotime($row['end_time'])) ?></small>
+                                    </td>
+                                    <td><span class="badge badge-warning"><?= htmlspecialchars($row['room'] ?? '') ?></span></td>
+                                    <td><strong><?= htmlspecialchars($row['subject_code'] ?? '') ?></strong></td>
+                                    <td>
+                                        <?= htmlspecialchars($row['section_code'] ?? '') ?><br>
+                                        <small><?= htmlspecialchars($row['grade_level'] ?? '') ?> - <?= htmlspecialchars($row['program'] ?? '') ?></small>
+                                    </td>
+                                    <td>
+                                        <?= htmlspecialchars($row['last_name'] ?? '') ?>, <?= htmlspecialchars($row['first_name'] ?? '') ?><br>
+                                        <small><?= htmlspecialchars($row['faculty_code'] ?? '') ?></small>
+                                    </td>
+                                    <td>
+                                        <?= htmlspecialchars($semester_map[$row['semester_id']] ?? ($row['semester'] ?? '')) ?><br>
+                                        <small><?= htmlspecialchars($school_year_map[$row['school_year_id']] ?? ($row['school_year'] ?? '')) ?></small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick='editSchedule(<?= json_encode($row) ?>)'>
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-calendar-times fa-3x" style="margin-bottom: 20px; color: #ddd;"></i>
+                        <h3>No schedules found</h3>
+                        <p>Try different filters or add new schedules</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="footer">
-            <div style="margin-bottom: 10px;">
-                <a href="index.php" class="btn btn-primary">
-                    <i class="fas fa-home"></i> Dashboard
-                </a>
-                <a href="attendance_form.php" class="btn btn-success">
-                    <i class="fas fa-clipboard-check"></i> Mark Attendance
-                </a>
-                <a href="view_enrollees.php" class="btn btn-primary">
-                    <i class="fas fa-users"></i> View Enrollees
-                </a>
+        <!-- Exam Proctoring Tab -->
+        <div id="proctoring-tab" class="tab-content <?= isset($_GET['action']) && $_GET['action'] == 'proctoring' ? 'active' : '' ?>">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;">
+                <h2><i class="fas fa-user-shield"></i> Exam Proctoring Assignment</h2>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" onclick="openExamModal()"><i class="fas fa-file-medical"></i> Create Exam</button>
+                    <button type="button" class="btn btn-primary" onclick="openExamScheduleModal()"><i class="fas fa-calendar-plus"></i> Add Exam Schedule</button>
+                    <button type="button" class="btn btn-primary" onclick="openProctorModal()"><i class="fas fa-plus"></i> Assign Proctor</button>
+                    <button type="button" class="btn btn-secondary" onclick="printProctorSchedule()"><i class="fas fa-print"></i> Print Schedule</button>
+                </div>
             </div>
-            <p>Schedule Management System &copy; <?= date('Y') ?> | Office of the Safety and Security</p>
+            <div class="filters" style="margin-bottom: 20px;">
+                <div class="filter-group">
+                    <div class="filter-item"><label for="proctorSemesterFilter">Semester</label><select id="proctorSemesterFilter">
+                        <option value="">All Semesters</option>
+                        <?php foreach ($semesters as $sem): ?><option value="<?= (int)$sem['id'] ?>" <?= $semester == $sem['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sem['name']) ?></option><?php endforeach; ?>
+                    </select></div>
+                    <div class="filter-item"><label for="proctorSchoolYearFilter">School Year</label><select id="proctorSchoolYearFilter">
+                        <option value="">All School Years</option>
+                        <?php foreach ($school_years as $sy): ?><option value="<?= (int)$sy['id'] ?>" <?= $school_year == $sy['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sy['name']) ?></option><?php endforeach; ?>
+                    </select></div>
+                    <div class="filter-item"><label for="proctorExamFilter">Exam</label><select id="proctorExamFilter"><option value="">All Exams</option></select></div>
+                    <div class="filter-item"><label for="proctorStatusFilter">Status</label><select id="proctorStatusFilter"><option value="Assigned" selected>Assigned</option><option value="Confirmed">Confirmed</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option><option value="">All Statuses</option></select></div>
+                    <div class="filter-item"><button type="button" class="btn btn-primary" onclick="loadProctorAssignments()"><i class="fas fa-filter"></i> Apply Filters</button> <button type="button" class="btn btn-warning" onclick="clearProctorFilters()"><i class="fas fa-times"></i> Clear</button></div>
+                </div>
+            </div>
+            <div class="table-container"><table class="data-table"><thead><tr>
+                <th>Exam</th><th>Subject</th><th>Section</th><th>Room</th><th>Exam Date</th><th>Time</th><th>Proctor</th><th>Role</th><th>Status</th><th>Actions</th>
+            </tr></thead><tbody id="proctorAssignmentsBody"><tr><td colspan="10" style="text-align:center;">Loading assignments...</td></tr></tbody></table></div>
+            <h3 style="margin: 25px 0 12px;"><i class="fas fa-calendar-alt"></i> Exam Schedule List</h3>
+            <div class="table-container"><table class="data-table"><thead><tr>
+                <th>Type</th><th>Exam</th><th>Subject</th><th>Section</th><th>Room</th><th>Date</th><th>Time</th><th>Status</th>
+            </tr></thead><tbody id="examSchedulesBody"><tr><td colspan="8" style="text-align:center;">Loading schedules...</td></tr></tbody></table></div>
+        </div>
+    </div>
+
+    <!-- Create Examination Modal -->
+    <div id="examModal" class="modal">
+        <div class="modal-content" style="max-width: 760px;">
+            <div class="modal-header"><h2><i class="fas fa-file-medical"></i> Create Examination</h2><button class="close-modal" type="button" onclick="closeExamModal()">&times;</button></div>
+            <form id="examForm" onsubmit="submitExam(event)">
+                <div class="form-grid">
+                    <div class="form-group"><label for="examName">Exam Name</label><input type="text" name="exam_name" id="examName" required></div>
+                    <div class="form-group"><label for="examType">Exam Type</label><select name="exam_type" id="examType" required><option value="">Select Exam Type</option><option value="Preliminary">Prelim</option><option value="Midterm">Midterm</option><option value="Final">Final</option><option value="Special">Special</option></select></div>
+                    <div class="form-group"><label for="examSchoolYear">School Year</label><select name="school_year_id" id="examSchoolYear" required><?php foreach ($school_years as $sy): ?><option value="<?= (int)$sy['id'] ?>" <?= $school_year == $sy['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sy['name']) ?></option><?php endforeach; ?></select></div>
+                    <div class="form-group"><label for="examSemester">Semester</label><select name="semester_id" id="examSemester" required><?php foreach ($semesters as $sem): ?><option value="<?= (int)$sem['id'] ?>" <?= $semester == $sem['id'] ? 'selected' : '' ?>><?= htmlspecialchars($sem['name']) ?></option><?php endforeach; ?></select></div>
+                    <div class="form-group"><label for="examStartDate">Start Date</label><input type="date" name="start_date" id="examStartDate" required></div>
+                    <div class="form-group"><label for="examEndDate">End Date</label><input type="date" name="end_date" id="examEndDate" required></div>
+                    <div class="form-group"><label for="examStatus">Status</label><select name="status" id="examStatus" required><option value="Scheduled">Scheduled</option><option value="Draft">Draft</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
+                </div>
+                <div style="text-align:center; margin-top:15px;"><button type="button" class="btn btn-warning" onclick="closeExamModal()">Cancel</button> <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save Examination</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Exam Schedule Modal -->
+    <div id="examScheduleModal" class="modal">
+        <div class="modal-content" style="max-width: 760px;">
+            <div class="modal-header"><h2><i class="fas fa-calendar-plus"></i> Add Exam Schedule</h2><button class="close-modal" type="button" onclick="closeExamScheduleModal()">&times;</button></div>
+            <form id="examScheduleForm" onsubmit="submitExamSchedule(event)">
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1/-1;"><label for="scheduleExamId">Exam</label><select name="exam_id" id="scheduleExamId" required></select><small id="scheduleExamContext" style="display:block;margin-top:5px;color:#666;"></small></div>
+                    <div class="form-group"><label for="scheduleType">Schedule Type</label><select name="schedule_type" id="scheduleType" required><option value="Exam">Exam</option><option value="Break Time">Break Time</option></select></div>
+                    <div id="examScheduleClassFields" style="display: contents;">
+                        <div class="form-group"><label for="scheduleCourseId">Course</label><select id="scheduleCourseId"><option value="">Select Course</option>
+<?php foreach ($all_courses as $course): ?>
+<option value="<?= (int)$course['id'] ?>"><?= htmlspecialchars($course['code']) ?> - <?= htmlspecialchars($course['name']) ?></option>
+<?php endforeach; ?>
+</select></div>
+                        <div class="form-group"><label for="scheduleYearLevel">Year Level</label><select id="scheduleYearLevel"><option value="">Select Year Level</option><option value="1st Year">1st Year</option><option value="2nd Year">2nd Year</option><option value="3rd Year">3rd Year</option><option value="4th Year">4th Year</option></select></div>
+                        <div class="form-group"><label for="scheduleSubjectId">Subject</label><select name="subject_id" id="scheduleSubjectId" required></select></div>
+                        <div class="form-group"><label for="scheduleSectionId">Section</label><select name="section_id" id="scheduleSectionId" required></select></div>
+                        <div class="form-group"><label for="scheduleRoomId">Room</label><select name="room_id" id="scheduleRoomId" required></select></div>
+                    </div>
+                    <div class="form-group"><label for="scheduleExamDate">Exam Date</label><input type="date" name="exam_date" id="scheduleExamDate" required></div>
+                    <div class="form-group"><label for="scheduleStartTime">Start Time</label><input type="time" name="start_time" id="scheduleStartTime" required></div>
+                    <div class="form-group"><label for="scheduleEndTime">End Time</label><input type="time" name="end_time" id="scheduleEndTime" required></div>
+                    <div class="form-group"><label for="scheduleStatus">Status</label><select name="status" id="scheduleStatus" required><option value="Scheduled">Scheduled</option><option value="Draft">Draft</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
+                </div>
+                <div style="text-align:center; margin-top:15px;"><button type="button" class="btn btn-warning" onclick="closeExamScheduleModal()">Cancel</button> <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save Schedule</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Exam Proctor Modal -->
+    <div id="proctorModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header"><h2 id="proctorModalTitle"><i class="fas fa-user-shield"></i> Assign Exam Proctor</h2><button class="close-modal" type="button" onclick="closeProctorModal()">&times;</button></div>
+            <form id="proctorForm" onsubmit="submitProctor(event)">
+                <input type="hidden" name="id" id="proctorAssignmentId">
+                <div class="form-group"><label for="proctorScheduleId">Exam Schedule</label><select name="exam_schedule_id" id="proctorScheduleId" required><option value="">Select Exam Schedule</option></select></div>
+                <div id="proctorScheduleInfo" class="form-card" style="margin-bottom: 15px; min-height: 20px;"></div>
+                <div class="form-grid" style="margin-bottom: 10px;">
+                    <div class="form-group"><label for="proctorFacultyId">Faculty / Proctor</label><select name="faculty_id" id="proctorFacultyId" required><option value="">Select Faculty</option></select></div>
+                    <div class="form-group"><label for="proctorRole">Role</label><select name="role" id="proctorRole" required><option value="Proctor">Proctor</option><option value="Lead Proctor">Lead Proctor</option><option value="Reliever">Reliever</option></select></div>
+                    <div class="form-group"><label for="proctorStatus">Status</label><select name="status" id="proctorStatus" required><option value="Assigned">Assigned</option><option value="Confirmed">Confirmed</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select></div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;"><button type="button" class="btn btn-warning" onclick="closeProctorModal()">Cancel</button> <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save Assignment</button></div>
+            </form>
         </div>
     </div>
 
@@ -891,26 +780,27 @@ foreach ($weekly_summary as $item) {
                 <h2><i class="fas fa-edit"></i> Edit Schedule</h2>
                 <button class="close-modal" onclick="closeEditModal()">&times;</button>
             </div>
-            <form method="POST" id="editForm" class="form-grid" onsubmit="return validateEditForm()">
+            <form method="POST" id="editForm" class="form-grid" data-custom-submit onsubmit="return validateEditForm()">
                 <input type="hidden" name="schedule_id" id="edit_schedule_id">
-                <input type="hidden" name="semester" id="edit_semester_hidden">
-                <input type="hidden" name="school_year" id="edit_school_year_hidden">
                 
                 <div class="form-card">
                     <h3>Basic Information</h3>
+                    
                     <div class="form-group">
                         <label>Room</label>
-                        <input type="text" name="room" id="edit_room" required maxlength="20">
+                        <select name="room_id" id="edit_room" required>
+                            <option value="">Select Room</option>
+                            <?php foreach ($all_rooms as $room_item): ?>
+                                <option value="<?= (int)$room_item['room_id'] ?>"><?= htmlspecialchars($room_item['room']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     
                     <div class="form-group">
-                        <label>Official Time Slot</label>
-                        <select name="official_time" id="edit_official_time" required>
-                            <option value="7:30-10:00">7:30-10:00 AM</option>
-                            <option value="10:00-12:30">10:00-12:30 PM</option>
-                            <option value="12:30-3:00">12:30-3:00 PM</option>
-                            <option value="3:00-5:30">3:00-5:30 PM</option>
-                            <option value="5:30-8:00">5:30-8:00 PM</option>
+                        <label>Schedule Type</label>
+                        <select name="schedule_type" id="edit_schedule_type">
+                            <option value="Class">Class</option>
+                            <option value="Break Time">Break Time</option>
                         </select>
                     </div>
                     
@@ -941,13 +831,18 @@ foreach ($weekly_summary as $item) {
                     </div>
                     
                     <div class="form-group">
-                        <label>Subject Code</label>
-                        <input type="text" name="subject_code" id="edit_subject_code" required maxlength="20">
+                        <label>Subject</label>
+                        <select name="subject_id" id="edit_subject_id">
+                            <option value="">Select Subject</option>
+                            <?php foreach ($subjects as $sub): ?>
+                                <option value="<?= (int)$sub['id'] ?>"><?= htmlspecialchars($sub['code']) ?> - <?= htmlspecialchars($sub['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     
                     <div class="form-group">
                         <label>Section</label>
-                        <select name="grade_section_id" id="edit_grade_section_id" required>
+                        <select name="grade_section_id" id="edit_grade_section_id">
                             <?php foreach ($all_sections as $sec): ?>
                                 <option value="<?= $sec['id'] ?>">
                                     <?= htmlspecialchars($sec['section_code']) ?> (<?= htmlspecialchars($sec['grade_level']) ?> - <?= htmlspecialchars($sec['program']) ?>)
@@ -960,30 +855,41 @@ foreach ($weekly_summary as $item) {
                 <div class="form-card">
                     <h3>Faculty & Semester</h3>
                     <div class="form-group">
+                        <label>Faculty Load (optional)</label>
+                        <select name="faculty_load_id" id="edit_faculty_load_id">
+                            <option value="">-- Select Faculty Load --</option>
+                            <?php foreach ($edit_faculty_loads as $fl): ?>
+                                <option value="<?= (int)$fl['id'] ?>" data-faculty="<?= (int)$fl['faculty_id'] ?>" data-subject="<?= (int)$fl['subject_id'] ?>" data-section="<?= (int)$fl['section_id'] ?>" data-semester="<?= (int)$fl['semester_id'] ?>" data-school-year="<?= (int)$fl['school_year_id'] ?>"><?= htmlspecialchars($fl['faculty_name']) ?> | <?= htmlspecialchars($fl['section_code']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Assigned Faculty</label>
                         <select name="faculty_id" id="edit_faculty_id" required>
                             <?php foreach ($all_faculty as $fac): ?>
-                                <option value="<?= $fac['id'] ?>">
-                                    <?= htmlspecialchars($fac['last_name']) ?>, <?= htmlspecialchars($fac['first_name']) ?> (<?= htmlspecialchars($fac['faculty_code']) ?>)
-                                </option>
+                                <option value="<?= (int)$fac['id'] ?>"><?= htmlspecialchars($fac['last_name']) ?>, <?= htmlspecialchars($fac['first_name']) ?> (<?= htmlspecialchars($fac['faculty_code']) ?>)</option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label>Semester</label>
-                        <select name="semester_display" id="edit_semester" required onchange="document.getElementById('edit_semester_hidden').value = this.value">
-                            <option value="1st Sem">1st Semester</option>
-                            <option value="2nd Sem">2nd Semester</option>
-                            <option value="Summer">Summer</option>
+                        <select name="semester_id" id="edit_semester_id" required>
+                            <option value="">Select Semester</option>
+                            <?php foreach ($semesters as $sem): ?>
+                                <option value="<?= (int)$sem['id'] ?>"><?= htmlspecialchars($sem['name']) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
                     <div class="form-group">
                         <label>School Year</label>
-                        <input type="text" name="school_year_display" id="edit_school_year" required 
-                               pattern="\d{4}-\d{4}" title="Please enter in format YYYY-YYYY"
-                               onchange="document.getElementById('edit_school_year_hidden').value = this.value">
+                        <select name="school_year_id" id="edit_school_year_id" required>
+                            <option value="">Select School Year</option>
+                            <?php foreach ($school_years as $sy): ?>
+                                <option value="<?= (int)$sy['id'] ?>"><?= htmlspecialchars($sy['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
 
@@ -998,586 +904,6 @@ foreach ($weekly_summary as $item) {
             </form>
         </div>
     </div>
-
-    <script>
-        // Tab functionality
-        function showTab(tabName) {
-            // Hide all tab content
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected tab content
-            document.getElementById(tabName + '-tab').classList.add('active');
-            
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Update URL parameter without reload
-            const url = new URL(window.location);
-            url.searchParams.set('action', tabName);
-            window.history.pushState({}, '', url);
-        }
-
-        // Set active tab based on URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const actionParam = urlParams.get('action');
-        if (actionParam && ['view', 'add', 'import'].includes(actionParam)) {
-            // Don't reload, just update active states
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.getElementById(actionParam + '-tab').classList.add('active');
-            document.querySelectorAll('.tab').forEach((tab, index) => {
-                if ((actionParam === 'view' && index === 0) ||
-                    (actionParam === 'add' && index === 1) ||
-                    (actionParam === 'import' && index === 2)) {
-                    tab.classList.add('active');
-                }
-            });
-        }
-
-        // Edit schedule modal
-        function editSchedule(schedule) {
-            // Fill form with schedule data
-            document.getElementById('edit_schedule_id').value = schedule.id;
-            document.getElementById('edit_room').value = schedule.room;
-            document.getElementById('edit_official_time').value = schedule.official_time;
-            
-            // Convert time from HH:MM:SS to HH:MM for time input
-            if (schedule.start_time) {
-                document.getElementById('edit_start_time').value = schedule.start_time.substring(0, 5);
-            }
-            if (schedule.end_time) {
-                document.getElementById('edit_end_time').value = schedule.end_time.substring(0, 5);
-            }
-            
-            document.getElementById('edit_day_of_week').value = schedule.day_of_week;
-            document.getElementById('edit_subject_code').value = schedule.subject_code;
-            document.getElementById('edit_grade_section_id').value = schedule.grade_section_id;
-            document.getElementById('edit_faculty_id').value = schedule.faculty_id;
-            
-            // Set semester and school year in both display and hidden fields
-            document.getElementById('edit_semester').value = schedule.semester;
-            document.getElementById('edit_semester_hidden').value = schedule.semester;
-            document.getElementById('edit_school_year').value = schedule.school_year;
-            document.getElementById('edit_school_year_hidden').value = schedule.school_year;
-            
-            // Show modal
-            document.getElementById('editModal').style.display = 'flex';
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target === modal) {
-                closeEditModal();
-            }
-        }
-
-        // Form validation
-        function validateForm() {
-            const startTime = document.getElementById('start_time').value;
-            const endTime = document.getElementById('end_time').value;
-            const dayOfWeek = document.getElementById('day_of_week').value;
-            const schoolYear = document.getElementById('school_year').value;
-            
-            // Validate school year format
-            const schoolYearPattern = /^\d{4}-\d{4}$/;
-            if (!schoolYearPattern.test(schoolYear)) {
-                alert('Please enter school year in format YYYY-YYYY (e.g., 2025-2026)');
-                return false;
-            }
-            
-            // Validate time order
-            if (startTime >= endTime) {
-                alert('End time must be after start time');
-                return false;
-            }
-            
-            return true;
-        }
-
-        function validateEditForm() {
-            const startTime = document.getElementById('edit_start_time').value;
-            const endTime = document.getElementById('edit_end_time').value;
-            const schoolYear = document.getElementById('edit_school_year').value;
-            
-            // Validate school year format
-            const schoolYearPattern = /^\d{4}-\d{4}$/;
-            if (!schoolYearPattern.test(schoolYear)) {
-                alert('Please enter school year in format YYYY-YYYY (e.g., 2025-2026)');
-                return false;
-            }
-            
-            // Validate time order
-            if (startTime >= endTime) {
-                alert('End time must be after start time');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // Set default time in add form
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const currentTime = now.toTimeString().slice(0,5);
-            
-            // Set default times if fields are empty
-            if (!document.getElementById('start_time').value) {
-                document.getElementById('start_time').value = currentTime;
-            }
-            if (!document.getElementById('end_time').value) {
-                const endTime = new Date(now.getTime() + 2.5 * 60 * 60 * 1000).toTimeString().slice(0,5);
-                document.getElementById('end_time').value = endTime;
-            }
-            
-            // Set default time slot based on current time
-            if (!document.getElementById('official_time').value) {
-                const hour = now.getHours();
-                let timeSlot = '';
-                if (hour >= 7 && hour < 10) timeSlot = '7:30-10:00';
-                else if (hour >= 10 && hour < 12) timeSlot = '10:00-12:30';
-                else if (hour >= 12 && hour < 15) timeSlot = '12:30-3:00';
-                else if (hour >= 15 && hour < 18) timeSlot = '3:00-5:30';
-                else timeSlot = '5:30-8:00';
-                
-                document.getElementById('official_time').value = timeSlot;
-            }
-            
-            // Set current day
-            if (!document.getElementById('day_of_week').value) {
-                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                document.getElementById('day_of_week').value = days[now.getDay()];
-            }
-        });
-
-        // Export to CSV
-        function exportToCSV() {
-            const rows = document.querySelectorAll('.data-table tbody tr');
-            if (rows.length === 0) {
-                alert('No data to export');
-                return;
-            }
-            
-            let csv = 'Room,Time Slot,Start Time,End Time,Day,Subject,Section,Faculty,Semester,School Year\n';
-            
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length >= 7) {
-                    const room = cells[2].querySelector('.badge')?.textContent || '';
-                    const timeSlot = cells[1].querySelector('strong')?.textContent || '';
-                    const times = cells[1].querySelector('small')?.textContent.split(' - ') || [];
-                    const startTime = times[0]?.trim() || '';
-                    const endTime = times[1]?.trim() || '';
-                    const day = cells[0].querySelector('.badge')?.textContent || '';
-                    const subject = cells[3]?.textContent?.trim() || '';
-                    const section = cells[4]?.textContent?.split('\n')[0]?.trim() || '';
-                    const faculty = cells[5]?.textContent?.split('\n')[0]?.trim() || '';
-                    const semester = cells[6]?.textContent?.split('\n')[0]?.trim() || '';
-                    const schoolYear = cells[6]?.querySelector('small')?.textContent || '';
-                    
-                    csv += `"${room}","${timeSlot}","${startTime}","${endTime}","${day}","${subject}","${section}","${faculty}","${semester}","${schoolYear}"\n`;
-                }
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `schedules_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        // Print schedule
-        function printSchedule() {
-            // Get selected faculty
-            const selectedFaculty = document.getElementById('facultySelector').value;
-            
-            if (!selectedFaculty) {
-                alert('Please select a faculty to print');
-                return;
-            }
-
-            // Get all rows from table
-            const rows = document.querySelectorAll('.table-container tbody tr');
-            
-            if (rows.length === 0) {
-                alert('No schedules to print');
-                return;
-            }
-
-            // Filter schedules for selected faculty only
-            const schedules = [];
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length > 0) {
-                    // Faculty code is in the 6th cell (index 5)
-                    const facultyInfo = cells[5].textContent.trim();
-                    const facultyCode = facultyInfo.split('\n')[1]?.trim() || '';
-                    
-                    // Only add if matches selected faculty
-                    if (facultyCode === selectedFaculty) {
-                        schedules.push({
-                            day: cells[0].textContent.trim(),
-                            time: cells[1].textContent.trim(),
-                            room: cells[2].textContent.trim(),
-                            subject_code: cells[3].textContent.trim(),
-                            section: cells[4].textContent.trim(),
-                            faculty_full: cells[5].textContent.trim(),
-                            faculty_code: facultyCode
-                        });
-                    }
-                }
-            });
-
-            if (schedules.length === 0) {
-                alert('No schedules found for selected faculty');
-                return;
-            }
-
-            // Get filter values
-            const semester = document.querySelector('select[name="semester"]')?.value || '<?= htmlspecialchars($semester) ?>';
-            const school_year = document.querySelector('select[name="school_year"]')?.value || '<?= htmlspecialchars($school_year) ?>';
-            
-            // Extract faculty name from full info
-            let faculty_name = '';
-            let faculty_code = selectedFaculty;
-            if (schedules.length > 0) {
-                const facultyText = schedules[0].faculty_full;
-                const lines = facultyText.split('\n');
-                faculty_name = lines[0]?.trim() || '';
-            }
-
-            // Build table rows HTML
-            let tableRows = '';
-            schedules.forEach(sch => {
-                tableRows += '<tr>' +
-                    '<td style="font-weight: bold;">' + sch.day + '</td>' +
-                    '<td>' + sch.time + '</td>' +
-                    '<td style="font-weight: bold;">' + sch.subject_code + '</td>' +
-                    '<td>' + sch.section + '</td>' +
-                    '<td style="font-weight: bold; text-align: center;">' + sch.room + '</td>' +
-                    '</tr>';
-            });
-
-            // Create print window
-            const printWindow = window.open('', '', 'width=1200,height=800');
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Faculty Class Schedule - ${faculty_name || 'Schedule'}</title>
-                    <style>
-                        * {
-                            margin: 0;
-                            padding: 0;
-                            box-sizing: border-box;
-                        }
-
-                        body {
-                            font-family: 'Calibri', 'Arial', sans-serif;
-                            padding: 30px;
-                            background: white;
-                            color: #333;
-                            line-height: 1.4;
-                        }
-
-                        .print-container {
-                            max-width: 900px;
-                            margin: 0 auto;
-                            background: white;
-                            padding: 40px;
-                            border-radius: 4px;
-                        }
-
-                        /* HEADER SECTION */
-                        .header {
-                            text-align: center;
-                            border-bottom: 3px solid #333;
-                            padding-bottom: 15px;
-                            margin-bottom: 20px;
-                        }
-
-                        .college-name {
-                            font-size: 18px;
-                            font-weight: bold;
-                            color: #000;
-                            margin-bottom: 5px;
-                            letter-spacing: 0.5px;
-                        }
-
-                        .college-address {
-                            font-size: 11px;
-                            color: #333;
-                            line-height: 1.3;
-                            margin-bottom: 3px;
-                        }
-
-                        .college-office {
-                            font-size: 12px;
-                            font-weight: bold;
-                            color: #000;
-                            margin-top: 8px;
-                        }
-
-                        .document-title {
-                            font-size: 16px;
-                            font-weight: bold;
-                            color: #000;
-                            margin-top: 12px;
-                            text-transform: uppercase;
-                            letter-spacing: 0.5px;
-                        }
-
-                        /* FACULTY INFO SECTION */
-                        .faculty-info {
-                            background: #f5f5f5;
-                            padding: 15px;
-                            margin-bottom: 20px;
-                            border: 1px solid #ccc;
-                            border-radius: 3px;
-                        }
-
-                        .info-row {
-                            display: flex;
-                            margin-bottom: 8px;
-                            font-size: 12px;
-                        }
-
-                        .info-label {
-                            font-weight: bold;
-                            width: 120px;
-                            color: #333;
-                        }
-
-                        .info-value {
-                            flex: 1;
-                            color: #555;
-                        }
-
-                        /* TABLE SECTION */
-                        .schedule-table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin: 20px 0;
-                            font-size: 11px;
-                        }
-
-                        .schedule-table thead {
-                            background: #333;
-                            color: white;
-                        }
-
-                        .schedule-table th {
-                            padding: 10px 8px;
-                            text-align: left;
-                            font-weight: bold;
-                            border: 1px solid #333;
-                            font-size: 11px;
-                        }
-
-                        .schedule-table td {
-                            padding: 8px;
-                            border: 1px solid #ccc;
-                        }
-
-                        .schedule-table tbody tr {
-                            background: white;
-                        }
-
-                        .schedule-table tbody tr:nth-child(even) {
-                            background: #f9f9f9;
-                        }
-
-                        /* FOOTER SECTION */
-                        .footer {
-                            margin-top: 40px;
-                            padding-top: 20px;
-                            border-top: 1px solid #ddd;
-                        }
-
-                        .footer-row {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-top: 40px;
-                        }
-
-                        .signature-block {
-                            width: 30%;
-                            text-align: center;
-                            font-size: 11px;
-                        }
-
-                        .signature-line {
-                            border-top: 1px solid #000;
-                            padding-top: 5px;
-                            margin-top: 35px;
-                            font-weight: bold;
-                        }
-
-                        .signature-title {
-                            font-size: 10px;
-                            color: #666;
-                            margin-top: 3px;
-                        }
-
-                        .date-prepared {
-                            font-size: 10px;
-                            color: #666;
-                            margin-top: 15px;
-                        }
-
-                        @media print {
-                            body {
-                                margin: 0;
-                                padding: 0;
-                                background: white;
-                            }
-                            .print-container {
-                                padding: 20px;
-                                border-radius: 0;
-                                box-shadow: none;
-                            }
-                            @page {
-                                size: A4 landscape;
-                                margin: 10mm;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-container">
-                        <!-- HEADER -->
-                        <div class="header">
-                            <div class="college-name">BESTLINK COLLEGE OF THE PHILIPPINES</div>
-                            <div class="college-address">
-                                1071 Brgy. Kaligayahan, Quirino Highway, Novaliches<br>
-                                Quezon City, Philippines 1116
-                            </div>
-                            <div class="college-office">College Coordinator Office</div>
-                            <div class="document-title">Faculty Class Schedule</div>
-                        </div>
-
-                        <!-- FACULTY INFORMATION -->
-                        <div class="faculty-info">
-                            <div class="info-row">
-                                <div class="info-label">Faculty Name:</div>
-                                <div class="info-value">${faculty_name || 'N/A'}</div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-label">Faculty Code:</div>
-                                <div class="info-value">${faculty_code || 'N/A'}</div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-label">Semester:</div>
-                                <div class="info-value">${semester} ${school_year}</div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-label">Academic Year:</div>
-                                <div class="info-value">${school_year}</div>
-                            </div>
-                        </div>
-
-                        <!-- SCHEDULE TABLE -->
-                        <table class="schedule-table">
-                            <thead>
-                                <tr>
-                                    <th>Day</th>
-                                    <th>Time</th>
-                                    <th>Subject Code</th>
-                                    <th>Section</th>
-                                    <th>Room</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRows}
-                            </tbody>
-                        </table>
-
-                        <!-- FOOTER -->
-                        <div class="footer">
-                            <div class="footer-row">
-                                <div class="signature-block">
-                                    <div class="date-prepared">Prepared by:</div>
-                                    <div class="signature-line"></div>
-                                    <div class="signature-title">College Coordinator</div>
-                                </div>
-
-                                <div class="signature-block">
-                                    <div class="date-prepared">Noted by:</div>
-                                    <div class="signature-line"></div>
-                                    <div class="signature-title">Dean / Director</div>
-                                </div>
-
-                                <div class="signature-block">
-                                    <div class="date-prepared">Date:</div>
-                                    <div class="signature-line">${new Date().toLocaleDateString()}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `;
-            
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-            printWindow.focus();
-            
-            // Trigger print after content is loaded
-            setTimeout(() => {
-                printWindow.print();
-            }, 250);
-        }
-
-        // Delete schedule via AJAX
-        function deleteSchedule(scheduleId) {
-            if (!confirm('Delete this schedule? This will also delete attendance records.')) {
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('schedule_id', scheduleId);
-
-            fetch('/sms/modules/college-coor/api/delete_schedule.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error deleting schedule: ' + error);
-            });
-        }
-    </script>
-</body>
+</div>
+    </body>
 </html>

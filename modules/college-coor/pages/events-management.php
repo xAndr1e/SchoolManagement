@@ -433,9 +433,8 @@ try {
     small { font-size: 12px; }
 </style>
 
-<div class="container">
     <!-- Page Header -->
-    <div class="header">
+    <div class="module-header">
         <div>
             <h1><i class="fas fa-calendar-alt me-2"></i> Events Management</h1>
             <p class="text-muted small">Manage college events, activities, and celebrations</p>
@@ -445,7 +444,7 @@ try {
         </button>
     </div>
 
-    <!-- Event Statistics Cards -->
+    <div class="module-content">
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-icon total">
@@ -547,7 +546,11 @@ try {
             </table>
         </div>
     </div>
-</div>
+    </div>
+
+    <!-- Event Statistics Cards -->
+    
+
 
 <!-- Add/Edit Event Modal -->
 <div class="modal" id="addEventModal">
@@ -560,7 +563,14 @@ try {
             <form id="eventForm" data-custom-submit="true">
                 <div class="modal-body">
                     <input type="hidden" id="eventId">
-                    
+
+                    <div class="form-group">
+                        <label class="form-label">Use Template</label>
+                        <select class="form-select" id="templateSelect">
+                            <option value="">(none) - choose a template</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label">Event Title <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="eventTitle" required>
@@ -607,14 +617,25 @@ try {
                         <input type="text" class="form-control" id="targetAudience" placeholder="e.g., Grade 10-12, Faculty, All Students">
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Status <span class="text-danger">*</span></label>
-                        <select class="form-select" id="eventStatus" required>
-                            <option value="">Select Status</option>
-                            <?php foreach ($statuses as $status): ?>
-                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row">
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" id="priority">
+                                <option value="">Select Priority</option>
+                                <option value="Normal">Normal</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="eventStatus" required>
+                                <option value="">Select Status</option>
+                                <?php foreach ($statuses as $status): ?>
+                                    <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -627,6 +648,7 @@ try {
         </div>
     </div>
 </div>
+     </div>
 
 <!-- Toast Notification -->
 <div id="toastContainer" class="toast-container"></div>
@@ -672,10 +694,64 @@ function initializeEventManager() {
 
     attachFormListener();
     attachFilters();
-    
+    // Load templates for modal
+    loadEventTemplates();
+
     // Always fetch fresh event data from API (important for dynamic page loads)
     refreshEventsData();
 }
+
+// Load templates via AJAX and populate the template dropdown
+function loadEventTemplates() {
+    const select = document.getElementById('templateSelect');
+    if (!select) return;
+
+    fetch(`${BASE_URL}/get_event_templates.php`)
+        .then(res => res.json())
+        .then(res => {
+            if (res.success && Array.isArray(res.templates)) {
+                select.innerHTML = '<option value="">(none) - choose a template</option>';
+                res.templates.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.template_id;
+                    opt.textContent = (t.template_name || (`Template ${t.template_id}`)) + (t.event_type ? ` (${t.event_type})` : '');
+                    opt.dataset.template = JSON.stringify(t);
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">(none) - no templates</option>';
+            }
+        })
+        .catch(() => {
+            select.innerHTML = '<option value="">(none) - no templates</option>';
+        });
+}
+
+function applyTemplateToForm(t) {
+    if (!t) return;
+    if (t.default_title) document.getElementById('eventTitle').value = t.default_title;
+    if (t.event_type) document.getElementById('eventType').value = t.event_type;
+    if (t.default_description) document.getElementById('description').value = t.default_description;
+    if (t.default_location) document.getElementById('location').value = t.default_location;
+    if (t.default_target_audience) document.getElementById('targetAudience').value = t.default_target_audience;
+    if (t.default_status) document.getElementById('eventStatus').value = t.default_status;
+    if (typeof t.priority !== 'undefined' && document.getElementById('priority')) document.getElementById('priority').value = t.priority;
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'templateSelect') {
+        const v = e.target.value;
+        if (!v) return;
+        const opt = e.target.options[e.target.selectedIndex];
+        if (!opt || !opt.dataset || !opt.dataset.template) return;
+        try {
+            const tmpl = JSON.parse(opt.dataset.template);
+            applyTemplateToForm(tmpl);
+        } catch (err) {
+            console.error('Failed to parse template', err);
+        }
+    }
+});
 
 // Run on initial page load
 document.addEventListener('DOMContentLoaded', initializeEventManager);
@@ -727,6 +803,12 @@ function resetEventForm() {
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-save me-2"></i> Save Event';
+
+    // reset template and priority when closing
+    const templateSelect = document.getElementById('templateSelect');
+    if (templateSelect) templateSelect.value = '';
+    const prioritySelect = document.getElementById('priority');
+    if (prioritySelect) prioritySelect.value = '';
 }
 
 // ===============================
@@ -776,7 +858,9 @@ function attachFormListener() {
             location: document.getElementById('location').value,
             description: document.getElementById('description').value,
             target_audience: document.getElementById('targetAudience').value,
-            status: document.getElementById('eventStatus').value
+            status: document.getElementById('eventStatus').value,
+            template_id: (document.getElementById('templateSelect') ? document.getElementById('templateSelect').value : null),
+            priority: (document.getElementById('priority') ? document.getElementById('priority').value : null)
         };
 
         // Add event_id only for edits
@@ -798,6 +882,7 @@ function attachFormListener() {
             if (res.success) {
                 showToast('Event saved successfully!', 'success');
                 closeModal();
+                notifyDashboardAlertsUpdate();
                 refreshEventsData();
             } else {
                 throw new Error(res.message || 'Unknown error occurred');
@@ -832,13 +917,28 @@ function displayEventsData(data = eventData) {
         return;
     }
 
+    // helper: convert 24-hour time string to 12-hour format
+    function convertTo12Hour(timeStr) {
+        if (!timeStr) return '';
+        // handle 'HH:MM:SS' or 'HH:MM'
+        const t = timeStr.split(' ')[0];
+        const parts = t.split(':');
+        if (parts.length < 2) return timeStr;
+        let h = parseInt(parts[0], 10);
+        const m = parts[1];
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        if (h === 0) h = 12;
+        return h + ':' + m + ' ' + ampm;
+    }
+
     data.forEach(e => {
         const row = document.createElement('tr');
 
         row.innerHTML = `
             <td><strong>${escapeHtml(e.event_title || '')}</strong></td>
             <td>${escapeHtml(e.event_type || '-')}</td>
-            <td>${formatDate(e.event_date)}<br><small class="text-muted">${e.start_time || ''} - ${e.end_time || ''}</small></td>
+            <td>${formatDate(e.event_date)}<br><small class="text-muted">${convertTo12Hour(e.start_time) || ''} - ${convertTo12Hour(e.end_time) || ''}</small></td>
             <td>${escapeHtml(e.location || '-')}</td>
             <td>${escapeHtml(e.target_audience || '-')}</td>
             <td>${renderStatusBadge(e.status)}</td>
@@ -894,6 +994,10 @@ function editEvent(id) {
     document.getElementById('description').value = event.description || '';
     document.getElementById('targetAudience').value = event.target_audience || '';
     document.getElementById('eventStatus').value = event.status || '';
+    const templateSelect = document.getElementById('templateSelect');
+    if (templateSelect) templateSelect.value = event.template_id || '';
+    const prioritySelect = document.getElementById('priority');
+    if (prioritySelect) prioritySelect.value = event.priority || '';
 
     document.getElementById('eventModalTitle').textContent = 'Edit Event';
 
@@ -913,6 +1017,7 @@ function deleteEvent(id) {
     .then(res => {
         if (res.success) {
             showToast('Event deleted successfully!', 'success');
+            notifyDashboardAlertsUpdate();
             refreshEventsData();
         } else {
             throw new Error(res.message || 'Delete failed');
@@ -999,6 +1104,19 @@ const completed = eventData.filter(e => e.status === 'completed').length;
 // ===============================
 // HELPERS
 // ===============================
+function notifyDashboardAlertsUpdate() {
+    try {
+        if (window.localStorage) {
+            localStorage.setItem('ccDashboardAlertsRefresh', String(Date.now()));
+        }
+        window.dispatchEvent(new CustomEvent('cc:dashboard-alerts-refresh', {
+            detail: { source: 'events-management' }
+        }));
+    } catch (error) {
+        console.warn('Unable to notify dashboard alerts:', error);
+    }
+}
+
 function renderStatusBadge(status) {
     const map = {
     'upcoming': 'secondary',

@@ -11,6 +11,9 @@ use App\Controllers\DocumentController;
 use App\Controllers\DocumentRequestController;
 use App\Controllers\EnrolleeController;
 use App\Controllers\EnrollmentController;
+use App\Controllers\ExamController;
+use App\Controllers\ExaminationScheduleController;
+use App\Controllers\ExaminationsController;
 use App\Controllers\GradeController;
 use App\Controllers\HomeController;
 use App\Controllers\IssueTrackingController;
@@ -292,9 +295,23 @@ $r->post('/document-request/release/{id:\d+}',[DocumentRequestController::class,
 $r->post('/document-request/rejected/{id:\d+}',[DocumentRequestController::class,'updateReject']);
 
 
+// exam 
+
+$r->get('/exam',[ExamController::class,'index']);
+$r->get('/all/exam',[ExamController::class,'allExaminations']);
 
 
+//examinations 
 
+$r->get('/examinations',[ExaminationsController::class,'index']);
+$r->get('/examinations/{id:\d+}',[ExaminationsController::class,'allExaminationsSplittedByTime']);
+
+
+// exam schedule
+
+$r->get('/exam-schedules',[ExaminationScheduleController::class,'index']);
+$r->get('/exam-schedules/schedule',[ExaminationScheduleController::class,'getSchedule']);
+$r->get('/exam-schedules/section',[ExaminationScheduleController::class,'getSectionOnThatDay']);
 
 // grades 
 

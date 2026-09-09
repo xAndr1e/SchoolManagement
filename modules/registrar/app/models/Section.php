@@ -13,9 +13,6 @@
     public $primaryKey = 'id';
 
    
-
-
-
     protected function schoolYearSemesters()
     {
 

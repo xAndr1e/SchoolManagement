@@ -83,7 +83,7 @@
         </h2>
 
 
-        <div id="studentMenu" class="collapse <?php echo in_array(CURRENT_URI, ['students','enrollees','subject-loading','class-offering','curriculum','curriculum-subject','grades','enrollment','class-list','academic-records']) || str_contains(CURRENT_URI,'section-schedule')  || str_contains(CURRENT_URI,'class-offering') ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
+        <div id="studentMenu" class="collapse <?php echo in_array(CURRENT_URI, ['students','enrollees','subject-loading','class-offering','curriculum','curriculum-subject','grades','enrollment','class-list','academic-records','exam']) || str_contains(CURRENT_URI,'section-schedule')  || str_contains(CURRENT_URI,'class-offering') ? 'show' : '' ?>"  data-bs-parent="#sidebarMenu">
         <ul>
              <li><a href="<?php echo BASE_URL?>/students" class="menu-link <?php echo CURRENT_URI  === "students" ? 'active' : '' ?>" id="student">Students</a></li>
              <li><a href="<?php echo BASE_URL?>/enrollees" class="menu-link d-none <?php echo CURRENT_URI  === "enrollees" ? 'active' : '' ?>" id="Enrollees">Enrollees (New Students)</a></li>
@@ -91,6 +91,7 @@
              <li><a href="<?php echo BASE_URL?>/class-offering" class="menu-link d-none <?php echo str_contains(CURRENT_URI,'class-offering') ? 'active' : ''?>" id="Enrollees">Class Offering</a></li>
              <li><a href="<?php echo BASE_URL?>/section-schedule" class="menu-link d-none <?php echo str_contains(CURRENT_URI,'section-schedule') ? 'active' : '' ?>" id="Enrollees">Section Schedule</a></li>
              <li><a href="<?php echo BASE_URL?>/enrollment" class="menu-link <?php echo CURRENT_URI  === "enrollment" ? 'active' : '' ?>" id="Enrollment">Enrollment Records</a></li>
+             <li><a href="<?php echo BASE_URL?>/exam" class="menu-link <?php echo CURRENT_URI  === "exam" ? 'active' : '' ?>" id="Enrollees">Exam</a></li>
              <li><a href="<?php echo BASE_URL?>/academic-records" class="menu-link <?php echo CURRENT_URI  === "academic-records" ? 'active' : '' ?>" id="Enrollment">Academic Records</a></li>
              <li><a href="<?php echo BASE_URL?>/class-list" class="menu-link <?php echo CURRENT_URI  === "class-list" ? 'active' : '' ?>" id="Enrollment">Class List</a></li>
              <li><a href="<?php echo BASE_URL?>/grades" class="menu-link <?php echo CURRENT_URI  === "grades" ? 'active' : '' ?>" id="Enrollees">Grades</a></li>

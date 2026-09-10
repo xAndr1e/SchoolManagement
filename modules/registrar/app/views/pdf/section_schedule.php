@@ -214,7 +214,7 @@ $total_height = ($end_hour - $start_hour) * $hour_height;
 </footer>
 
 <h3 class="schedule-title">
-    Class Schedule: <?= htmlspecialchars($schedules[0]['section_name'] ?? 'N/A') ?>
+    Class Schedule: <?= htmlspecialchars($schedules[0]['section_code'] ?? 'N/A') ?>
 </h3>
 
 <div class="schedule-container">

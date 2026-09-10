@@ -3,7 +3,7 @@
 class FpDamage
 {
     private $db;
-    private $table = "fingerprint_lab_damage";
+    private $table = "lab_fingerprint_damage";
 
     public function __construct()
     {

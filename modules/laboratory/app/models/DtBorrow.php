@@ -3,7 +3,7 @@
 class DtBorrow
 {
     private $db;
-    private $table = "defense_lab_borrow";
+    private $table = "lab_defense_borrow";
 
     public function __construct()
     {

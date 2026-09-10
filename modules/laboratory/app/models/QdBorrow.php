@@ -3,7 +3,7 @@
 class QdBorrow
 {
     private $db;
-    private $table = "question_lab_borrow";
+    private $table = "lab_qd_borrow";
 
     public function __construct()
     {

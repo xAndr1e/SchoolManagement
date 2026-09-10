@@ -3,7 +3,7 @@
 class QdDamage
 {
     private $db;
-    private $table = "question_lab_damage";
+    private $table = "lab_qd_damage";
 
     public function __construct()
     {

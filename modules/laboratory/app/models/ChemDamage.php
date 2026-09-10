@@ -3,7 +3,7 @@
 class ChemDamage
 {
     private $db;
-    private $table = "chemistry_lab_damage";
+    private $table = "lab_chemistry_damage";
 
     public function __construct()
     {

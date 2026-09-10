@@ -3,7 +3,7 @@
 class CsDamage
 {
     private $db;
-    private $table = "crime_lab_damage";
+    private $table = "lab_crime_damage";
 
     public function __construct()
     {

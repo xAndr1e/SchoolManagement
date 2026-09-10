@@ -3,7 +3,7 @@
 class DtMonitoring
 {
     private $db;
-    private $table = "defense_lab_monitoring";
+    private $table = "lab_defense_monitoring";
 
     public function __construct()
     {

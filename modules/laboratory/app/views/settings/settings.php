@@ -115,6 +115,145 @@
     </div>
     </div>
     </div>
+
+    <!-- <div class="container mt-5">
+
+        <h1 class="h3 mb-1 text-gray-800">
+            Settings
+        </h1>
+
+        <p class="text-muted mb-4">
+            Manage system configuration.
+        </p>
+
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-header bg-white">
+
+                <h5 class="mb-0">
+                    General Settings
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <form
+                    method="POST"
+                    action="<?= BASE_URL ?>/settings/update">
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            System Name
+                        </label>
+
+                        <input
+                            type="text"
+                            name="system_name"
+                            class="form-control"
+                            value="<?= htmlspecialchars(
+                                        $settings['system_name']
+                                    ) ?>"
+                            required>
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            School Name
+                        </label>
+
+                        <input
+                            type="text"
+                            name="school_name"
+                            class="form-control"
+                            value="<?= htmlspecialchars(
+                                        $settings['school_name']
+                                    ) ?>"
+                            required>
+
+                    </div>
+
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            School Year
+                        </label>
+
+                        <input
+                            type="text"
+                            name="school_year"
+                            class="form-control"
+                            placeholder="2026-2027"
+                            value="<?= htmlspecialchars(
+                                        $settings['school_year']
+                                    ) ?>"
+                            required>
+
+                    </div>
+
+
+
+                    <div class="mb-4">
+
+                        <label class="form-label">
+                            Semester
+                        </label>
+
+                        <select
+                            name="semester"
+                            class="form-select">
+
+                            <option
+                                value="1st Semester"
+                                <?= $settings['semester'] === '1st Semester'
+                                    ? 'selected'
+                                    : '' ?>>
+                                1st Semester
+                            </option>
+
+                            <option
+                                value="2nd Semester"
+                                <?= $settings['semester'] === '2nd Semester'
+                                    ? 'selected'
+                                    : '' ?>>
+                                2nd Semester
+                            </option>
+
+                            <option
+                                value="Summer"
+                                <?= $settings['semester'] === 'Summer'
+                                    ? 'selected'
+                                    : '' ?>>
+                                Summer
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        Save Changes
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div> -->
 </main>
 
 

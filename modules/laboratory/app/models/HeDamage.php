@@ -3,7 +3,7 @@
 class HeDamage
 {
     private $db;
-    private $table = "he_lab_damage";
+    private $table = "lab_he_damage";
 
     public function __construct()
     {

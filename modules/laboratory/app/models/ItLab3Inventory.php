@@ -3,7 +3,7 @@
 class Itlab3Inventory
 {
     private $db;
-    private $table = "it_lab3_inventory";
+    private $table = "lab_it3_inventory";
 
     public function __construct()
     {

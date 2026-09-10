@@ -3,7 +3,7 @@
 class ChemBorrow
 {
     private $db;
-    private $table = "chemistry_lab_borrow";
+    private $table = "lab_chemistry_borrow";
 
     public function __construct()
     {

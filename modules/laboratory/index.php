@@ -38,6 +38,21 @@ switch ($segments[0] ?? '') {
 
         break;
 
+    case 'settings':
+
+        require_once __DIR__ . '/app/controllers/SettingsController.php';
+        $controller = new SettingsController();
+
+        if (!isset($segments[1])) {
+            // /settings
+            $controller->index();
+        } elseif ($segments[1] === 'update') {
+            // /settings/update
+            $controller->update();
+        }
+
+        break;
+
 
     case 'physics-damage':
         require_once __DIR__ . '/app/controllers/PhyDamageController.php';

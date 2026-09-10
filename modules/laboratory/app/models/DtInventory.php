@@ -3,7 +3,7 @@
 class DtInventory
 {
     private $db;
-    private $table = "defense_lab_inventory";
+    private $table = "lab_defense_inventory";
 
     public function __construct()
     {

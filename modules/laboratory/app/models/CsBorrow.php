@@ -3,7 +3,7 @@
 class CsBorrow
 {
     private $db;
-    private $table = "crime_lab_borrow";
+    private $table = "lab_crime_borrow";
 
     public function __construct()
     {

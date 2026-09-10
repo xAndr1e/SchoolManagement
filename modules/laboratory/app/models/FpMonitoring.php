@@ -3,7 +3,7 @@
 class FpMonitoring
 {
     private $db;
-    private $table = "fingerprint_lab_monitoring";
+    private $table = "lab_fingerprint_monitoring";
 
     public function __construct()
     {

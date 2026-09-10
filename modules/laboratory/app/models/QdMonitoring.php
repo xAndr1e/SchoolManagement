@@ -3,7 +3,7 @@
 class QdMonitoring
 {
     private $db;
-    private $table = "question_lab_monitoring";
+    private $table = "lab_qd_monitoring";
 
     public function __construct()
     {

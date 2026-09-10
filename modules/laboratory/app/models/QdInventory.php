@@ -3,7 +3,7 @@
 class QdInventory
 {
     private $db;
-    private $table = "question_lab_inventory";
+    private $table = "lab_qd_inventory";
 
     public function __construct()
     {

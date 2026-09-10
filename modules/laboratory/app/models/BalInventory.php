@@ -3,7 +3,7 @@
 class BalInventory
 {
     private $db;
-    private $table = "balistic_lab_inventory";
+    private $table = "lab_ballistic_inventory";
 
     public function __construct()
     {

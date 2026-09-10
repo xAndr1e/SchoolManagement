@@ -3,7 +3,7 @@
 class PhysInventory
 {
     private $db;
-    private $table = "phys_lab_inventory";
+    private $table = "lab_phys_inventory";
 
     public function __construct()
     {

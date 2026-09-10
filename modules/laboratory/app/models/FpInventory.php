@@ -3,7 +3,7 @@
 class FpInventory
 {
     private $db;
-    private $table = "fingerprint_lab_inventory";
+    private $table = "lab_fingerprint_inventory";
 
     public function __construct()
     {

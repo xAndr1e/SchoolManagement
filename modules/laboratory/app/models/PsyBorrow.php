@@ -3,7 +3,7 @@
 class PsyBorrow
 {
     private $db;
-    private $table = "psy_lab_borrow";
+    private $table = "lab_psy_borrow";
 
     public function __construct()
     {

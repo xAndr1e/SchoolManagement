@@ -3,7 +3,7 @@
 class CsMonitoring
 {
     private $db;
-    private $table = "crime_lab_monitoring";
+    private $table = "lab_crime_monitoring";
 
     public function __construct()
     {

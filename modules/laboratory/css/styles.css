@@ -50,7 +50,7 @@ header i {
 /* Sidebar */
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--color1);
+    background: #25428d;
     padding: 1.2rem 1.3rem;
     top: 0;
     left: 0;
@@ -93,7 +93,7 @@ header i {
     text-align: center;
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--color6);
+    border-bottom: 1px solid #fff;
 }
 
 .user-avatar {
@@ -123,7 +123,7 @@ header i {
 
 .user-id {
     font-size: 10px;
-    color: var(--color5);
+    color: rgb(138, 138, 138);
     font-weight: bold;
 }
 
@@ -159,7 +159,7 @@ header i {
 }
 
 .sidebar .menu-link:hover {
-    background: var(--color7);
+    background: rgba(255, 255, 255, .08);
     color: var(--color3);
     transform: translateX(5px);
 }

@@ -3,7 +3,7 @@
 class CsInventory
 {
     private $db;
-    private $table = "crime_lab_inventory";
+    private $table = "lab_crime_inventory";
 
     public function __construct()
     {

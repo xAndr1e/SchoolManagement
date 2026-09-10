@@ -2,7 +2,7 @@
 
 class ScheduleModel
 {
-    protected $table = 'laboratory_schedule';
+    protected $table = 'lab_schedule';
 
     private $db;
 
@@ -21,7 +21,7 @@ class ScheduleModel
                 s.*,
                 l.laboratory_name
             FROM {$this->table} s
-            INNER JOIN laboratories l 
+            INNER JOIN lab_laboratories l 
                 ON s.lab_id = l.lab_id
             ORDER BY s.day, s.start_time
         ";

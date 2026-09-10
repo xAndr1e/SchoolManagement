@@ -3,7 +3,7 @@
 class FpBorrow
 {
     private $db;
-    private $table = "fingerprint_lab_borrow";
+    private $table = "lab_fingerprint_borrow";
 
     public function __construct()
     {

@@ -3,7 +3,7 @@
 class Lab3Monitoring
 {
     private $db;
-    private $table = "it_lab3_monitoring";
+    private $table = "lab_it3_monitoring";
 
     public function __construct()
     {

@@ -11,7 +11,7 @@ if (sectionSelect && section_id) {
     sectionSelect.value = section_id;
 }
 
-getData(section_id);
+getData(section_id = 10);
 
 document.getElementById("section").addEventListener('change', (e) => {
 
@@ -149,14 +149,14 @@ function fillGrid(schedule) {
 
         if (firstCell) {
            firstCell.innerHTML = `
-                    <div class="btn btn-sm btn-primary schedule-btn" data-id="${item.class_offering_id}" >
-                        <h6 class="card-title mb-0">${item.section_name}</h6>
+                    <div class="btn btn-sm btn-primary schedule-btn" >
+                        <h6 class="card-title mb-0">${item.section_code}</h6>
                         <p class="card-text mb-0"><small>${item.subject_code}</small></p>
                         <p class="card-text mb-0"><small>${item.subject_name || ''}</small></p>
                          <p class="card-text mb-0"><small>${item.day}</small></p>
                         <p class="card-text mb-0"><small>${formatSchedule(item.start_time)} - ${formatSchedule(item.end_time)}</small></p>
                         <p class="card-text mb-0"><small>${item.room_name}</small></p> 
-                        <p class="card-text mb-0"><small>${item.teacher_name}</small></p> 
+                        <p class="card-text mb-0"><small>${item.first_name} ${item.last_name}</small></p> 
                     </div>
             `;
             firstCell.style.backgroundColor = '#0d6efd';

@@ -46,7 +46,7 @@
                     <label class="form-label small">Section</label>
                     <select class="form-select form-select-sm" id="section">
                         <?php foreach ($sections as $section) {?>
-                        <option value=<?= $section['id'] ?>><?= $section['name'] ?></option>
+                        <option value=<?= $section['section_id'] ?>><?= $section['section_code'] ?></option>
                         <?php  } ?>
                     </select>
                 </div>

@@ -11,6 +11,6 @@ $pendingApplicants = $conn->query("SELECT COUNT(*) FROM enr_applicants WHERE sta
 $activeEmployees   = $conn->query("SELECT COUNT(*) FROM sms_employee WHERE status = 'active'")->fetchColumn();
 $pendingReports    = $conn->query("SELECT COUNT(*) FROM sd_reports WHERE status = 'submitted'")->fetchColumn();
 $openIssues        = $conn->query("SELECT COUNT(*) FROM sd_issues WHERE status = 'submitted'")->fetchColumn();
-$pendingApprovals  = $conn->query("SELECT COUNT(*) FROM sd_approvals WHERE decision = 'submitted'")->fetchColumn();
+$pendingApprovals  = $conn->query("SELECT COUNT(*) FROM sd_approvals WHERE status = 'submitted'")->fetchColumn();
 $overdueBooks      = $conn->query("SELECT COUNT(*) FROM lbr_transactions WHERE status = 'overdue'")->fetchColumn();
 $todayClinic       = $conn->query("SELECT COUNT(*) FROM cln_clinic_visits WHERE DATE(visit_date) = CURDATE()")->fetchColumn();

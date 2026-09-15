@@ -78,44 +78,56 @@
         <ul>
             <li><a href="<?php echo BASE_URL ?>/events" class="menu-link <?php echo CURRENT_URI  === "events" ? 'active' : '' ?> " id="dashboard">Events</a></li>
         </ul>
+
+        <div class="separator"></div>
+        <h2>Scholarship</h2>
+        <ul>
+            <li><a href="<?php echo BASE_URL ?>/scholarship" class="menu-link <?php echo CURRENT_URI  === "scholarship" ? 'active' : '' ?> " id="dashboard">
+                Scholarship</a></li>
+        </ul>
+        <ul>
+            <li><a href="<?php echo BASE_URL ?>/scholarship-offered" class="menu-link <?php echo CURRENT_URI  === "scholarship-offered" ? 'active' : '' ?> " id="dashboard">
+                Scholarship Offerred</a></li>
+        </ul>
+        <ul>
+            <li><a href="<?php echo BASE_URL ?>/my-applications" class="menu-link <?php echo CURRENT_URI  === "my-applications" ? 'active' : '' ?> " id="dashboard">
+                My Applications</a></li>
+        </ul>
  
         <!-- settings  -->
-        <hr>
+        <div class="separator"></div>
         <h2>
-            <a data-bs-toggle="collapse" href="#schoolSettings" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
+            <a href="#schoolSettings" class="d-flex justify-content-between align-items-center text-decoration-none text-white">
                 Settings
-                <i class="fa-solid fa-chevron-down"></i>
             </a>
         </h2>
-        <div id="schoolSettings" class="collapse <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
+        <div id="schoolSettings" <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
             <ul>
                 <li><a href="<?php echo BASE_URL ?>students" class="menu-link" id="profile">Profile</a></li>
             </ul>
         </div>
-        <hr>
+        <div class="separator"></div>
  
          <!-- request -->
         <h2>
-            <a data-bs-toggle="collapse" href="#docuRequest" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
+            <a href="#docuRequest" class="d-flex justify-content-between align-items-center text-decoration-none text-white">
                 Request Documents
-                <i class="fa-solid fa-chevron-down"></i>
             </a>
         </h2>
-        <div id="docuRequest" class="collapse <?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
+        <div id="docuRequest"<?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
             <ul>
                 <li><a href="<?php echo BASE_URL ?>/document-request" class="menu-link <?php echo CURRENT_URI  === "document-request" ? 'active' : '' ?> " id="request">Document Request</a></li>
                 <li><a href="<?php echo BASE_URL ?>/document-status" class="menu-link <?php echo CURRENT_URI  === "document-status" ? 'active' : '' ?>" id="status">Document Status</a></li>
             </ul>
         </div>
-        <hr>
+        <div class="separator"></div>
 
 
         <div class="mt-3">
             <a href="<?= BASE_URL ?>/logout"
-                class="d-flex justify-content-between align-items-center text-decoration-none text-white text-uppercase"
+                class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                 style="margin-left: 8px;">
                 <span>Logout</span>
-                <i class="fa-solid fa-right-from-bracket"></i>
             </a>
         </div>
     </div>

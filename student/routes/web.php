@@ -9,6 +9,9 @@ use App\Controllers\LoginController;
 use App\Controllers\InstructorController;
 use App\Controllers\NotificationController;
 use App\Controllers\StudentController;
+use App\Controllers\ScholarshipController;
+use App\Controllers\ScholarshipOfferedController;
+use App\Controllers\MyApplicationController;
 use App\Helper\Response;
 use App\Models\SchoolYear;
 
@@ -235,10 +238,31 @@ $r->addRoute('GET', '/pdf/{id:\d+}/cor', [
     'uses' => [DocumentStatusController::class, 'getDocumentHistory']
 ]);
 
+/**
+ * ================================================================
+ *  Document Status Controller
+ * ---------------------------------------------------------------
+ * File      : ScholarshipController.php
+ * Module    : Scholarship
+ * Protected by : Auth
+ * ================================================================
+ */
 
 
+  $r->addRoute('GET', '/scholarship', [
+    'middleware' => ['auth'],
+    'uses' => [ScholarshipController::class, 'index']
+  ]);
 
+  $r->addRoute('GET', '/scholarship-offered', [
+    'middleware' => ['auth'],
+    'uses' => [ScholarshipOfferedController::class, 'index']
+  ]);
 
+  $r->addRoute('GET', '/my-application', [
+    'middleware' => ['auth'],
+    'uses' => [MyApplicationController::class, 'index']
+  ]);
 
 
 

@@ -82,10 +82,8 @@ getData(section_id,exam_date,exam_id);
 
 
    document.getElementById('pdf').addEventListener('click',()=>{
-
-        const section_id = document.getElementById("section").value;
     
-         getPdf(section_id);
+         getPdf(section_id,exam_date,exam_id);
 
     });
 
@@ -182,7 +180,7 @@ function fillGrid(schedule) {
 }
 
 
- function getPdf(section_id)
+ function getPdf(section_id,exam_date,exam_id)
     {
 
         //  fetch(`${BASE_URL}/students/pdf?status=${status}&search=${encodeURIComponent(search)}`)
@@ -197,7 +195,7 @@ function fillGrid(schedule) {
         // take this if you dont want redirection confirmation 
 
         window.open(
-        `${BASE_URL}/section-schedule/pdf?section_id=${section_id}`,
+        `${BASE_URL}/exam-schedule/pdf?section_id=${section_id}&exam_date=${exam_date}&exam_id=${exam_id}`,
         "_blank"
         );
     }

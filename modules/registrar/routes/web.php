@@ -312,6 +312,7 @@ $r->get('/examinations/{id:\d+}',[ExaminationsController::class,'allExaminations
 $r->get('/exam-schedules',[ExaminationScheduleController::class,'index']);
 $r->get('/exam-schedules/schedule',[ExaminationScheduleController::class,'getSchedule']);
 $r->get('/exam-schedules/section',[ExaminationScheduleController::class,'getSectionOnThatDay']);
+$r->get('/exam-schedule/pdf',[ExaminationScheduleController::class,'examSchedulerPdf']);
 
 // grades 
 

@@ -441,3 +441,4 @@ footer {
     margin-top: 0 !important; /* Removes that 40px gap */
 }
 
+@import url(scholarship.css);

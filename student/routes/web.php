@@ -10,8 +10,6 @@ use App\Controllers\InstructorController;
 use App\Controllers\NotificationController;
 use App\Controllers\StudentController;
 use App\Controllers\ScholarshipController;
-use App\Controllers\ScholarshipOfferedController;
-use App\Controllers\MyApplicationController;
 use App\Helper\Response;
 use App\Models\SchoolYear;
 
@@ -240,7 +238,7 @@ $r->addRoute('GET', '/pdf/{id:\d+}/cor', [
 
 /**
  * ================================================================
- *  Document Status Controller
+ *  Scholarship Controller
  * ---------------------------------------------------------------
  * File      : ScholarshipController.php
  * Module    : Scholarship
@@ -249,23 +247,40 @@ $r->addRoute('GET', '/pdf/{id:\d+}/cor', [
  */
 
 
-  $r->addRoute('GET', '/scholarship', [
+    $r->addRoute('GET', '/scholarship', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'index']
+    ]);
+
+    $r->addRoute('GET', '/scholarship/get-scholarship', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'getScholarship']
+    ]);
+
+    $r->addRoute('GET', '/scholarship-offered', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'offered']
+    ]);
+
+    $r->addRoute('GET', '/scholarship-offered/list', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'listOffered']
+    ]);
+
+    $r->addRoute('GET', '/my-applications', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'myApplication']
+    ]);
+
+    $r->addRoute('GET', '/my-applications/list', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'listMyApplications']
+    ]);
+    
+    $r->addRoute('POST', '/scholarship-offered/apply', [
     'middleware' => ['auth'],
-    'uses' => [ScholarshipController::class, 'index']
-  ]);
-
-  $r->addRoute('GET', '/scholarship-offered', [
-    'middleware' => ['auth'],
-    'uses' => [ScholarshipOfferedController::class, 'index']
-  ]);
-
-  $r->addRoute('GET', '/my-application', [
-    'middleware' => ['auth'],
-    'uses' => [MyApplicationController::class, 'index']
-  ]);
-
-
-
+    'uses' => [ScholarshipController::class, 'applyScholarship']
+    ]);
  
 
 

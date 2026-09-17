@@ -90,7 +90,7 @@ $logo = dirname(__DIR__, 2) . '/assets/images/bestlink.png';
             <tr>
                 <td><?php echo (int)$key + 1; ?></td>
                 <td><?php echo $student['student_number']; ?></td>
-                <td><?php echo $student['first_name']; ?> <?php echo $student['last_name']; ?></td>
+                <td><?php echo $student['first_name']; ?> <?php echo $student['surname']; ?></td>
             </tr>
         <?php endforeach; ?>
 

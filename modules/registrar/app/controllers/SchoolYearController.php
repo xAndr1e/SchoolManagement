@@ -1,10 +1,13 @@
 <?php 
 
- namespace App\Controllers;
- use App\Core\Controller;
+namespace App\Controllers;
+use App\Core\Controller;
 use App\Helper\Logger;
+use App\Helper\Response;
 use App\Models\Employee;
 use App\Models\SchoolYear;
+use App\Models\Section;
+use App\Models\Semester;
 use Dompdf\Dompdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
@@ -16,8 +19,15 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
     {
         
         $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();
       
-        $this->render('/acad/schoolYear', ['user' => $user]);
+        $this->render('/acad/schoolYear',
+         [
+            'user' => $user,
+            'semester' => $semester,
+            'schoolYear' => $schoolYear
+        ]);
 
     }
 
@@ -158,7 +168,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
     }
 
-
     public function schoolYearCsv()
     {
 
@@ -211,9 +220,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
     }
 
-
-   
-
     public function destroy()
     {
 
@@ -237,7 +243,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
     }
 
 
-
     public function update($id)
     {
 
@@ -250,14 +255,21 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
          "Updated A New Schoool Year Information for System"
          );
 
-        
-         SchoolYear::updateStatus();
+          // reset the status of school year
+          SchoolYear::updateStatus();
 
+          // reset all the status
+         Semester::updateStatus();
+
+         // activate the default
+         Semester::activateDefaultSemester($id);
+
+         // update the status in school year
          SchoolYear::update($id,[
 
             'is_active' => true,
 
-         ]);
+         ]);        
 
         echo json_encode([
             'status' => 'success',

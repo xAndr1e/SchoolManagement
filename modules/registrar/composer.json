@@ -9,6 +9,7 @@
     "twig/twig": "^3.22",
     "dompdf/dompdf": "^3.1",
     "phpoffice/phpspreadsheet": "^5.4",
-    "fakerphp/faker": "^1.24"
+    "fakerphp/faker": "^1.24",
+    "phpmailer/phpmailer": "^7.1"
   }
 }

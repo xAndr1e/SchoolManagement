@@ -1,3 +1,8 @@
+     let filters = {
+    school_year_id: '',
+    };
+
+  
   
   document.addEventListener('DOMContentLoaded', function() {
     
@@ -330,6 +335,9 @@
                         return response.json();
                     })
                     .then(result => {
+                       
+                        updateSemester();
+
                          allSameToggles.forEach(checkbox => {
                             if(checkbox != e.target){
                             checkbox.checked = false; 
@@ -349,6 +357,42 @@
         }
     });
 
+     const filterModal = new bootstrap.Modal(document.getElementById('filterModal'));
+     const schoolYearSelect = document.getElementById('filter_school_year');
+     const defaultSchoolYear = schoolYearSelect.options[schoolYearSelect.selectedIndex].value;
+
+
+    // filter 
+
+    document.getElementById('filterBtn').addEventListener('click', function(){
+        filterModal.show();
+    });
+
+
+     // filter send
+    document.getElementById("applyFilter").addEventListener("click", () => {
+
+    filters.school_year_id = schoolYearSelect.value;
+    getData(currentOrder, currentLimit,currentPage);
+  
+    filterModal.hide();
+
+   });
+
+
+   // reset filter
+
+   document.getElementById("resetFilter").addEventListener('click', function(){
+    
+     schoolYearSelect.value = defaultSchoolYear;
+      
+     filters.school_year_id = defaultSchoolYear;
+
+     getData(currentOrder, currentLimit,currentPage);
+     filterModal.hide();
+
+  
+    });
    
 
     });
@@ -422,7 +466,7 @@
     const search = document.getElementById("search").value;
     const tbody = document.getElementById("studentsTableBody");
 
-    fetch(`${BASE_URL}/semester/all?order=${order}&limit=${limit}&page=${page}&search=${encodeURIComponent(search)}`)
+    fetch(`${BASE_URL}/semester/all?order=${order}&limit=${limit}&page=${page}&search=${encodeURIComponent(search)}&school_year_id=${filters.school_year_id}`)
         .then(response => response.json())
         .then(result => {
 
@@ -520,6 +564,20 @@ function renderResultInfo(result) {
 
     info.textContent = `Showing ${start}–${end} of ${result.total} results`;
 }
+
+
+function updateSemester()
+{
+ 
+     fetch(`${BASE_URL}/semester/active`)
+        .then(response => response.json())
+        .then(result => {
+            semesterLabel.textContent = result.name ;
+
+        });
+    
+}
+
 
 
 

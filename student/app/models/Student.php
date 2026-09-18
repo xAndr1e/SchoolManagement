@@ -64,6 +64,8 @@
             ON ccfac.id = ccf.faculty_id
         JOIN rgr_subjects rs 
             ON rs.id = ccs.subject_id
+        JOIN gd_scholarships gsch 
+            ON gsch.id = es.scholarship_id    
         WHERE es.student_id = :studentId
           AND ccs.semester_id = :semesterId
     ";

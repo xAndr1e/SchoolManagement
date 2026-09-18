@@ -11,7 +11,7 @@
    
     <div class="mb-4">
 
-        <small class="text-primary">
+        <small class="text-primary fw-semibold">
             Dashboard
         </small>
 

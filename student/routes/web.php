@@ -9,6 +9,7 @@ use App\Controllers\LoginController;
 use App\Controllers\InstructorController;
 use App\Controllers\NotificationController;
 use App\Controllers\StudentController;
+use App\Controllers\ScholarshipController;
 use App\Helper\Response;
 use App\Models\SchoolYear;
 
@@ -235,6 +236,51 @@ $r->addRoute('GET', '/pdf/{id:\d+}/cor', [
     'uses' => [DocumentStatusController::class, 'getDocumentHistory']
 ]);
 
+/**
+ * ================================================================
+ *  Scholarship Controller
+ * ---------------------------------------------------------------
+ * File      : ScholarshipController.php
+ * Module    : Scholarship
+ * Protected by : Auth
+ * ================================================================
+ */
+
+
+    $r->addRoute('GET', '/scholarship', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'index']
+    ]);
+
+    $r->addRoute('GET', '/scholarship/get-scholarship', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'getScholarship']
+    ]);
+
+    $r->addRoute('GET', '/scholarship-offered', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'offered']
+    ]);
+
+    $r->addRoute('GET', '/scholarship-offered/list', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'listOffered']
+    ]);
+
+    $r->addRoute('GET', '/my-applications', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'myApplication']
+    ]);
+
+    $r->addRoute('GET', '/my-applications/list', [
+        'middleware' => ['auth'],
+        'uses' => [ScholarshipController::class, 'listMyApplications']
+    ]);
+    
+    $r->addRoute('POST', '/scholarship-offered/apply', [
+    'middleware' => ['auth'],
+    'uses' => [ScholarshipController::class, 'applyScholarship']
+    ]);
 
 
 

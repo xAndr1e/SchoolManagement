@@ -65,7 +65,7 @@ class LoginController extends Controller
             session_start();
         }
 
-        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['student_user_id'] = $user['user_id'];
 
         $rate->clear($key);
 

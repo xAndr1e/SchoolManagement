@@ -15,7 +15,7 @@
     public function allNotifications()
     {
 
-        $id = Session::get('user_id');
+        $id = Session::get('student_user_id');
         $user = Users::find($id);
         $student = Student::find($user['student_id']);
         $notifications = Notifications::allNotifications($student['student_id']);

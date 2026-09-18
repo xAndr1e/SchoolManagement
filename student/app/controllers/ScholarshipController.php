@@ -19,7 +19,7 @@
     {
         public function index()
         {
-            $id = Session::get('user_id');
+            $id = Session::get('student_user_id');
             $user = Users::find($id);
             $student = Student::find($user['student_id']);
             $semester = Semester::activeSemester();
@@ -69,7 +69,7 @@
         
         public function getScholarship()
         {
-            $id = Session::get('user_id');
+            $id = Session::get('student_user_id');
             $user = Users::find($id);
             $student = Student::find($user['student_id']);
 
@@ -118,7 +118,7 @@
         }
         public function offered()
         {
-            $id = Session::get('user_id');
+            $id = Session::get('student_user_id');
             $user = Users::find($id);
             $student = Student::find($user['student_id']);
             $semester = Semester::activeSemester();
@@ -164,7 +164,7 @@
         {   
 
     try {
-        $id = Session::get('user_id');
+        $id = Session::get('student_user_id');
         $user = Users::find($id);
         $student = Student::find($user['student_id']);
 
@@ -251,7 +251,7 @@
 }
     public function myApplication()
     {
-            $id = Session::get('user_id');
+            $id = Session::get('student_user_id');
             $user = Users::find($id);
             $student = Student::find($user['student_id']);
             $semester = Semester::activeSemester();
@@ -285,7 +285,7 @@
 
     public function listMyApplications()
     {
-        $id = Session::get('user_id');
+        $id = Session::get('student_user_id');
         $user = Users::find($id);
         $student = Student::find($user['student_id']);
 

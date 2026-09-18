@@ -94,24 +94,15 @@
                 My Applications</a></li>
         </ul>
  
-        <!-- settings  -->
+        
         <div class="separator"></div>
-        <h2>
-            <a href="#schoolSettings" class="d-flex justify-content-between align-items-center text-decoration-none text-white">
-                Settings
-            </a>
-        </h2>
-        <div id="schoolSettings" <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
- 
         <!-- settings  -->
-        <hr>
         <h2>
-            <a data-bs-toggle="collapse" href="#schoolSettings" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
+            <a href="#schoolSettings" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
                 Settings
-                <i class="fa-solid fa-chevron-down"></i>
             </a>
         </h2>
-        <div id="schoolSettings" class="collapse <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
+        <div id="schoolSettings"  <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
             <ul>
                 <li><a href="<?php echo BASE_URL ?>students" class="menu-link" id="profile">Profile</a></li>
             </ul>
@@ -125,23 +116,15 @@
             </a>
         </h2>
         <div id="docuRequest"<?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
-        <hr>
  
          <!-- request -->
-        <h2>
-            <a data-bs-toggle="collapse" href="#docuRequest" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
-                Request Documents
-                <i class="fa-solid fa-chevron-down"></i>
-            </a>
-        </h2>
-        <div id="docuRequest" class="collapse <?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
+        <div id="docuRequest" <?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
             <ul>
                 <li><a href="<?php echo BASE_URL ?>/document-request" class="menu-link <?php echo CURRENT_URI  === "document-request" ? 'active' : '' ?> " id="request">Document Request</a></li>
                 <li><a href="<?php echo BASE_URL ?>/document-status" class="menu-link <?php echo CURRENT_URI  === "document-status" ? 'active' : '' ?>" id="status">Document Status</a></li>
             </ul>
         </div>
         <div class="separator"></div>
-        <hr>
 
 
         <div class="mt-3">
@@ -149,10 +132,6 @@
                 class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                 style="margin-left: 8px;">
                 <span>Logout</span>
-                class="d-flex justify-content-between align-items-center text-decoration-none text-white text-uppercase"
-                style="margin-left: 8px;">
-                <span>Logout</span>
-                <i class="fa-solid fa-right-from-bracket"></i>
             </a>
         </div>
     </div>

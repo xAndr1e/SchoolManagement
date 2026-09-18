@@ -95,7 +95,6 @@ header i {
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
     border-bottom: 0.5px solid var(--color3);
-    border-bottom: 1px solid var(--color6);
 }
 
 .user-avatar {
@@ -151,8 +150,6 @@ header i {
     }
 
 
-}
-
 .sidebar .menu-link {
     display: flex;
     align-items: center;
@@ -184,12 +181,6 @@ header i {
     background: var(--color7);
     color: var(--color3);
     transform: translateX(5px);
-}
-
-.sidebar .menu-link.active {
-    background: var(--color2);
-    color: var(--color3);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* Main Content */

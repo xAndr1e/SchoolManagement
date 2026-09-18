@@ -2,6 +2,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+
+<?php
+    $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+    $moduleSuffix = '/modules/monitoring/public';
+    $appBase = $scriptDir;
+
+    if (substr($scriptDir, -strlen($moduleSuffix)) === $moduleSuffix) {
+        $appBase = substr($scriptDir, 0, -strlen($moduleSuffix));
+    }
+
+    $logoPath = ($appBase === '' ? '' : $appBase) . '/assets/bcp-logo.png';
+?>
 
 <div class="col-md-2 sidebar-enhanced">
     <div class="sidebar-wrapper">
@@ -10,7 +24,7 @@
         <div class="user-header-section">
             <div class="header-top-actions">
                 <div class="school-logo">
-                    <i class="bi bi-shield-check"></i>
+                    <img src="<?php echo htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8'); ?>" alt="BCP Logo">
                 </div>
                 <div class="header-icons">
                     <i class="bi bi-bell"></i>
@@ -33,7 +47,7 @@
                     ?>
                 </div>
                 <div class="user-fullname">
-                    <?php echo isset($_SESSION['fullname']) ? $_SESSION['fullname'] : 'Monitoring'; ?>
+                    <?php echo isset($_SESSION['fullname']) ? $_SESSION['fullname'] : 'Monitoring Staff'; ?>
                 </div>
                 <div class="user-email">
                     <?php echo isset($_SESSION['email']) ? $_SESSION['email'] : 'admin@bcp.edu.ph'; ?>
@@ -43,7 +57,6 @@
         
         <!-- Main Navigation -->
         <?php
-            $scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
             $monitoringBase = ($scriptDir === '' ? '' : $scriptDir) . '/index.php';
         ?>
         <nav class="nav flex-column">
@@ -67,13 +80,13 @@
             
             <!-- Attendance Dropdown -->
             <div class="nav-item dropdown-wrapper">
-                <a href="#" class="nav-link <?php echo in_array($currentPage ?? '', ['attendance', 'online-classes']) ? 'active' : ''; ?>" id="attendanceToggle">
+                <button type="button" class="nav-link nav-dropdown-toggle <?php echo in_array($currentPage ?? '', ['attendance', 'online-classes']) ? 'active' : ''; ?>" id="attendanceToggle">
                     <i class="bi bi-calendar-check-fill"></i> 
                     <span>Attendance</span>
                     <span class="dropdown-arrow <?php echo in_array($currentPage ?? '', ['attendance', 'online-classes']) ? 'open' : ''; ?>" id="attendanceArrow">
                         <i class="bi bi-chevron-down"></i>
                     </span>
-                </a>
+                </button>
                 <div class="sub-menu <?php echo in_array($currentPage ?? '', ['attendance', 'online-classes']) ? 'show' : ''; ?>" id="attendanceSubMenu">
                     <a href="<?php echo $monitoringBase; ?>?page=attendance" class="sub-nav-link <?php echo ($currentPage ?? '') === 'attendance' ? 'active' : ''; ?>">
                         <i class="bi bi-table"></i> 
@@ -107,14 +120,14 @@
             ?>
             <!-- Reports Dropdown -->
             <div class="nav-item dropdown-wrapper">
-                <a href="#" class="nav-link <?php echo $isReportActive ? 'active' : ''; ?>" id="reportsToggle">
-                    <i class="bi bi-file-earmark-clipboard-fill"></i> 
+                <button type="button" class="nav-link nav-dropdown-toggle <?php echo $isReportActive ? 'active' : ''; ?>" id="reportsToggle">
+                    <i class="bi bi-file-earmark-text-fill"></i> 
                     <span>Reports</span>
                     <span class="badge-beta">BETA</span>
                     <span class="dropdown-arrow <?php echo $isReportActive ? 'open' : ''; ?>" id="reportsArrow">
                         <i class="bi bi-chevron-down"></i>
                     </span>
-                </a>
+                </button>
                 <div class="sub-menu <?php echo $isReportActive ? 'show' : ''; ?>" id="reportsSubMenu">
                     <a href="<?php echo $monitoringBase; ?>?page=reports&type=academic" class="sub-nav-link <?php echo $reportType === 'academic' ? 'active' : ''; ?>">
                         <i class="bi bi-file-text-fill"></i>
@@ -186,6 +199,13 @@
 .school-logo i {
     font-size: 1.6rem;
     color: #ffffff;
+}
+
+.school-logo img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    display: block;
 }
 
 .header-icons {
@@ -289,11 +309,14 @@
 
 /* Nav Links */
 .nav .nav-link {
+    width: 100%;
+    border: 0;
     color: #ffffff;
     padding: 11px 16px;
     margin: 3px 0;
     border-radius: 8px;
-    transition: all 0.2s ease-in-out;
+    background: transparent;
+    transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -301,7 +324,24 @@
     font-size: 0.9rem;
     font-weight: 600;
     position: relative;
+    overflow: hidden;
     cursor: pointer;
+}
+
+.nav-dropdown-toggle {
+    text-align: left;
+}
+
+.nav .nav-link::after,
+.sub-nav-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--click-x, 50%) var(--click-y, 50%), rgba(255, 255, 255, 0.24), transparent 38%);
+    opacity: 0;
+    transform: scale(0.84);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    pointer-events: none;
 }
 
 .nav .nav-link i {
@@ -314,6 +354,18 @@
 .nav .nav-link:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
+    transform: translateX(3px);
+}
+
+.nav .nav-link.is-clicked,
+.sub-nav-link.is-clicked {
+    transform: translateX(6px) scale(0.98);
+}
+
+.nav .nav-link.is-clicked::after,
+.sub-nav-link.is-clicked::after {
+    opacity: 1;
+    transform: scale(1.35);
 }
 
 /* Active Nav Link */
@@ -371,13 +423,15 @@
     padding: 9px 14px;
     margin: 2px 0;
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease;
     display: flex;
     align-items: center;
     gap: 12px;
     text-decoration: none;
     font-size: 0.84rem;
     font-weight: 500;
+    position: relative;
+    overflow: hidden;
     cursor: pointer;
 }
 
@@ -391,6 +445,7 @@
 .sub-nav-link:hover {
     background: rgba(255, 255, 255, 0.08);
     color: #ffffff;
+    transform: translateX(3px);
 }
 
 .sub-nav-link.active {
@@ -446,6 +501,33 @@
     background: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
 }
+
+.main-content {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+body.sidebar-navigating .main-content {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav .nav-link,
+    .sub-nav-link,
+    .nav .nav-link::after,
+    .sub-nav-link::after,
+    .main-content {
+        transition: none;
+    }
+
+    .nav .nav-link:hover,
+    .sub-nav-link:hover,
+    .nav .nav-link.is-clicked,
+    .sub-nav-link.is-clicked,
+    body.sidebar-navigating .main-content {
+        transform: none;
+    }
+}
 </style>
 
 <script>
@@ -457,7 +539,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (toggleBtn && subMenu && arrow) {
             toggleBtn.addEventListener('click', function(e) {
-                e.preventDefault();
                 subMenu.classList.toggle('show');
                 arrow.classList.toggle('open');
             });
@@ -466,6 +547,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setupDropdown('attendanceToggle', 'attendanceSubMenu', 'attendanceArrow');
     setupDropdown('reportsToggle', 'reportsSubMenu', 'reportsArrow');
+
+    document.querySelectorAll('.nav-link[href]:not([href="#"]), .sub-nav-link[href]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                return;
+            }
+
+            const target = this.getAttribute('target');
+            const href = this.getAttribute('href');
+
+            if (!href || href.charAt(0) === '#' || target === '_blank') {
+                return;
+            }
+
+            e.preventDefault();
+
+            const rect = this.getBoundingClientRect();
+            this.style.setProperty('--click-x', `${e.clientX - rect.left}px`);
+            this.style.setProperty('--click-y', `${e.clientY - rect.top}px`);
+            this.classList.add('is-clicked');
+            document.body.classList.add('sidebar-navigating');
+
+            window.setTimeout(function() {
+                window.location.href = href;
+            }, 160);
+        });
+    });
 
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {

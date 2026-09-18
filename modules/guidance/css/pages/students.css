@@ -179,11 +179,11 @@
     text-align: left;
     font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: .03em;
     color: var(--color5);
-    background: var(--color9);
+    background: var(--color3);
     padding: 12px 16px;
-    border-bottom: 1px solid var(--color4);
+    border-bottom: 1px solid var(--color9);
+    border-radius: 10px;
 }
 
 .std-table tbody td {

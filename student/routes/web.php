@@ -281,6 +281,13 @@ $r->addRoute('GET', '/pdf/{id:\d+}/cor', [
     'middleware' => ['auth'],
     'uses' => [ScholarshipController::class, 'applyScholarship']
     ]);
+
+
+
+
+
+
+
  
 
 

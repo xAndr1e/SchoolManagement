@@ -32,6 +32,13 @@
         $section = Section::find($student['section_id']);
         $adviser = Faculty::find($section['adviser_id']);
         $course = Course::find($student['course_id']);
+        
+        $studentInfo = Applicant::find($student['applicant_id']);
+        $section = Section::find($student['section_id']);
+        $adviser = Faculty::find($section['adviser_id']);
+
+        $course = Course::find($student['course_id']);
+        
         $firstName = $studentInfo['first_name'];
         $first_parts = substr($firstName, 0, 2);
     

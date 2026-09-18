@@ -14,6 +14,7 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'timeout') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="icon" href="assets/bcp-logo.png" type="image/x-icon">
     <title>Login Page</title>
 </head>
 <body>

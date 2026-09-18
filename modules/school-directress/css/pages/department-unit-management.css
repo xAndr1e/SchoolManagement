@@ -1,227 +1,90 @@
-    .tab-container {
-        margin-top: 20px;
-        background-color: var(--color3);
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    }
+/* ============================================================
+   School Directress — Department & Unit Management (flat view, no tabs)
+   (.module-header is handled by the global stylesheet — not included here.)
+   ============================================================ */
 
-    .tab-list {
-        list-style: none;
-        display: flex;
-        margin: 0;
-        padding: 0;
-        gap: 8px;
-        align-items: center;
-    }
+.dept-module {
+    width: 100%;
+}
 
-    .tab-list li {
-        padding: 8px 12px;
-        cursor: pointer;
-        font-weight: 700;
-        border-radius: 999px;
-        color: var(--color2);
-        background: transparent;
-        transition: background-color .15s ease, color .15s ease, transform .08s ease;
-        border: 1px solid transparent;
-    }
+.dept-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.6rem ;
+    background: var(--color3);
+    border-radius: 10px;
+}
 
-    .tab-list li:hover {
-        background-color: var(--color1);
-        color: var(--color3);
-        transform: translateY(-1px);
-    }
+.dept-header h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color2);
+}
 
-    .tab-list li.active {
-        background-color: var(--color1);
-        color: var(--color3);
-        border: 1px solid rgba(81, 70, 183, 0.12);
-    }
+.dept-card {
+    background: var(--color3);
+    border: 1px solid var(--color9);
+    border-radius: 10px;
+    padding: 1.6rem;
+}
 
-    .tab-content.active {
-        display: block;
-    }
+/* ── Department table ───────────────────────────────────────── */
+.table-responsive {
+    border: 1px solid var(--color9);
+    border-radius: 8px;
+    overflow: hidden;
+    overflow-x: auto;
+    background: var(--color3);
+}
 
-    .tab-content {
-        display: none;
-        margin-top: 16px;
-    }
+.department-table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
-    .form-section {
-        margin-top: 12px;
-        background-color: var(--color3);
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid var(--color4);
-    }
+.department-table thead th {
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color5);
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--color9);
+    white-space: nowrap;
+}
 
-    .form-section-header h3 {
-        margin-bottom: 12px;
-        font-size: 1.25rem;
-        color: var(--color2);
-    }
+.department-table tbody td {
+    font-size: 0.85rem;
+    color: var(--color2);
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--color9);
+}
 
-    .table-responsive {
-        overflow-x: auto;
-    }
+.department-table tbody tr:last-child td {
+    border-bottom: none;
+}
 
+.department-table tbody tr:hover {
+    background: rgba(32, 0, 130, 0.02);
+}
+
+.department-table td[colspan] {
+    text-align: center;
+    color: var(--color5);
+    padding: 1.5rem;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
     .department-table {
-        width: 100%;
-        margin-top: 16px;
-        border-collapse: separate;
-        border-spacing: 0;
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
-        border-radius: 8px;
-        overflow: hidden;
+        min-width: 700px;
     }
-
-    .department-table th,
-    .department-table td {
-        padding: 12px 14px;
-        text-align: left;
-        border-bottom: 1px solid var(--color4);
-        font-size: 0.95rem;
-    }
-
-    .department-table thead th {
-        background: transparent;
-        color: var(--color2);
-        font-weight: 700;
-    }
-
-    .department-table td.actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .form-group {
-        margin-bottom: 12px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 6px;
-        color: var(--color2);
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-
-    input[type="text"],
-    textarea,
-    select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid var(--color4);
-        border-radius: 6px;
-        background: var(--color3);
-        color: var(--color2);
-        transition: box-shadow .12s ease, border-color .12s ease;
-    }
-
-    input[type="text"]:focus,
-    textarea:focus,
-    select:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(81, 70, 183, 0.06);
-        border-color: var(--color7);
-    }
-
-    .form-actions {
-        margin-top: 12px;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .btn-save {
-        background: var(--color1);
-        color: var(--color3);
-        padding: 8px 12px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    .btn-save:hover {
-        filter: brightness(.95);
-        transform: translateY(-1px);
-    }
-
-    .btn-cancel {
-        background: transparent;
-        color: var(--color2);
-        padding: 8px 12px;
-        border: 1px solid var(--color4);
-        border-radius: 6px;
-        cursor: pointer;
-    }
-
-    .btn-edit,
-    .btn-assign {
-        padding: 6px 8px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.9rem;
-    }
-
-    .btn-edit {
-        background: var(--color1);
-        color: var(--color3);
-        border: none;
-    }
-
-    .btn-assign {
-        background: transparent;
-        color: var(--color2);
-        border: 1px solid var(--color4);
-    }
-
-    .assign-banner {
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 16px;
 }
 
-.assign-banner--success {
-    background: #e6f4ea;
-    color: var(--color7);
-    border: 1px solid var(--color7);
-}
-
-.assign-banner--error {
-    background: #fdecea;
-    color: var(--color1);
-    border: 1px solid var(--color1);
-}
-
-    @media (max-width: 720px) {
-        .tab-list {
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .form-actions {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .btn-cancel {
-            margin-left: 0;
-        }
-
-        .department-table th,
-        .department-table td {
-            padding: 10px;
-            font-size: 0.9rem;
-        }
+@media (max-width: 700px) {
+    .dept-card {
+        padding: 1.1rem;
     }
-
-    textarea {
-        resize: vertical;
-        min-height: 80px;
-    } 
-
+}

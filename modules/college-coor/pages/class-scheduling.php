@@ -329,7 +329,7 @@ $school_year_map = array_column($school_years, 'name', 'id');
 ?>
         <!-- Header -->
         <div class="module-header">
-            <h1><i class="fas fa-calendar-alt"></i> Schedule Management System</h1>
+            <h1>Schedule Management System</h1>
             <p>Office of the Safety and Security | Class Schedule Management</p>
         </div>
 

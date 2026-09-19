@@ -104,7 +104,7 @@ function editSchedule(row) {
             updateScheduleTypeFields();
         }
 
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
         modal.classList.add('show');
     } catch (error) {
         console.error('editSchedule error:', error);
@@ -1226,6 +1226,11 @@ async function submitExamSchedule(event) {
 
 window.addEventListener('page:loaded', function (event) {
     if (event.detail?.page !== 'class-scheduling') return;
+
+    // Move all modals to be direct children of document.body to fix centering issues
+    document.querySelectorAll('.modal').forEach(function (modal) {
+        document.body.appendChild(modal);
+    });
 
     try {
         const blob = document.getElementById('preload-scheduleAllFaculty');

@@ -1,6 +1,6 @@
 :root {
-            --primary: #4361ee;
-            --secondary: #3a0ca3;
+            --primary: rgb(20, 41, 128);
+            --secondary: rgba(32, 0, 130, 1); 
             --success: #4cc9f0;
             --warning: #f72585;
             --light: #f8f9fa;
@@ -119,14 +119,33 @@
 
         .filter-group {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 20px;
+            flex-wrap: nowrap;
             align-items: flex-end;
+            width: 100%;
         }
 
-        .filter-item { flex: 1; min-width: 200px; }
+        .filter-item {
+            flex: 0 1 200px;
+            min-width: 160px;
+        }
 
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        .filter-item:last-child {
+            flex: 0 0 auto;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+
+        .filter-item:last-child .btn {
+            white-space: nowrap;
+            flex: 0 0 auto;
+            padding: 10px 30px;
+        }
+
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; white-space: nowrap; }
 
         select, input, textarea {
             width: 100%;
@@ -322,8 +341,23 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .filter-group { flex-direction: column; }
-            .filter-item { min-width: 100%; }
+            .filter-group {
+                flex-direction: column;
+                flex-wrap: wrap;
+            }
+            .filter-item {
+                flex: 1 1 100% !important;
+                min-width: 100%;
+            }
+            .filter-item:last-child {
+                flex: 1 1 100% !important;
+                margin-left: 0;
+                justify-content: space-between;
+            }
+            .filter-item:last-child .btn {
+                flex: 1;
+                text-align: center;
+            }
             .tabs { flex-direction: column; }
             .form-grid { grid-template-columns: 1fr; }
         }

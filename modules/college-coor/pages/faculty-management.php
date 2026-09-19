@@ -724,7 +724,7 @@ function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
 ?>
     <div class="module-header">
         <div>
-            <h1><i class="fas fa-chalkboard-teacher"></i> Faculty Management</h1>
+            <h1> Faculty Management</h1>
             <p>View and manage faculty credentials, attainment, and trainings.</p>
         </div>
     </div>

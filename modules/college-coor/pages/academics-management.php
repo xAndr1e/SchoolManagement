@@ -46,7 +46,7 @@ $stats = [
     <!-- Page Header -->
     <div class="module-header">
         <div>
-            <h1><i class="fas fa-graduation-cap"></i> Academics Management</h1>
+            <h1>Academics Management</h1>
             <p>Monitor programs, curriculum, subjects, sections, and faculty load</p>
         </div>
     </div>

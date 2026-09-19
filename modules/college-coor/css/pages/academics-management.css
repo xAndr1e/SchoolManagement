@@ -56,7 +56,7 @@
         border-radius: 8px;
         padding: 20px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        border-left: 4px solid #0d6efd;
+        border-left: 4px solid rgba(32, 0, 130, 1); 
     }
 
     .stat-card.subjects { border-left-color: #6f42c1; }
@@ -102,12 +102,12 @@
     }
 
     .academics-tab:hover {
-        color: #0d6efd;
+        color: rgba(32, 0, 130, 1); 
     }
 
     .academics-tab.active {
-        color: #0d6efd;
-        border-bottom-color: #0d6efd;
+        color: rgba(32, 0, 130, 1); 
+        border-bottom-color: rgba(32, 0, 130, 1); 
     }
 
     /* Panels */
@@ -231,7 +231,7 @@
 
     .search-box input:focus {
         outline: none;
-        border-color: #0d6efd;
+        border-color: rgba(32, 0, 130, 1); 
         box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
     }
 
@@ -245,7 +245,7 @@
 
     .filter-select:focus {
         outline: none;
-        border-color: #0d6efd;
+        border-color: rgba(32, 0, 130, 1); 
     }
 
     .btn {
@@ -262,12 +262,12 @@
     }
 
     .btn-primary {
-        background-color: #0d6efd;
+        background-color: rgb(14, 28, 90);
         color: white;
     }
 
     .btn-primary:hover {
-        background-color: #0b5ed7;
+        background-color: rgb(14, 28, 90);
     }
 
     .btn-secondary {
@@ -285,12 +285,12 @@
     }
 
     .btn-info {
-        background-color: #17a2b8;
+        background-color: rgb(20, 41, 128);
         color: white;
     }
 
     .btn-info:hover {
-        background-color: #138496;
+        background-color: rgba(24, 0, 98, 1);
     }
 
     .btn-danger {
@@ -472,7 +472,7 @@
 
     .form-control:focus {
         outline: none;
-        border-color: #0d6efd;
+        border-color:rgba(32, 0, 130, 1); 
         box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
     }
 
@@ -603,5 +603,7 @@ body,
 .module-content {
     background: var(--color9, #f8f9fa);
 }
+
+
 
 

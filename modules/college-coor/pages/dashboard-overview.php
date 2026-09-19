@@ -262,7 +262,7 @@ $chartDataJson = json_encode([
 ?>
 
 <div class="module-header">
-    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h1>
+    <h1>Dashboard Overview</h1>
     <p class="text-muted small">Summary of academic analytics, events, and recent activities</p>
 </div>
 
@@ -380,7 +380,7 @@ $chartDataJson = json_encode([
         <section class="recent-activities-section" style="grid-column: 1 / -1;">
             <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 class="section-title">Recent Activities</h2>
-                <button onclick="openActivitiesModal()" style="padding: 6px 12px; background-color: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">View All</button>
+                <button onclick="openActivitiesModal()" style="padding: 6px 12px; background-color: rgb(14, 28, 90); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">View All</button>
             </div>
             
             <div class="activities-list" id="activitiesList">

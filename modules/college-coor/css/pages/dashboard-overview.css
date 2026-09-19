@@ -757,7 +757,7 @@
             }
 
             .btn-nav {
-                background: #3b82f6;
+                background:rgba(32, 0, 130, 1); 
                 color: white;
                 border: none;
                 padding: 8px 16px;
@@ -768,7 +768,7 @@
             }
 
             .btn-nav:hover {
-                background: #2563eb;
+                background:rgb(14, 28, 90);
             }
 
             .calendar-grid {

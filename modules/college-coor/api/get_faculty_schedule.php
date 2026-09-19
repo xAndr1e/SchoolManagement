@@ -12,16 +12,19 @@ try {
     $database = new Database();
     $conn = $database->getConnection();
 
-    // Fetch schedule data for the faculty member from cc_schedule
+        // Fetch schedule data for the faculty member using room_id and cc_room
     $query = "SELECT 
-                cs.subject_code,
+                                subj.code AS subject_code,
                 cs.start_time,
                 cs.end_time,
                 cs.day_of_week,
-                cs.room,
-                sec.section_code
+                                cs.schedule_type,
+                                CONCAT(cr.room_code, ' - ', cr.room_name) AS room,
+                                sec.section_code
               FROM cc_schedule cs
-              LEFT JOIN cc_sections sec ON cs.grade_section_id = sec.id
+                            LEFT JOIN cc_sections sec ON cs.section_id = sec.id
+                            LEFT JOIN rgr_subjects subj ON cs.subject_id = subj.id
+                            LEFT JOIN cc_room cr ON cs.room_id = cr.id
               WHERE cs.faculty_id = :faculty_id
               ORDER BY 
                 FIELD(cs.day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'),

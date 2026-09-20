@@ -14,11 +14,13 @@ if (isset($_GET['reason']) && $_GET['reason'] === 'timeout') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="icon" href="assets/bcp-logo.png" type="image/x-icon">
     <title>Login Page</title>
 </head>
 <body>
     <div class="login-container">
         <div class="login-contents">
+            <h1>SMS Login</h1>
             <div class="school-logo">
                 <img src="assets/bcp-logo.png" alt="School Logo">
             </div>

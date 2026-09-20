@@ -2,7 +2,6 @@
  document.addEventListener('DOMContentLoaded', function () {
 
          // home
-
          gsap.from("#dashboard-title", {
             x: -200,          
             opacity: 0,       

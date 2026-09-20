@@ -83,7 +83,8 @@ $error    = $data['error'];
                 $rid  = 'smd-' . $s['student_number'];
             ?>
             <!-- DATA ROW -->
-            <tr class="sm-row"
+            <tr 
+                class="sm-row"
                 data-name="<?= htmlspecialchars(strtolower($name)) ?>"
                 data-snum="<?= htmlspecialchars(strtolower((string) $s['student_number'])) ?>"
                 data-email="<?= htmlspecialchars(strtolower($s['email'] ?? '')) ?>"

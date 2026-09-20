@@ -60,7 +60,9 @@
             $columns = implode(',', array_keys($data));
             $placeholders = implode(',', array_fill(0, count($data), '?'));
             $stmt = $this->pdo->prepare("INSERT INTO {$this->tableName} ($columns) VALUES ($placeholders)");
-            return $stmt->execute(array_values($data));
+            $stmt->execute(array_values($data));
+
+            return $this->pdo->lastInsertId(); 
         }
 
 
@@ -84,6 +86,25 @@
             );
 
             return $stmt->execute($ids);
+        }
+
+
+        protected  function isDuplicate(array $data)
+        {
+
+            $conditions = [];
+
+            foreach (array_keys($data) as $column) {
+                $conditions[] = "$column = ?";
+            }
+            $whereSql = implode(" AND ", $conditions);
+
+            $sql = "SELECT COUNT(*) FROM $this->tableName WHERE $whereSql";
+            $stmt = $this->pdo->prepare($sql);
+
+            $stmt->execute(array_values($data));
+
+            return $stmt->fetchColumn() > 0;
         }
 
 

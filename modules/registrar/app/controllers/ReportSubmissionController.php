@@ -9,6 +9,8 @@
   use App\Models\Department;
   use App\Models\Employee;
   use App\Models\Report;
+  use App\Models\SchoolYear;
+  use App\Models\Semester;
   use App\Models\Submission;
   use Exception;
 
@@ -21,8 +23,17 @@
         $departments = Department::all();
         $reports = Report::all();
         $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();
       
-        $this->render('reports/report_submission', ['user' => $user, 'reports' => $reports, 'departments' => $departments ]);
+        $this->render('reports/report_submission',
+           [
+             'user' => $user,
+             'reports' => $reports, 
+             'departments' => $departments,
+             'semester' => $semester,
+             'schoolYear' => $schoolYear
+             ]);
 
     }
 
@@ -30,7 +41,7 @@
     public function allReports()
     {
        $all_activity = Submission::allReports();
-        Response::json($all_activity);
+         Response::json($all_activity);
     }
 
 

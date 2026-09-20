@@ -4,6 +4,7 @@
 
   use App\Core\Controller;
   use App\Helper\Logger;
+  use App\Helper\Response;
   use App\Models\Employee;
   use App\Models\SchoolYear;
   use App\Models\Semester;
@@ -19,10 +20,16 @@
     {
 
         $school_year = SchoolYear::all();
+        $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();
 
-         $user = Employee::find('1003'); 
       
-        $this->render('/acad/semester', ['user' => $user,'school_year' => $school_year]);
+        $this->render('/acad/semester', ['user' => $user,
+        'school_year' => $school_year,
+        'semester' => $semester,
+        'schoolYear' => $schoolYear
+      ]);
 
     }
 
@@ -31,6 +38,14 @@
         header('Content-Type: application/json');
         $semester = Semester::allSemester();
         echo json_encode($semester );
+    }
+
+    public function semesterSections(int $id)
+    {
+
+        $semester = Semester::semesterSections($id);
+        Response::json($semester);
+
     }
 
 
@@ -242,11 +257,15 @@
         
          Semester::updateStatus();
 
+         
+
          Semester::update($id,[
 
             'is_active' => true,
 
          ]);
+
+
 
         echo json_encode([
             'status' => 'success',

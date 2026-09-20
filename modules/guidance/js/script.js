@@ -11,3 +11,4 @@ import './modules/cases.js';
 import './modules/appointments.js';
 import './modules/incidents.js';
 import './modules/analytics.js';
+import './modules/scholar.js';

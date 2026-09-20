@@ -30,7 +30,7 @@
 
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-    $where = " WHERE 1=1 ";
+    $where = " WHERE submitted_by = 1003  ";
     $params = [];
 
 

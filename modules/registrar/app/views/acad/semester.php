@@ -26,6 +26,15 @@
 
                 <div class="d-flex gap-2">
 
+                 <button class="btn btn-outline-secondary btn-sm position-relative" id="filterBtn">
+                  <i class="bi bi-funnel"></i> 
+                  Filter
+                  <span id="filterBadge" 
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                    0
+                  </span>
+                </button>
+
                     <button type="button" class="btn btn-outline-danger btn-sm" id="pdf">
                         <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                     </button>
@@ -217,6 +226,45 @@
         </div>
     </div>
 </div>
+
+<!-- filtering -->
+ 
+<div class="modal fade" id="filterModal">
+  <div class="modal-dialog">
+    <div class="modal-content p-3">
+
+        <h5>Filter</h5>
+
+       <!-- school year filter -->
+
+
+
+     <div class="form-floating mt-2 mb-3">
+            
+       <select id="filter_school_year"  class="form-select mb-2">
+             <?php foreach($school_year as $sy) { ?>
+        <option 
+            value="<?= $sy['id']; ?>"
+            <?= $sy['is_active'] == 1 ? 'selected' : ''; ?>
+        >
+            <?= $sy['name']; ?>
+        </option>
+    
+        <?php  } ?> 
+      </select>
+
+      <label for="floatingSelect">School Year</label>
+
+      </div>
+  
+    
+      <button class="btn btn-primary w-100 mb-2" id="applyFilter">Apply Filter</button>
+      <button class="btn btn-warning w-100" id="resetFilter">Reset Filter</button>
+
+    </div>
+  </div>
+</div>
+
 
  
 

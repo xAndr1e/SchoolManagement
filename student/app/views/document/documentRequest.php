@@ -1,5 +1,5 @@
-<?php include __DIR__ .'/../partials/sidebar.php'; ?>
 <?php include  __DIR__ .'/../partials/header.php'; ?>
+<?php include __DIR__ .'/../partials/sidebar.php'; ?>
 
 <main class="main-content bg-light pb-5">
     <div class="container-fluid px-4">

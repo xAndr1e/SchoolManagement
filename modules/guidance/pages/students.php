@@ -7,16 +7,10 @@
  * approval-submission.php. StudentsController.php (AJAX) is only used
  * afterward for search/filter refreshes, remarks, and document uploads —
  * not for this initial render.
- *
- * NOTE: rgr_students.year_level is defined as YEAR(4), which normally
- * stores a calendar year (e.g. 2026), not an ordinal level like "1st Year".
- * This mockup assumes it's actually being used to store 1-4 as a year
- * standing — please confirm which it really is; if it's a literal
- * calendar year, the filter options/labels below need to change to list
- * actual years instead of "1st/2nd/3rd/4th Year".
  */
 
 include_once __DIR__ . '/../../../auth/session.php';
+include_once __DIR__ . '/../../../database/db.php';
 include_once __DIR__ . '/../classes/Students.php';
 
 $studentsClass = new Students();
@@ -31,19 +25,37 @@ $filters = [
     'risk'       => $_GET['risk'] ?? '',
     'status'     => $_GET['status'] ?? '',
 ];
+
 $page     = max(1, (int) ($_GET['page'] ?? 1));
 $pageSize = 10;
 
 $result        = $studentsClass->getList($filters, $page, $pageSize);
-$students       = $result['rows'];
-$totalStudents  = $result['total'];
-$totalPages     = (int) ceil($totalStudents / $pageSize);
+$students      = $result['rows'];
+$totalStudents = $result['total'];
+$totalPages    = (int) ceil($totalStudents / $pageSize);
+
+$database = new Database();
+$pdo = $database->getConnection();
+
+$sectionStmt = $pdo->prepare("
+    SELECT id, section_code
+    FROM cc_sections
+    WHERE section_code IS NOT NULL
+    ORDER BY section_code ASC
+");
+$sectionStmt->execute();
+$sections = $sectionStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$courseStmt = $pdo->prepare("
+    SELECT id, code, name
+    FROM rgr_courses
+    ORDER BY name ASC
+");
+$courseStmt->execute();
+$courses = $courseStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // The modal is populated live via AJAX (students.js -> StudentsController.php)
-// the moment "View Profile" is clicked, so no profile detail needs to be
-// queried on this initial page render. $profileDetail below only exists to
-// give the modal markup real field names/structure to bind to; every value
-// gets overwritten on first click.
+// the moment "View Profile" is clicked.
 $profileDetail = [
     'student_number' => '', 'name' => '', 'year_level' => '', 'section' => '',
     'course' => '', 'gender' => '', 'birth_date' => '', 'email' => '', 'phone' => '',
@@ -113,16 +125,20 @@ function std_status_badge_class($status) {
 
             <select class="std-filter-select" id="stdFilterSection">
                 <option value="" <?= $filters['section'] === '' ? 'selected' : '' ?>>All Sections</option>
-                <option value="BSCS-3A" <?= $filters['section'] === 'BSCS-3A' ? 'selected' : '' ?>>BSCS-3A</option>
-                <option value="BSBA-2B" <?= $filters['section'] === 'BSBA-2B' ? 'selected' : '' ?>>BSBA-2B</option>
-                <option value="BSIT-4A" <?= $filters['section'] === 'BSIT-4A' ? 'selected' : '' ?>>BSIT-4A</option>
+                <?php foreach ($sections as $section): ?>
+                    <option value="<?= htmlspecialchars($section['id']) ?>" <?= (string) $filters['section'] === (string) $section['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($section['section_code']) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
 
             <select class="std-filter-select" id="stdFilterCourse">
                 <option value="" <?= $filters['course'] === '' ? 'selected' : '' ?>>All Courses</option>
-                <option value="BS Computer Science" <?= $filters['course'] === 'BS Computer Science' ? 'selected' : '' ?>>BS Computer Science</option>
-                <option value="BS Information Technology" <?= $filters['course'] === 'BS Information Technology' ? 'selected' : '' ?>>BS Information Technology</option>
-                <option value="BS Business Administration" <?= $filters['course'] === 'BS Business Administration' ? 'selected' : '' ?>>BS Business Administration</option>
+                <?php foreach ($courses as $course): ?>
+                    <option value="<?= htmlspecialchars($course['id']) ?>" <?= (string) $filters['course'] === (string) $course['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($course['name']) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
 
             <select class="std-filter-select" id="stdFilterRisk">
@@ -178,8 +194,8 @@ function std_status_badge_class($status) {
                                 </div>
                             </div>
                         </td>
-                        <td>Year <?= htmlspecialchars($s['year_level']) ?> - <?= htmlspecialchars($s['section']) ?></td>
-                        <td><?= htmlspecialchars($s['course']) ?></td>
+                        <td>Year <?= htmlspecialchars($s['year_level']) ?> - <?= htmlspecialchars($s['section'] ?? 'N/A') ?></td>
+                        <td><?= htmlspecialchars($s['course'] ?? 'N/A') ?></td>
                         <td>
                             <span class="std-badge <?= std_risk_badge_class($s['risk_level']) ?>">
                                 <?= htmlspecialchars($s['risk_level']) ?>
@@ -228,7 +244,7 @@ function std_status_badge_class($status) {
 </div>
 
 <!-- ============================================================
-     Student Profile Modal (example populated with $profileDetail)
+     Student Profile Modal
      ============================================================ -->
 <div class="std-modal-overlay" id="stdProfileModal">
     <div class="std-modal">

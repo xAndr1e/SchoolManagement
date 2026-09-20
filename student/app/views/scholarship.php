@@ -1,5 +1,5 @@
-<?php include __DIR__ . '/partials/sidebar.php'; ?>
 <?php include __DIR__ . '/partials/header.php'; ?>
+<?php include __DIR__ . '/partials/sidebar.php'; ?>
 
 <div class="main-content bg-light">
     <div class="schp-module-header">

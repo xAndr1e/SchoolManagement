@@ -40,11 +40,33 @@ class Lab1MonitoringController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $monitoring = new Lab1Monitoring();
 
-        $monitoring->delete($id);
+        $rows = $monitoring->getInactive();
+
+        require_once __DIR__ . '/../views/monitoring/it-lab/lab1/lab1MonInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $monitoring = new Lab1Monitoring();
+
+        $monitoring->deactivate($id);
+
+        header("Location: " . BASE_URL . "/lab1-monitoring");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $monitoring = new Lab1Monitoring();
+
+        $monitoring->activate($id);
 
         header("Location: " . BASE_URL . "/lab1-monitoring");
         exit;

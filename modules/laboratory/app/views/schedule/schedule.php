@@ -1,177 +1,285 @@
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 <?php include __DIR__ . '/../includes/header.php'; ?>
 
+
 <main class="main-content">
-    <div class="container-fluid px-4">
-        <h1 class="h3 mb-2 text-gray-800">Laboratory Schedule</h1>
-        <p class="mb-4">Schedule</p>
+<div class="container">
 
-        <div class="card mb-4 card shadow-sm border-0 border-top border-4 border-secondary shadow-lg p-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <i class="fas fa-table me-1"></i>
-                    Laboratory Schedule
-                </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    
+        <div id="dashboard-title">
+            <h1 class="h3 fw-bold mb-0">Section Schedule</h1>
+             <p class="text-muted small">Manage and organize academic programs for the registrar.</p>
+        </div>
 
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
-                    <i class="bi bi-plus-lg"></i>
-                    Add Schedule
+
+    </div>
+
+
+    <div class="card mb-4 card shadow-sm border-0 border-top border-4 border-secondary shadow-lg p-3">
+
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="fs-6 mb-0 text-primary">Section Schedule List</h3>
+
+            <!-- <div class="d-flex gap-2">
+
+                <button type="button" class="btn btn-outline-danger btn-sm" id="pdf">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                 </button>
 
-            </div>
-            <div class="card-body">
-                <table id="scheduleTable" class="table table-striped table-bordered" style="width:100%">
-                    <thead>
+                <button type="button" class="btn btn-outline-success btn-sm" id="excel">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel
+                </button>
+
+                <button type="button" class="btn btn-outline-primary btn-sm" id="csv">
+                    <i class="bi bi-filetype-csv"></i> CSV
+                </button>
+
+            </div> -->
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="row g-2 mb-3">
+
+                <div class="col-md-3">
+                    <label class="form-label small">Section</label>
+                    <select class="form-select form-select-sm" id="section">
+                        <?php foreach ($sections as $section) {?>
+                            <option value="<?= $section['section_id'] ?>"><?= $section['name'] ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+                <table class="table table-hover table-striped align-middle">
+
+                    <thead class="table-light">
                         <tr>
-                            <th>Laboratory</th>
-                            <th>Subject</th>
-                            <th>Section</th>
-                            <th>Instructor</th>
-                            <th>Day</th>
-                            <th>Time</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                            
+                        <th style="width:100px;">Time</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                           
                         </tr>
                     </thead>
 
-                    <tbody>
-
-                        <?php foreach ($schedules as $schedule): ?>
-
-                            <tr>
-                                <td>
-                                    <?= htmlspecialchars(
-                                        $schedule['laboratory_name']
-                                    ) ?>
-                                </td>
-
-                                <td>
-                                    <?= htmlspecialchars(
-                                        $schedule['subject_name']
-                                    ) ?>
-                                </td>
-
-                                <td>
-                                    <?= htmlspecialchars(
-                                        $schedule['section']
-                                    ) ?>
-                                </td>
-
-                                <td>
-                                    <?= htmlspecialchars(
-                                        $schedule['instructor']
-                                    ) ?>
-                                </td>
-
-                                <td>
-                                    <?= htmlspecialchars(
-                                        $schedule['day']
-                                    ) ?>
-                                </td>
-
-                                <td>
-                                    <?= date(
-                                        'h:i A',
-                                        strtotime($schedule['start_time'])
-                                    ) ?>
-
-                                    -
-
-                                    <?= date(
-                                        'h:i A',
-                                        strtotime($schedule['end_time'])
-                                    ) ?>
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-success">
-                                        <?= htmlspecialchars(
-                                            $schedule['status']
-                                        ) ?>
-                                    </span>
-                                </td>
-
-
-                                <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown">
-                                            Action
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a href="#" class="dropdown-item viewBtn"
-                                                    data-id="<?= $schedule['schedule_id'] ?>">
-                                                    <i class="fas fa-eye me-2"></i> View
-                                                </a>
-                                            </li>
-
-                                            <li>
-                                                <a href="#" class="dropdown-item editBtn"
-                                                    data-id="<?= $schedule['schedule_id'] ?>">
-                                                    <i class="fas fa-edit me-2"></i> Edit
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <hr class="dropdown-divider">
-                                            </li>
-                                            <li>
-                                                <a href="#" class="dropdown-item text-danger deleteBtn"
-                                                    data-id="<?= $schedule['schedule_id'] ?>">
-                                                    <i class="fas fa-trash me-2"></i>
-                                                    Delete
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-
-                        <?php endforeach; ?>
-
+                    <tbody id="grid-body">
+                        
                     </tbody>
+                   
+
                 </table>
+
             </div>
+
+
+            
+            <div class="d-flex align-items-center justify-content-between mt-3">
+
+                <div class="fw-semibold small" id="pageInfo"></div>
+
+                <div id="pagination" class="d-flex gap-1"></div>
+
+            </div>
+
         </div>
 
     </div>
+
+</div>
 </main>
 
 
-<!-- <main class="main-content">
-    <div class="container-fluid px-4">
-        <h1 class="h3 mb-2 text-gray-800">Schedule</h1>
-        <p class="mb-4">Calendar</p>
+ <!-- show course modal -->
+<div class="modal fade" id="showScheduleDetailModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
 
-        <div class="card mb-4 card shadow-sm border-0 border-top border-4 border-secondary shadow-lg p-3">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0 rounded-3">
 
-            <div class="card-body">
-                <div id='homeCalendar' style="height: 100%; width: 100%;"></div>
+           
+            <div class="modal-header bg-primary text-white">
+                <div>
+                    <h5 class="modal-title mb-0" id="showModalTitle">
+                        Class Details
+                    </h5>
+                    <small class="opacity-75">View class and schedule information</small>
+                </div>
+
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- BODY -->
+            <div class="modal-body p-4">
+
+
+            <!-- COURSE SECTION -->
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase small mb-2">Course Information</h6>
+
+                    <div class="p-3 bg-light rounded">
+                        
+                        <div class="row mb-2">
+                           
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <small class="text-muted">Course Code</small>
+                                <div class="fw-semibold" id="show_course_code">—</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <small class="text-muted">Course Name</small>
+                                <div class="fw-semibold" id="show_course_name">—</div>
+                            </div>
+                        </div>
+
+                          <div class="row mb-1">
+                           
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <small class="text-muted">Section</small>
+                                <div class="fw-semibold" id="show_section_name">—</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <small class="text-muted">Year Level</small>
+                                <div class="fw-semibold" id="show_year_level">—</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <!-- CURRICULUM SECTION -->
+                <div>
+                    <h6 class="text-muted text-uppercase small mb-2">Subject Information</h6>
+
+                    <div class="p-3 border rounded">
+
+                        <div class="row mb-2">
+                           
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <small class="text-muted">Subject Code</small>
+                                <div class="fw-semibold" id="show_subject_code">—</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <small class="text-muted">Subject Name</small>
+                                <div class="fw-semibold" id="show_subject_name">—</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                           
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <small class="text-muted">Semester</small>
+                                <div class="fw-semibold" id="show_semester">—</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <small class="text-muted">Teacher</small>
+                                <div class="fw-semibold" id="show_teacher_name">—</div>
+                            </div>
+                        </div>
+
+                         <div class="row mb-2">
+                           
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <small class="text-muted">Units</small>
+                                <div class="fw-semibold" id="show_units">—</div>
+                            </div>
+
+                              <div class="col-md-4">
+                                <small class="text-muted">Lecture Hours</small>
+                                <div class="fw-semibold" id="show_lecture_hours">—</div>
+                            </div>
+
+                              <div class="col-md-4">
+                                <small class="text-muted">Laboratory Hours</small>
+                                <div class="fw-semibold" id="show_laboratory_hours">—</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+                 <!-- CURRICULUM SECTION -->
+                <div>
+                    <h6 class="text-muted text-uppercase small mt-4">Class and Schedule Information</h6>
+
+                    <div class="p-3 border rounded">
+
+
+                         <div class="row mb-2">
+                           
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <small class="text-muted">Room</small>
+                                <div class="fw-semibold" id="show_room">—</div>
+                            </div>
+
+                              <div class="col-md-4">
+                                <small class="text-muted">Room Type</small>
+                                <div class="fw-semibold" id="show_room_type">—</div>
+                            </div>
+
+                              <div class="col-md-4">
+                                <small class="text-muted">Building</small>
+                                <div class="fw-semibold" id="show_building">—</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                           
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <small class="text-muted">Day</small>
+                                <div class="fw-semibold" id="show_day">—</div>
+                            </div>                          
+
+                            <div class="col-md-4">
+                                <small class="text-muted ">Start Time</small>
+                                <div class="fw-semibold" id="show_start_time">—</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <small class="text-muted">End Time</small>
+                                <div class="fw-semibold" id="show_end_time">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer d-flex justify-content-between">
+                  
+                  <a href='#' id="class_offer_card" class="btn btn-primary" style="cursor:pointer;">
+                     Go to Class Offering
+                </a>
+
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Close
+                </button>
             </div>
 
         </div>
     </div>
-</main> -->
+</div>
 
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js'></script>
 
-<script>
-    $(document).ready(function() {
-        $('#scheduleTable').DataTable({
-            pageLength: 10,
-            lengthMenu: [10, 20, 30, 40],
-        });
-    });
-</script>
-
-<script>
-    const BASE_URL = "<?= BASE_URL ?>";
-</script>
-<script src="<?= BASE_URL ?>/js/calendar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.1/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script> const BASE_URL = "<?php echo BASE_URL ?>" </script>
 <script src="<?= BASE_URL ?>/js/schedule.js"></script>
 
-<?php require __DIR__ . '/addScheduleModal.php'; ?>
-<?php require __DIR__ . '/scheduleEditModal.php'; ?>
-<?php require __DIR__ . '/scheduleViewModal.php'; ?>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

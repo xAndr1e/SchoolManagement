@@ -40,11 +40,33 @@ class BallisticMonitoringController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $monitoring = new BalMonitoring();
 
-        $monitoring->delete($id);
+        $rows = $monitoring->getInactive();
+
+        require_once __DIR__ . '/../views/monitoring/crim/ballistic/balMonInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $monitoring = new BalMonitoring();
+
+        $monitoring->deactivate($id);
+
+        header("Location: " . BASE_URL . "/ballistic-monitoring");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $monitoring = new BalMonitoring();
+
+        $monitoring->activate($id);
 
         header("Location: " . BASE_URL . "/ballistic-monitoring");
         exit;

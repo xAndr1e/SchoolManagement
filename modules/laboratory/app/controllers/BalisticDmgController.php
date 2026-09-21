@@ -40,11 +40,33 @@ class BalisticDmgController
         exit;
     }
 
-    public function delete($id)
+    //inactive records
+    public function inactive()
     {
         $damage = new BalDamage();
 
-        $damage->delete($id);
+        $rows = $damage->getInactive();
+
+        require_once __DIR__ . '/../views/damages/crim/balistic/balInactive.php';
+    }
+
+    //deactivate a record
+    public function deactivate($id)
+    {
+        $damage = new BalDamage();
+
+        $damage->deactivate($id);
+
+        header("Location: " . BASE_URL . "/balistic-damage");
+        exit;
+    }
+
+    //activate a record
+    public function activate($id)
+    {
+        $damage = new BalDamage();
+
+        $damage->activate($id);
 
         header("Location: " . BASE_URL . "/balistic-damage");
         exit;

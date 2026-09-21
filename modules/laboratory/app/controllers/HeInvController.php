@@ -40,14 +40,35 @@ class HeInvController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
-        $inventory = new heInventory();
+        $inventory = new HeInventory();
 
-        $inventory->delete($id);
+        $rows = $inventory->getInactive();
+
+        require_once __DIR__ . '/../views/inventories/home-eco/heInvInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $inventory = new HeInventory();
+
+        $inventory->deactivate($id);
 
         header("Location: " . BASE_URL . "/he-inventory");
         exit;
     }
-    
+
+    // Activate a record
+    public function activate($id)
+    {
+        $inventory = new HeInventory();
+
+        $inventory->activate($id);
+
+        header("Location: " . BASE_URL . "/he-inventory");
+        exit;
+    }
 }

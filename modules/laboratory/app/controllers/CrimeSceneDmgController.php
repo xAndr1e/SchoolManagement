@@ -40,15 +40,36 @@ class CrimeSceneDmgController
         exit;
     }
 
-    public function delete($id)
+
+    //inactive records
+    public function inactive()
     {
         $damage = new CsDamage();
 
-        $damage->delete($id);
+        $rows = $damage->getInactive();
+
+        require_once __DIR__ . '/../views/damages/crim/crime-scene/csInactive.php';
+    }
+
+    //deactivate a record
+    public function deactivate($id)
+    {
+        $damage = new CsDamage();
+
+        $damage->deactivate($id);
+
+        header("Location: " . BASE_URL . "/crime-scene-damage");
+        exit;
+    }
+
+    //activate a record
+    public function activate($id)
+    {
+        $damage = new CsDamage();
+
+        $damage->activate($id);
 
         header("Location: " . BASE_URL . "/crime-scene-damage");
         exit;
     }
 }
-
-

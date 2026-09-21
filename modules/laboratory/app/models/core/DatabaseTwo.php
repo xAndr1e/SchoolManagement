@@ -8,7 +8,7 @@ class DatabaseTwo
     private function __construct()
     {
         $this->conn = new PDO(
-            "mysql:host=localhost;dbname=sms;charset=utf8",
+            "mysql:host=localhost;dbname=;charset=utf8",
             "root",
             "",
             [

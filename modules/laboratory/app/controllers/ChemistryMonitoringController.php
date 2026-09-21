@@ -40,11 +40,33 @@ class ChemistryMonitoringController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $monitoring = new ChemMonitoring();
 
-        $monitoring->delete($id);
+        $rows = $monitoring->getInactive();
+
+        require_once __DIR__ . '/../views/monitoring/crim/chemistry/chemMonInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $monitoring = new ChemMonitoring();
+
+        $monitoring->deactivate($id);
+
+        header("Location: " . BASE_URL . "/chemistry-monitoring");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $monitoring = new ChemMonitoring();
+
+        $monitoring->activate($id);
 
         header("Location: " . BASE_URL . "/chemistry-monitoring");
         exit;

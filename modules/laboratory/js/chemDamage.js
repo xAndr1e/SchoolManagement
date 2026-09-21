@@ -58,17 +58,16 @@ document.addEventListener("click", function (e) {
     
 });
 
-//delete
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".deleteBtn");
+//deactivate
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.deactivateBtn');
 
-  if (!btn) return;
+    if (!btn) return;
 
-  e.preventDefault();
+    const id = btn.dataset.id;
 
-  let id = btn.dataset.id;
-
-  if (confirm("Are you sure you want to delete this inventory?")) {
-    window.location.href = `${BASE_URL}/chemistry-damage/delete/${id}`;
-  }
+    if (confirm('Are you sure you want to deactivate this inventory?')) {
+        window.location.href =
+            `${BASE_URL}/chemistry-damage/deactivate/${id}`;
+    }
 });

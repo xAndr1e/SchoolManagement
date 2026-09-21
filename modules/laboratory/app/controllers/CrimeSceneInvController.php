@@ -40,14 +40,35 @@ class CrimeSceneInvController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $inventory = new CsInventory();
 
-        $inventory->delete($id);
+        $rows = $inventory->getInactive();
+
+        require_once __DIR__ . '/../views/inventories/crim-lab/crime-scene/csInvInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $inventory = new CsInventory();
+
+        $inventory->deactivate($id);
 
         header("Location: " . BASE_URL . "/crime-scene-inventory");
         exit;
     }
-    
+
+    // Activate a record
+    public function activate($id)
+    {
+        $inventory = new CsInventory();
+
+        $inventory->activate($id);
+
+        header("Location: " . BASE_URL . "/crime-scene-inventory");
+        exit;
+    }
 }

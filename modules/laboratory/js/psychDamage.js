@@ -58,17 +58,17 @@ document.addEventListener("click", function (e) {
     
 });
 
-//delete
+// DELETE PSYCHOLOGY DAMAGE
 document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".deleteBtn");
+    const btn = e.target.closest(".deleteBtn");
 
-  if (!btn) return;
+    if (!btn) return;
 
-  e.preventDefault();
+    e.preventDefault();
 
-  let id = btn.dataset.id;
+    const id = btn.dataset.id;
 
-  if (confirm("Are you sure you want to delete this inventory?")) {
-    window.location.href = `${BASE_URL}/it_damage/delete/${id}`;
-  }
+    if (confirm("Are you sure you want to delete this damage report?")) {
+        window.location.href = `${BASE_URL}/psycho-damage/delete/${id}`;
+    }
 });

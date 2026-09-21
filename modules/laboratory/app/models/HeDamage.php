@@ -11,10 +11,17 @@ class HeDamage
         $this->db = Database::connect();
     }
 
+    //get all active records
     public function getAll()
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table}");
+        $stmt = $this->db->prepare(
+            "SELECT * FROM {$this->table}
+         WHERE is_active = 1
+         ORDER BY id DESC"
+        );
+
         $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -76,12 +83,45 @@ class HeDamage
         ]);
     }
 
-    public function delete($id)
+    //inactive records
+    public function getInactive()
     {
-        $stmt=$this->db->prepare("DELETE FROM {$this->table} WHERE id=:id");
+        $stmt = $this->db->prepare(
+            "SELECT * FROM {$this->table}
+         WHERE is_active = 0
+         ORDER BY id DESC"
+        );
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Deactivate a record (soft delete)
+    public function deactivate($id)
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE {$this->table}
+         SET is_active = 0
+         WHERE id = :id"
+        );
 
         return $stmt->execute([
-            ':id'=>$id
+            ':id' => $id
+        ]);
+    }
+
+    // Activate a record by setting is_active to 1
+    public function activate($id)
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE {$this->table}
+         SET is_active = 1
+         WHERE id = :id"
+        );
+
+        return $stmt->execute([
+            ':id' => $id
         ]);
     }
 }

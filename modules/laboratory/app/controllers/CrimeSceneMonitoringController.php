@@ -40,11 +40,33 @@ class CrimeSceneMonitoringController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $monitoring = new CsMonitoring();
 
-        $monitoring->delete($id);
+        $rows = $monitoring->getInactive();
+
+        require_once __DIR__ . '/../views/monitoring/crim/crimescene/csMonInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $monitoring = new CsMonitoring();
+
+        $monitoring->deactivate($id);
+
+        header("Location: " . BASE_URL . "/crime-scene-monitoring");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $monitoring = new CsMonitoring();
+
+        $monitoring->activate($id);
 
         header("Location: " . BASE_URL . "/crime-scene-monitoring");
         exit;

@@ -48,7 +48,7 @@
                     <div id="collapsePhysics" class="collapse ps-3" data-bs-parent="#collapseUtilities">
                         <a href="<?= BASE_URL ?>/physics-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'physics-inventory' ? "active" :  "" ?>">Inventory</a>
                         <a href="<?= BASE_URL ?>/physics-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'physics-damage' ? "active" :  "" ?>">Damage</a>
-                        <a href="<?= BASE_URL ?>/borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'borrow' ? "active" :  "" ?>">Borrow</a>
+                        <!-- <a href="<?= BASE_URL ?>/borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'borrow' ? "active" :  "" ?>">Borrow</a> -->
                         <a href="<?= BASE_URL ?>/phys-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'phys-monitoring' ? "active" :  "" ?>">Monitoring</a>
                     </div>
 
@@ -65,7 +65,7 @@
                     <div class="collapse ps-3" id="collapsePsychology" data-bs-parent="#collapseUtilities">
                         <a href="<?= BASE_URL ?>/psycho-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'psycho-inventory' ? "active" :  "" ?>">Inventory</a>
                         <a href="<?= BASE_URL ?>/psycho-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'psycho-damage' ? "active" :  "" ?>">Damage</a>
-                        <a href="<?= BASE_URL ?>/psy_borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'psy_borrow' ? "active" :  "" ?>">Borrow</a>
+                        <!-- <a href="<?= BASE_URL ?>/psy_borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'psy_borrow' ? "active" :  "" ?>">Borrow</a> -->
                         <a href="<?= BASE_URL ?>/psy_monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'psy_monitoring' ? "active" :  "" ?>">Monitoring</a>
                     </div>
 
@@ -128,7 +128,7 @@
                                 <div id="collapseCrim1" class="collapse ps-3" data-bs-parent="#crimLabAccordion">
                                     <a href="<?= BASE_URL ?>/fingerprint-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'fingerprint_inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/fingerprint-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'fingerprint_damage' ? "active" :  "" ?>">Damage</a>
-                                    <a href="<?= BASE_URL ?>/fingerprint-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'fingerprintborrow' ? "active" :  "" ?>">Borrow</a>
+                                    <!-- <a href="<?= BASE_URL ?>/fingerprint-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'fingerprintborrow' ? "active" :  "" ?>">Borrow</a> -->
                                     <a href="<?= BASE_URL ?>/fingerprint-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'fingerprint_monitoring' ? "active" :  "" ?>">Monitoring</a>
                                 </div>
                             </div>
@@ -145,7 +145,7 @@
                                 <div id="collapseCrim2" class="collapse ps-3" data-bs-parent="#crimLabAccordion">
                                     <a href="<?= BASE_URL ?>/crime-scene-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'crime_scene_inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/crime-scene-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'crime_scene_damage' ? "active" :  "" ?>">Damage</a>
-                                    <a href="<?= BASE_URL ?>/crimescene-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'crimescene_borrow' ? "active" :  "" ?>">Borrow</a>
+                                    <!-- <a href="<?= BASE_URL ?>/crimescene-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'crimescene_borrow' ? "active" :  "" ?>">Borrow</a> -->
                                     <a href="<?= BASE_URL ?>/crime-scene-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'crime_scene_monitoring' ? "active" :  "" ?>">Monitoring</a>
                                 </div>
                             </div>
@@ -162,7 +162,7 @@
                                 <div id="collapseCrim3" class="collapse ps-3" data-bs-parent="#crimLabAccordion">
                                     <a href="<?= BASE_URL ?>/balistic-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'balistic_inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/balistic-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'balistic_damage' ? "active" :  "" ?>">Damage</a>
-                                    <a href="<?= BASE_URL ?>/balistic-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'balistic_borrow' ? "active" :  "" ?>">Borrow</a>
+                                    <!-- <a href="<?= BASE_URL ?>/balistic-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'balistic_borrow' ? "active" :  "" ?>">Borrow</a> -->
                                     <a href="<?= BASE_URL ?>/ballistic-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'ballistic_monitoring' ? "active" :  "" ?>">Monitoring</a>
                                 </div>
                             </div>
@@ -179,7 +179,7 @@
                                 <div id="collapseCrim4" class="collapse ps-3" data-bs-parent="#crimLabAccordion">
                                     <a href="<?= BASE_URL ?>/questioned-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'questioned_inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/question-document-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'question_document_damage' ? "active" :  "" ?>">Damage</a>
-                                    <a href="<?= BASE_URL ?>/questiondocument-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'questiondocument_borrow' ? "active" :  "" ?>">Borrow</a>
+                                    <!-- <a href="<?= BASE_URL ?>/questiondocument-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'questiondocument_borrow' ? "active" :  "" ?>">Borrow</a> -->
                                      <a href="<?= BASE_URL ?>/question-document-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'question_document_monitoring' ? "active" :  "" ?>">Monitoring</a>
                                 </div>
                             </div>
@@ -196,7 +196,7 @@
                                 <div id="collapseCrim5" class="collapse ps-3" data-bs-parent="#crimLabAccordion">
                                     <a href="<?= BASE_URL ?>/chemestry-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'chemestry_inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/chemistry-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'chemistry_damage' ? "active" :  "" ?>">Damage</a>
-                                    <a href="<?= BASE_URL ?>/chemistry-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'chemistry_borrow' ? "active" :  "" ?>">Borrow</a>
+                                    <!-- <a href="<?= BASE_URL ?>/chemistry-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'chemistry_borrow' ? "active" :  "" ?>">Borrow</a> -->
                                     <a href="<?= BASE_URL ?>/chemistry-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'chemistry_monitoring' ? "active" :  "" ?>">Monitoring</a>
                                 </div>
                             </div>
@@ -213,7 +213,7 @@
                                 <div id="collapseCrim6" class="collapse ps-3" data-bs-parent="#crimLabAccordion">
                                     <a href="<?= BASE_URL ?>/defense-inventory" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'defense_inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/defense-tactics-damage" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'defense_tactics_damage' ? "active" :  "" ?>">Damage</a>
-                                    <a href="<?= BASE_URL ?>/defense-tactics-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'defense_tactics_borrow' ? "active" :  "" ?>">Borrow</a>
+                                    <!-- <a href="<?= BASE_URL ?>/defense-tactics-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'defense_tactics_borrow' ? "active" :  "" ?>">Borrow</a> -->
                                     <a href="<?= BASE_URL ?>/defense-tactics-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'defense_tactics_monitoring' ? "active" :  "" ?>">Monitoring</a>
                                 </div>
                             </div>
@@ -292,7 +292,7 @@
                                 <div id="collapseIT2"
                                     class="collapse ps-3"
                                     data-bs-parent="#itLabAccordion">
-                                    <a href="<?= BASE_URL ?>/lab2-inventory" class="dropdown-item small menu-link text-white <?php echo CURRENT_URI == 'lab2-inventory' ? "active" :  "" ?>">Inventory</a>
+                                    <a href="<?= BASE_URL ?>/it-lab2-inventory" class="dropdown-item small menu-link text-white <?php echo CURRENT_URI == 'it-lab2-inventory' ? "active" :  "" ?>">Inventory</a>
                                     <a href="<?= BASE_URL ?>/lab2-damage" class="dropdown-item small menu-link text-white <?php echo CURRENT_URI == 'lab2-damage' ? "active" :  "" ?>">Damage</a>
                                     <a href="<?= BASE_URL ?>/lab2-borrow" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'lab2-borrow' ? "active" :  "" ?>">Borrow</a>
                                     <a href="<?= BASE_URL ?>/lab2-monitoring" class="dropdown-item menu-link small text-white <?php echo CURRENT_URI == 'lab2-monitoring' ? "active" :  "" ?>">Monitoring</a>

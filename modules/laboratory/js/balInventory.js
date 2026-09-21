@@ -61,16 +61,16 @@ document.addEventListener("click", function (e) {
 });
 
 //delete
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".deleteBtn");
+// document.addEventListener("click", function (e) {
+//   const btn = e.target.closest(".deleteBtn");
 
-  if (!btn) return;
+//   if (!btn) return;
 
-  e.preventDefault();
+//   e.preventDefault();
 
-  let id = btn.dataset.id;
+//   let id = btn.dataset.id;
 
-  if (confirm("Are you sure you want to delete this inventory?")) {
-    window.location.href = `${BASE_URL}/balistic-inventory/delete/${id}`;
-  }
-});
+//   if (confirm("Are you sure you want to delete this inventory?")) {
+//     window.location.href = `${BASE_URL}/balistic-inventory/delete/${id}`;
+//   }
+// });

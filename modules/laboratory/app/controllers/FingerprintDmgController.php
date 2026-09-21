@@ -40,16 +40,35 @@ class FingerprintDmgController
         exit;
     }
 
-    public function delete($id)
+    //inactive records
+    public function inactive()
     {
         $damage = new FpDamage();
 
-        $damage->delete($id);
+        $rows = $damage->getInactive();
+
+        require_once __DIR__ . '/../views/damages/crim/fingerprint/fpInactive.php';
+    }
+
+    //deactivate a record
+    public function deactivate($id)
+    {
+        $damage = new FpDamage();
+
+        $damage->deactivate($id);
+
+        header("Location: " . BASE_URL . "/fingerprint-damage");
+        exit;
+    }
+
+    //activate a record
+    public function activate($id)
+    {
+        $damage = new FpDamage();
+
+        $damage->activate($id);
 
         header("Location: " . BASE_URL . "/fingerprint-damage");
         exit;
     }
 }
-
-
-

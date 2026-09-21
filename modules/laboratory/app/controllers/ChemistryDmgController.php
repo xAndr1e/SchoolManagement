@@ -41,11 +41,33 @@ class ChemistryDmgController
         exit;
     }
 
-    public function delete($id)
+    //inactive records
+    public function inactive()
     {
         $damage = new ChemDamage();
 
-        $damage->delete($id);
+        $rows = $damage->getInactive();
+
+        require_once __DIR__ . '/../views/damages/crim/chemistry/chemInactive.php';
+    }
+
+    //deactivate a record
+    public function deactivate($id)
+    {
+        $damage = new ChemDamage();
+
+        $damage->deactivate($id);
+
+        header("Location: " . BASE_URL . "/chemistry-damage");
+        exit;
+    }
+
+    //activate a record
+    public function activate($id)
+    {
+        $damage = new ChemDamage();
+
+        $damage->activate($id);
 
         header("Location: " . BASE_URL . "/chemistry-damage");
         exit;

@@ -40,11 +40,33 @@ class Itlab2DamageController
         exit;
     }
 
-    public function delete($id)
+    //inactive records
+    public function inactive()
     {
         $damage = new Lab2Damage();
 
-        $damage->delete($id);
+        $rows = $damage->getInactive();
+
+        require_once __DIR__ . '/../views/damages/it-lab/lab2/lab2Inactive.php';
+    }
+
+    //deactivate a record
+    public function deactivate($id)
+    {
+        $damage = new Lab2Damage();
+
+        $damage->deactivate($id);
+
+        header("Location: " . BASE_URL . "/lab2-damage");
+        exit;
+    }
+
+    //activate a record
+    public function activate($id)
+    {
+        $damage = new Lab2Damage();
+
+        $damage->activate($id);
 
         header("Location: " . BASE_URL . "/lab2-damage");
         exit;

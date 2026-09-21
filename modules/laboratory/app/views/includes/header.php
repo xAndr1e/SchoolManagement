@@ -31,14 +31,45 @@
 </head>
 
 <body>
-    <header>
+    <header class="d-flex justify-content-between align-items-center p-3 border-bottom small fw-bold text-secondary">
         <div class="hamburger">
             <span></span>
             <span></span>
             <span></span>
         </div>
+
+        <div class="header-status">
+
+            <span id="semesterLabel">
+                <?= $semester['name'] ?? ''; ?>
+            </span>
+
+
+            <span id="live-clock"></span>
+        </div>
     </header>
 
 
+    <script>
+        function updateClock() {
+            const now = new Date();
+
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+
+            document.getElementById("live-clock").textContent =
+                now.toLocaleString('en-US', options);
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
 
     <script src="js/sidebar.js"></script>

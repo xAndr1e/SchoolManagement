@@ -40,11 +40,33 @@ class PhysMonitoringController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $monitoring = new PhysMonitoring();
 
-        $monitoring->delete($id);
+        $rows = $monitoring->getInactive();
+
+        require_once __DIR__ . '/../views/monitoring/physics/physMonInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $monitoring = new PhysMonitoring();
+
+        $monitoring->deactivate($id);
+
+        header("Location: " . BASE_URL . "/phys-monitoring");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $monitoring = new PhysMonitoring();
+
+        $monitoring->activate($id);
 
         header("Location: " . BASE_URL . "/phys-monitoring");
         exit;

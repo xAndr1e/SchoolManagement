@@ -2,9 +2,11 @@
 
 require_once __DIR__ . '/../models/ScheduleModel.php';
 
+
 class ScheduleController
 {
     private $model;
+
 
     public function __construct()
     {
@@ -14,9 +16,18 @@ class ScheduleController
     // DISPLAY
     public function index()
     {
-        $schedules = $this->model->getAll();
+
+        $sections = $this->model->allSectionsAvailableSy();
 
         require __DIR__ . '/../views/schedule/schedule.php';
+    }
+
+
+    public function allSchedules()
+    {
+        $schedules = $this->model->allSchedules();
+        header('Content-Type: application/json');
+        echo json_encode($schedules);
     }
 
     // GET ONE

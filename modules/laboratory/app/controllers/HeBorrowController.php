@@ -53,12 +53,33 @@ class HeBorrowController
     }
 
 
-    // DELETE
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $borrow = new HeBorrow();
 
-        $borrow->delete($id);
+        $rows = $borrow->getInactive();
+
+        require_once __DIR__ . '/../views/barrow/he/heBrwInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $borrow = new HeBorrow();
+
+        $borrow->deactivate($id);
+
+        header("Location: " . BASE_URL . "/he_borrow");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $borrow = new HeBorrow();
+
+        $borrow->activate($id);
 
         header("Location: " . BASE_URL . "/he_borrow");
         exit;

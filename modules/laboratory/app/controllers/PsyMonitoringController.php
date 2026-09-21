@@ -40,11 +40,33 @@ class PsyMonitoringController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $monitoring = new PsyMonitoring();
 
-        $monitoring->delete($id);
+        $rows = $monitoring->getInactive();
+
+        require_once __DIR__ . '/../views/monitoring/psychology/psyMonInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $monitoring = new PsyMonitoring();
+
+        $monitoring->deactivate($id);
+
+        header("Location: " . BASE_URL . "/psy_monitoring");
+        exit;
+    }
+
+    // Activate a record
+    public function activate($id)
+    {
+        $monitoring = new PsyMonitoring();
+
+        $monitoring->activate($id);
 
         header("Location: " . BASE_URL . "/psy_monitoring");
         exit;

@@ -164,7 +164,7 @@
                             <div class="col-xl-8 col-lg-7">
                                 <div class="card shadow mb-4">
                                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                        <h6 class="m-0 fw-bold text-primary">Overview</h6>
+                                        <h6 class="m-0 fw-bold text-primary">Equipment Status</h6>
 
                                         <div class="dropdown">
                                             <a class="btn btn-sm btn-light" data-bs-toggle="dropdown"
@@ -186,8 +186,90 @@
                                         </div>
                                     </div>
 
-                                    <div class="card-body">
-                                        <canvas id="myAreaChart"></canvas>
+                                    <div class="card shadow-sm border-0 mb-4">
+
+                                        <div class="card-body">
+
+                                            <div class="row text-center">
+
+                                                <?php
+                                                $statusCounts = [
+                                                    'working' => 0,
+                                                    'damage' => 0,
+                                                    'under inspection' => 0,
+                                                    'unavailable' => 0
+                                                ];
+
+                                                foreach ($equipmentStatus as $status) {
+
+                                                    $statusName = strtolower(trim($status['status']));
+
+                                                    if (isset($statusCounts[$statusName])) {
+                                                        $statusCounts[$statusName] =
+                                                            $status['total'];
+                                                    }
+                                                }
+                                                ?>
+
+                                                <!-- Working -->
+                                                <div class="col-md-3 mb-3">
+
+                                                    <h3 class="text-success">
+                                                        <?= $statusCounts['working'] ?>
+                                                    </h3>
+
+                                                    <span class="badge bg-success">
+                                                        Working
+                                                    </span>
+
+                                                </div>
+
+
+                                                <!-- Damage -->
+                                                <div class="col-md-3 mb-3">
+
+                                                    <h3 class="text-danger">
+                                                        <?= $statusCounts['damage'] ?>
+                                                    </h3>
+
+                                                    <span class="badge bg-danger">
+                                                        Damage
+                                                    </span>
+
+                                                </div>
+
+
+                                                <!-- Under Inspection -->
+                                                <div class="col-md-3 mb-3">
+
+                                                    <h3 class="text-warning">
+                                                        <?= $statusCounts['under inspection'] ?>
+                                                    </h3>
+
+                                                    <span class="badge bg-warning text-dark">
+                                                        Under Inspection
+                                                    </span>
+
+                                                </div>
+
+
+                                                <!-- Unavailable -->
+                                                <div class="col-md-3 mb-3">
+
+                                                    <h3 class="text-secondary">
+                                                        <?= $statusCounts['unavailable'] ?>
+                                                    </h3>
+
+                                                    <span class="badge bg-secondary">
+                                                        Unavailable
+                                                    </span>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -421,22 +503,17 @@
         });
     });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        gsap.fromTo(".dashboard-card",
-            {
-                x: (i) => i % 2 === 0 ? 100 : 100,
-                opacity: 0
-            },
-            {
-                x: 0,
-                opacity: 3,
-                duration: 1,
-                stagger: 0.15,
-                ease: "power3.out"
-            }
-        );
+    document.addEventListener("DOMContentLoaded", function() {
+        gsap.fromTo(".dashboard-card", {
+            x: (i) => i % 2 === 0 ? 100 : 100,
+            opacity: 0
+        }, {
+            x: 0,
+            opacity: 3,
+            duration: 1,
+            stagger: 0.15,
+            ease: "power3.out"
+        });
     });
-
-
 </script>
 <?php include 'includes/footer.php'; ?>

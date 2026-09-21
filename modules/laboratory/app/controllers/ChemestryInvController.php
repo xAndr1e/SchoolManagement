@@ -40,16 +40,35 @@ class ChemestryInvController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $inventory = new ChemInventory();
 
-        $inventory->delete($id);
+        $rows = $inventory->getInactive();
+
+        require_once __DIR__ . '/../views/inventories/crim-lab/chemestry/chemInvInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $inventory = new ChemInventory();
+
+        $inventory->deactivate($id);
 
         header("Location: " . BASE_URL . "/chemestry-inventory");
         exit;
     }
-    
+
+    // Activate a record
+    public function activate($id)
+    {
+        $inventory = new ChemInventory();
+
+        $inventory->activate($id);
+
+        header("Location: " . BASE_URL . "/chemestry-inventory");
+        exit;
+    }
 }
-
-

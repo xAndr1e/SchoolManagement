@@ -40,14 +40,35 @@ class ItLab2InventoryController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
-        $inventory = new Itlab2Inventory();
+        $inventory = new ItLab2Inventory();
 
-        $inventory->delete($id);
+        $rows = $inventory->getInactive();
+
+        require_once __DIR__ . '/../views/inventories/it-lab/lab2/lab2InvInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $inventory = new ItLab2Inventory();
+
+        $inventory->deactivate($id);
 
         header("Location: " . BASE_URL . "/it-lab2-inventory");
         exit;
     }
-    
+
+    // Activate a record
+    public function activate($id)
+    {
+        $inventory = new ItLab2Inventory();
+
+        $inventory->activate($id);
+
+        header("Location: " . BASE_URL . "/it-lab2-inventory");
+        exit;
+    }
 }

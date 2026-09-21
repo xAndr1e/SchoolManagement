@@ -40,16 +40,35 @@ class QuestionedInvController
         exit;
     }
 
-    public function delete($id)
+    // Inactive records
+    public function inactive()
     {
         $inventory = new QdInventory();
 
-        $inventory->delete($id);
+        $rows = $inventory->getInactive();
+
+        require_once __DIR__ . '/../views/inventories/crim-lab/questioned-lab/qdInvInactive.php';
+    }
+
+    // Deactivate a record
+    public function deactivate($id)
+    {
+        $inventory = new QdInventory();
+
+        $inventory->deactivate($id);
 
         header("Location: " . BASE_URL . "/questioned-inventory");
         exit;
     }
-    
+
+    // Activate a record
+    public function activate($id)
+    {
+        $inventory = new QdInventory();
+
+        $inventory->activate($id);
+
+        header("Location: " . BASE_URL . "/questioned-inventory");
+        exit;
+    }
 }
-
-

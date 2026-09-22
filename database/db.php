@@ -12,7 +12,7 @@ class Database {
     public function __construct() {
         // Look for Railway's environment variables first, default to local if missing
         $this->host = getenv('DB_HOST') ?: "localhost";
-        $this->port = getenv('DB_PORT') ?: "3306"; // Default MySQL port
+        $this->port = getenv('DB_PORT') ?: "3307"; // Default MySQL port
         $this->db   = getenv('DB_DATABASE') ?: "ccms_sms";
         $this->user = getenv('DB_USER') ?: "ccms_sms";
         $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "nhj@MWMTnf0y%tTn";

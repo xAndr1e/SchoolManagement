@@ -169,7 +169,7 @@ if (actionParam && ['view', 'add', 'proctoring'].includes(actionParam)) {
     if (matchingTab) matchingTab.classList.add('active');
 }
 
-const proctorApi = '/sms/modules/college-coor/api/exam_proctoring.php';
+const proctorApi = '/modules/college-coor/api/exam_proctoring.php';
 let proctorExamSchedules = [];
 let allProctorExamSchedules = [];
 let proctorFaculty = [];
@@ -953,7 +953,7 @@ function deleteSchedule(scheduleId) {
     const formData = new FormData();
     formData.append('schedule_id', scheduleId);
 
-    fetch('/sms/modules/college-coor/api/delete_schedule.php', {
+    fetch('/modules/college-coor/api/delete_schedule.php', {
         method: 'POST',
         body: formData
     })

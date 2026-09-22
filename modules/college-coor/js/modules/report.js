@@ -1,4 +1,4 @@
-const ReportController = '/sms/modules/school-directress/controllers/ReportController.php';
+const ReportController = '/modules/school-directress/controllers/ReportController.php';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initReportModule() {
@@ -30,7 +30,7 @@ function initReportModule() {
                 const json = await res.json();
 
                 if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-                    setTimeout(() => window.location.href = '/sms/index.php', 1500);
+                    setTimeout(() => window.location.href = '/index.php', 1500);
                     return;
                 }
 
@@ -107,7 +107,7 @@ async function loadReports() {
                 <td>${esc(row.submitted_at)}</td>
                 <td>
                     ${row.file_path
-                        ? `<a style="color:var(--color2);text-decoration:none; border:1px solid var(--color2); padding:5px 10px; border-radius:4px;" href="/sms/${esc(row.file_path)}" target="_blank">View</a>`
+                        ? `<a style="color:var(--color2);text-decoration:none; border:1px solid var(--color2); padding:5px 10px; border-radius:4px;" href="/${esc(row.file_path)}" target="_blank">View</a>`
                         : '<span class="muted">No file</span>'
                     }
                 </td>

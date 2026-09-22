@@ -1,4 +1,4 @@
-const ApprovalController = '/sms/modules/school-directress/controllers/ApprovalController.php';
+const ApprovalController = '/modules/school-directress/controllers/ApprovalController.php';
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initApprovalModule() {
@@ -28,7 +28,7 @@ function initApprovalModule() {
                     const json = await res.json();
 
                     if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-                        setTimeout(() => window.location.href = '/sms/index.php', 1500);
+                        setTimeout(() => window.location.href = '/index.php', 1500);
                         return;
                     }
 
@@ -132,7 +132,7 @@ async function loadApprovalQueue() {
                 </td>
                 <td>
                     ${row.file_path
-                        ? `<a style="color:var(--color2);text-decoration:none;border:1px solid var(--color4);padding:4px 8px;border-radius:4px;" href="/sms/${esc(row.file_path)}" target="_blank">View</a>`
+                        ? `<a style="color:var(--color2);text-decoration:none;border:1px solid var(--color4);padding:4px 8px;border-radius:4px;" href="/${esc(row.file_path)}" target="_blank">View</a>`
                         : '<span class="muted">No file</span>'
                     }
                 </td>
@@ -158,7 +158,7 @@ async function sendDecision(action, approvalId = '') {
         const json = await res.json();
 
         if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-            setTimeout(() => window.location.href = '/sms/index.php', 1500);
+            setTimeout(() => window.location.href = '/index.php', 1500);
             return;
         }
 

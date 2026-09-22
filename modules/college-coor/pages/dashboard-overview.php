@@ -438,5 +438,5 @@ window.chartData = <?php echo $chartDataJson; ?>;
 window.serverTimestamp = <?php echo json_encode($serverTimestampIso); ?>;
 window.allActivities = <?php echo json_encode($recentActivities); ?>;
 </script>
-<script src="js/modules/dashboard-overview.js"></script>
+<script src="/modules/dashboard-overview.js"></script>
 

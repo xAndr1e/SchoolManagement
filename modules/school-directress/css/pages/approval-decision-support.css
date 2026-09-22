@@ -60,6 +60,7 @@ School Directress — Approval & Decision Support
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    margin-top: 0.8rem;
 }
 
 /* ── File Input ────────────────────────────────────────── */

@@ -216,6 +216,8 @@
     font-weight: 600;
     padding: 0.2rem 0.6rem;
     border-radius: 6px;
+    width: 4rem;
+    text-align: center;
 }
 
 .sm-mono {

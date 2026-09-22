@@ -4,7 +4,7 @@
  * StudentMonitoring
  *
  * Handles all data access for the Student Monitoring page (School Directress
- * module). Reads directly from the flat rgr_students table — no joins.
+ * module). Reads directly from enr_students and related enrollment tables.
  * Follows the same pattern as Employee.php / Announcement.php: optional
  * constructor injection, falling back to Database::getConnection().
  */
@@ -18,7 +18,7 @@ class StudentMonitoring
             $this->conn = $conn;
         } else {
             require_once __DIR__ . '/../../../database/db.php';
-            $database   = new Database();
+            $database = new Database();
             $this->conn = $database->getConnection();
         }
     }
@@ -32,55 +32,69 @@ class StudentMonitoring
     {
         try {
             $students = $this->getStudents();
-            $courses  = $this->getDistinctCourses();
+            $courses = $this->getDistinctCourses();
 
             return [
                 'students' => $students,
-                'courses'  => $courses,
-                'stats'    => $this->computeStats($students),
-                'error'    => null,
+                'courses' => $courses,
+                'stats' => $this->computeStats($students),
+                'error' => null,
             ];
         } catch (PDOException $e) {
             return [
                 'students' => [],
-                'courses'  => [],
-                'stats'    => $this->computeStats([]),
-                'error'    => $e->getMessage(),
+                'courses' => [],
+                'stats' => $this->computeStats([]),
+                'error' => $e->getMessage(),
             ];
         }
     }
 
-    public function getStudents() : array
+    public function getStudents(): array
     {
         $stmt = $this->conn->query("
             SELECT
-                student_number, first_name, middle_name, last_name,
-                gender, birth_date, course, year_level, section,
-                email, phone, address, academic_status,
-                graduated_at, created_at, updated_at
-            FROM rgr_students
-            ORDER BY created_at DESC
+                es.student_number,
+                ea.first_name,
+                ea.middle_name,
+                ea.surname AS last_name,
+                ea.sex AS gender,
+                ea.date_of_birth AS birth_date,
+                rc.code AS course_code,
+                rc.name AS course,
+                es.year_level,
+                es.section_id AS section,
+                ea.email,
+                ea.contact_number AS contact,
+                ea.address_complete AS address,
+                es.enrollment_status AS academic_status,
+                es.enrolled_at
+            FROM enr_students AS es
+            JOIN enr_applicants AS ea ON es.applicant_id = ea.applicant_id
+            JOIN rgr_courses AS rc ON es.course_id = rc.id
+            ORDER BY es.enrolled_at DESC
         ");
 
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /** No separate courses table — pull the distinct values used in rgr_students itself. */
+    /** Pulls the distinct courses currently used by enrolled students. */
     public function getDistinctCourses(): array
     {
         $stmt = $this->conn->query("
-            SELECT DISTINCT course
-            FROM rgr_students
-            WHERE course IS NOT NULL AND course != ''
-            ORDER BY course
+            SELECT DISTINCT rc.id, rc.code, rc.name
+            FROM enr_students AS es
+            JOIN rgr_courses AS rc ON es.course_id = rc.id
+            WHERE es.course_id IS NOT NULL
+            ORDER BY rc.name
         ");
 
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function computeStats(array $students): array
     {
-        $stats = ['total' => count($students), 'active' => 0, 'inactive' => 0, 'graduated' => 0];
+        $stats = ['total' => count($students), 'enrolled' => 0, 'on_leave' => 0, 'graduated' => 0, 'dropped' => 0];
 
         foreach ($students as $r) {
             $key = $r['academic_status'];
@@ -115,18 +129,19 @@ class StudentMonitoring
     public static function statusMeta(string $s): array
     {
         $map = [
-            'active'    => ['label' => 'Active',    'cls' => 's-active'],
-            'inactive'  => ['label' => 'Inactive',  'cls' => 's-inactive'],
+            'enrolled' => ['label' => 'Enrolled', 'cls' => 's-active'],
+            'on_leave' => ['label' => 'On Leave', 'cls' => 's-inactive'],
             'graduated' => ['label' => 'Graduated', 'cls' => 's-graduated'],
+            'dropped' => ['label' => 'Dropped', 'cls' => 's-default'],
         ];
 
         return $map[$s] ?? ['label' => ucfirst($s), 'cls' => 's-default'];
     }
 
-    /** year_level is stored as YEAR(4) but treated as a 1–4(-ish) standing, not a calendar year. */
+    /** year_level is stored as an integer and treated as a 1–5 standing. */
     public static function yearLabel($y): string
     {
-        $y      = (int) $y;
+        $y = (int) $y;
         $labels = ['', '1st', '2nd', '3rd', '4th', '5th'];
         if ($y < 1) {
             return '—';
@@ -135,3 +150,4 @@ class StudentMonitoring
     }
 
 }
+

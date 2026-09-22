@@ -3,11 +3,11 @@ include_once __DIR__ . '/../../../auth/session.php';
 include_once __DIR__ . '/../classes/StudentMonitoring.php';
 
 $model = new StudentMonitoring();
-$data  = $model->getDashboardData();
+$data = $model->getDashboardData();
 
 $students = $data['students'];
-$courses  = $data['courses'];
-$error    = $data['error'];
+$courses = $data['courses'];
+$error = $data['error'];
 ?>
 
 <div class="module-header">
@@ -32,15 +32,16 @@ $error    = $data['error'];
 
         <select class="sm-sel" id="smStatus">
             <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="enrolled">Enrolled</option>
+            <option value="on_leave">On Leave</option>
             <option value="graduated">Graduated</option>
+            <option value="dropped">Dropped</option>
         </select>
 
         <select class="sm-sel" id="smCourse">
             <option value="">All Courses</option>
             <?php foreach ($courses as $c): ?>
-            <option value="<?= htmlspecialchars($c) ?>"><?= htmlspecialchars($c) ?></option>
+            <option value="<?= htmlspecialchars($c['id']) ?>"><?= htmlspecialchars($c['code'] . ' - ' . $c['name']) ?></option>
             <?php endforeach; ?>
         </select>
 
@@ -78,18 +79,18 @@ $error    = $data['error'];
 
             <?php else: foreach ($students as $s):
                 $name = StudentMonitoring::fullName($s);
-                $sm   = StudentMonitoring::statusMeta($s['academic_status']);
-                $age  = StudentMonitoring::age($s['birth_date']);
-                $rid  = 'smd-' . $s['student_number'];
+                $sm = StudentMonitoring::statusMeta($s['academic_status']);
+                $age = StudentMonitoring::age($s['birth_date']);
+                $rid = 'smd-' . $s['student_number'];
             ?>
             <!-- DATA ROW -->
-            <tr 
+            <tr
                 class="sm-row"
                 data-name="<?= htmlspecialchars(strtolower($name)) ?>"
                 data-snum="<?= htmlspecialchars(strtolower((string) $s['student_number'])) ?>"
                 data-email="<?= htmlspecialchars(strtolower($s['email'] ?? '')) ?>"
                 data-status="<?= htmlspecialchars($s['academic_status']) ?>"
-                data-course="<?= htmlspecialchars($s['course'] ?? '') ?>"
+                data-course="<?= htmlspecialchars($s['course_code'] ?? '') ?>"
                 data-year="<?= (int) $s['year_level'] ?>"
                 data-sex="<?= htmlspecialchars($s['gender'] ?? '') ?>"
                 onclick="smToggle(this,'<?= $rid ?>')"
@@ -100,7 +101,7 @@ $error    = $data['error'];
 
                 <td>
                     <div class="sm-student">
-                        <div class="sm-avatar <?= $s['gender'] === 'female' ? 'sm-avatar--f' : '' ?>"><?= StudentMonitoring::initials($s) ?></div>
+                        <div class="sm-avatar <?= $s['gender'] === 'Female' ? 'sm-avatar--f' : '' ?>"><?= StudentMonitoring::initials($s) ?></div>
                         <div>
                             <div class="sm-name"><?= htmlspecialchars($name) ?></div>
                             <div class="sm-meta"><?= htmlspecialchars(ucfirst($s['gender'] ?? '—')) ?> · <?= htmlspecialchars($s['email'] ?? '—') ?></div>
@@ -125,7 +126,7 @@ $error    = $data['error'];
                 </td>
 
                 <td style="font-size:0.8rem;color:var(--color5);white-space:nowrap;">
-                    <?= $s['created_at'] ? date('M j, Y', strtotime($s['created_at'])) : '—' ?>
+                    <?= $s['enrolled_at'] ? date('M j, Y', strtotime($s['enrolled_at'])) : '—' ?>
                 </td>
             </tr>
 
@@ -135,7 +136,7 @@ $error    = $data['error'];
                     <div class="sm-detail-inner">
                         <div>
                             <div class="sm-fl__k">Phone</div>
-                            <div class="sm-fl__v"><?= htmlspecialchars($s['phone'] ?? '—') ?></div>
+                            <div class="sm-fl__v"><?= htmlspecialchars($s['contact'] ?? '—') ?></div>
                         </div>
                         <div>
                             <div class="sm-fl__k">Birth Date</div>
@@ -152,21 +153,11 @@ $error    = $data['error'];
                         </div>
                         <div>
                             <div class="sm-fl__k">Academic Status</div>
-                            <div class="sm-fl__v"><?= htmlspecialchars(ucfirst($s['academic_status'])) ?></div>
+                            <div class="sm-fl__v"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $s['academic_status']))) ?></div>
                         </div>
-                        <?php if ($s['academic_status'] === 'graduated' && $s['graduated_at']): ?>
-                        <div>
-                            <div class="sm-fl__k">Graduated On</div>
-                            <div class="sm-fl__v"><?= date('F j, Y', strtotime($s['graduated_at'])) ?></div>
-                        </div>
-                        <?php endif; ?>
                         <div>
                             <div class="sm-fl__k">Record Created</div>
-                            <div class="sm-fl__v"><?= $s['created_at'] ? date('F j, Y', strtotime($s['created_at'])) : '—' ?></div>
-                        </div>
-                        <div>
-                            <div class="sm-fl__k">Last Updated</div>
-                            <div class="sm-fl__v"><?= $s['updated_at'] ? date('F j, Y', strtotime($s['updated_at'])) : '—' ?></div>
+                            <div class="sm-fl__v"><?= $s['enrolled_at'] ? date('F j, Y', strtotime($s['enrolled_at'])) : '—' ?></div>
                         </div>
                     </div>
                 </td>

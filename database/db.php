@@ -15,7 +15,7 @@ class Database {
         $this->port = getenv('DB_PORT') ?: "3306"; // Default MySQL port
         $this->db   = getenv('DB_DATABASE') ?: "ccms_sms";
         $this->user = getenv('DB_USER') ?: "ccms_sms";
-        $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "%yDwJ0Si8YNEgTCj";
+        $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "nhj@MWMTnf0y%tTn";
 
         try {
             // Added port mapping and upgraded charset to utf8mb4 (standard for modern MySQL)

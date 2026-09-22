@@ -361,7 +361,7 @@
     async function refreshFacultyLoadChart() {
         try {
             // Use optimized API endpoint for distribution data
-            const response = await fetch('/sms/modules/college-coor/api/get_faculty_load_distribution.php', {credentials:'same-origin'});
+            const response = await fetch('/modules/college-coor/api/get_faculty_load_distribution.php', {credentials:'same-origin'});
             if (!response.ok) throw new Error('Failed to load faculty load distribution');
             const distribution = await response.json();
             

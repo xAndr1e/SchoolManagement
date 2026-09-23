@@ -1,7 +1,7 @@
 <main class="main-content">
     <div class="container-fluid mt-4">
 
-        <div class="card shadow-sm border-0">
+        <div class="card mb-4 card shadow-sm border-0 border-top border-4 border-secondary shadow-lg p-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <h4 class="mb-0">Approval & Decision Support</h4>
@@ -29,8 +29,12 @@
 
             <div class="card-body">
                 <div class="d-flex justify-content-end w-100 mb-2">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createApprovalDSModal">
-                        ➕ Create
+                    <button
+                        class="btn btn-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createApprovalDSModal">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Create
                     </button>
                 </div>
                 <div class="table-responsive">

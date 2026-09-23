@@ -12,7 +12,7 @@
                 <th>Submitted By</th>
                 <th>Submitted At</th>
                 <th>File</th>
-                <th class="text-center">Actions</th>
+                <!-- <th class="text-center">Actions</th> -->
             </tr>
         </thead>
         <tbody>
@@ -41,14 +41,14 @@
                                 <span class="text-muted">No file</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <!-- <td>
                             <form method="POST" action="report-submission-management/delete" class="d-inline">
                                 <input type="hidden" name="report_id" value="<?= $report['report_id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this report?')">
-                                    Delete
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to Deactivate this report?')">
+                                    Deactivate
                                 </button>
                             </form>
-                        </td>
+                        </td> -->
                     </tr>
                 <?php endforeach; ?>
             <?php else : ?>

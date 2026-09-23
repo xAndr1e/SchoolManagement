@@ -355,10 +355,11 @@
             data-bs-parent="#accordionSidebar">
 
             <div class="text-white py-2 px-3 rounded w-100">
-                <a class="dropdown-item menu-link" href="#">Inventory Reports</a>
+                <a class="dropdown-item menu-link" href="#">Reports</a>
+                <!-- <a class="dropdown-item menu-link" href="#">Inventory Reports</a>
                 <a class="dropdown-item menu-link" href="#">Damage Reports</a>
                 <a class="dropdown-item menu-link" href="#">Laboratory Usage</a>
-                <a class="dropdown-item menu-link" href="#">Monthly Schedule</a>
+                <a class="dropdown-item menu-link" href="#">Monthly Schedule</a> -->
 
                 <a href="<?= BASE_URL ?>/approval-decision-support" class="menu-link">Approval Decision Support</a>
                 <a href="<?= BASE_URL ?>/concern-issue-tracking" class="menu-link">Concerns Issue Tracking</a>

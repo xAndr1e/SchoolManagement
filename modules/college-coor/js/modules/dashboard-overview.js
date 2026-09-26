@@ -308,6 +308,7 @@
     function openActivitiesModal() {
         const modal = document.getElementById('activitiesModal');
         const list = document.getElementById('allActivitiesList');
+        if (modal.parentElement !== document.body) { document.body.appendChild(modal); } 
         if (!modal || !list) return;
         const activities = dashboard().allActivities;
         list.innerHTML = activities.length ? activities.map(activity => `<div style="padding:12px;border-radius:5px;background-color:#f0f9ff;border-left:4px solid #3b82f6;margin-bottom:8px;"><div style="font-weight:600;color:#1f2937;font-size:14px;">${escapeHtml(activity.type)}</div><div style="color:#4b5563;font-size:13px;margin:4px 0;">${escapeHtml(activity.description)}</div><div><span style="font-size:11px;color:#6b7280;">${escapeHtml(activity.module)}</span> <span style="font-size:11px;color:#9ca3af;">${formatActivityElapsedTime(activity.timestamp)}</span></div></div>`).join('') : '<div style="padding:20px;text-align:center;color:#999;">No recent activities yet</div>';

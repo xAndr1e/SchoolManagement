@@ -2,518 +2,625 @@
 <?php include 'includes/header.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<link rel="stylesheet" href="<?= BASE_URL ?>/css/dashboard.css">
 
 <main class="main-content bg-light pb-5">
-    <div class="">
-        <div id="wrapper">
-            <!-- Content Wrapper -->
-            <div id="content-wrapper" class="d-flex flex-column">
 
-                <!-- Main Content -->
-                <div id="content">
-                    <!-- Begin Page Content -->
-                    <div class="container-fluid">
+    <div class="container-fluid px-4 py-4">
 
-                        <!-- Page Heading -->
-                        <div class="d-sm-flex align-items-center justify-content-between mb-1">
-                            <h1 class="h3 mb-0 text-gray-800 fw-bold">Dashboard</h1>
-                            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
-                                    class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
-                        </div>
-                        <p class="text-muted small mb-4">Welcome back! Here's what's happening today.</p>
+        <div class="d-flex justify-content-between align-items-center mb-1">
 
-                        <!-- Content Row -->
-                        <div class="row">
+            <div>
+                <h1 class="fw-bold mb-1 dashboard-title">
+                    Dashboard
+                </h1>
 
-                            <!-- Schedule today -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div
-                                    class="card dashboard-card border-0 border-start border-primary border-4 shadow-sm h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-primary text-uppercase mb-1">
-                                                    Today's Schedule
-                                                </div>
-                                                <div class="h5 mb-0 fw-bold text-gray-800">Nothing</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-calendar fa-2x text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- total lab -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div
-                                    class="card dashboard-card border-0 border-start border-success border-4 shadow-sm h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-success text-uppercase mb-1">
-                                                    Total Laboratories
-                                                </div>
-                                                <div class="h5 mb-0 fw-bold text-gray-800">11 Lab.</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-hospital-fill fa-2x text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pending report -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div
-                                    class="card dashboard-card border-0 border-start border-danger border-4 shadow-sm h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-danger text-uppercase mb-1">
-                                                    Reports
-                                                </div>
-                                                <div class="h5 mb-0 fw-bold text-gray-800">Nothing</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-exclamation-circle-fill fa-2x text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Active user -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div
-                                    class="card dashboard-card border-0 border-start border-info border-4 shadow-sm h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-info text-uppercase mb-1">
-                                                    Active User
-                                                </div>
-                                                <div class="h5 mb-0 fw-bold text-gray-800">10 Active Users</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="bi bi-people-fill fa-2x text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-                            <!-- task -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div
-                                    class="card dashboard-card border-0 border-start border-secondary border-4 shadow-sm h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-uppercase mb-1">Tasks
-                                                </div>
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto">
-                                                        <div class="h5 mb-0 mr-3 fw-bold text-uppercase mb-1">50%</div>
-                                                    </div>
-                                                    <div class="col">
-                                                        <div class="progress progress-sm mr-2">
-                                                            <div class="progress-bar bg-dark" role="progressbar"
-                                                                style="width: 50%" aria-valuenow="50" aria-valuemin="0"
-                                                                aria-valuemax="100"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-clipboard-list fa-2x text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pending Requests Card Example -->
-                            <div class="col-xl-3 col-md-6 mb-4">
-                                <div
-                                    class="card dashboard-card border-0 border-start border-warning border-4 shadow-sm h-100 py-2">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col mr-2">
-                                                <div class="text-xs fw-bold text-warning text-uppercase mb-1">
-                                                    Pending Requests
-                                                </div>
-                                                <div class="h5 mb-0 fw-bold text-gray-800">18</div>
-                                            </div>
-                                            <div class="col-auto">
-                                                <i class="fas fa-calendar fa-2x text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Content Row -->
-                        <div class="row">
-
-                            <!-- Area Chart -->
-                            <div class="col-xl-8 col-lg-7">
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                        <h6 class="m-0 fw-bold text-primary">Equipment Status</h6>
-
-                                        <div class="dropdown">
-                                            <a class="btn btn-sm btn-light" data-bs-toggle="dropdown"
-                                                aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v text-gray-400"></i>
-                                            </a>
-
-                                            <ul class="dropdown-menu dropdown-menu-end shadow">
-                                                <li>
-                                                    <h6 class="dropdown-header">Dropdown Header</h6>
-                                                </li>
-                                                <li><a class="dropdown-item" href="#">Action</a></li>
-                                                <li><a class="dropdown-item" href="#">Another action</a></li>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li><a class="dropdown-item" href="#">Something else here</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    <div class="card shadow-sm border-0 mb-4">
-
-                                        <div class="card-body">
-
-                                            <div class="row text-center">
-
-                                                <?php
-                                                $statusCounts = [
-                                                    'working' => 0,
-                                                    'damage' => 0,
-                                                    'under inspection' => 0,
-                                                    'unavailable' => 0
-                                                ];
-
-                                                foreach ($equipmentStatus as $status) {
-
-                                                    $statusName = strtolower(trim($status['status']));
-
-                                                    if (isset($statusCounts[$statusName])) {
-                                                        $statusCounts[$statusName] =
-                                                            $status['total'];
-                                                    }
-                                                }
-                                                ?>
-
-                                                <!-- Working -->
-                                                <div class="col-md-3 mb-3">
-
-                                                    <h3 class="text-success">
-                                                        <?= $statusCounts['working'] ?>
-                                                    </h3>
-
-                                                    <span class="badge bg-success">
-                                                        Working
-                                                    </span>
-
-                                                </div>
-
-
-                                                <!-- Damage -->
-                                                <div class="col-md-3 mb-3">
-
-                                                    <h3 class="text-danger">
-                                                        <?= $statusCounts['damage'] ?>
-                                                    </h3>
-
-                                                    <span class="badge bg-danger">
-                                                        Damage
-                                                    </span>
-
-                                                </div>
-
-
-                                                <!-- Under Inspection -->
-                                                <div class="col-md-3 mb-3">
-
-                                                    <h3 class="text-warning">
-                                                        <?= $statusCounts['under inspection'] ?>
-                                                    </h3>
-
-                                                    <span class="badge bg-warning text-dark">
-                                                        Under Inspection
-                                                    </span>
-
-                                                </div>
-
-
-                                                <!-- Unavailable -->
-                                                <div class="col-md-3 mb-3">
-
-                                                    <h3 class="text-secondary">
-                                                        <?= $statusCounts['unavailable'] ?>
-                                                    </h3>
-
-                                                    <span class="badge bg-secondary">
-                                                        Unavailable
-                                                    </span>
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pie Chart -->
-                            <div class="col-xl-4 col-lg-5">
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                                        <h6 class="m-0 fw-bold text-primary">Sources</h6>
-
-                                        <div class="dropdown">
-                                            <a class="btn btn-sm btn-light" data-bs-toggle="dropdown"
-                                                aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v text-gray-400"></i>
-                                            </a>
-
-                                            <ul class="dropdown-menu dropdown-menu-end shadow">
-                                                <li>
-                                                    <h6 class="dropdown-header">Dropdown Header</h6>
-                                                </li>
-                                                <li><a class="dropdown-item" href="#">Action</a></li>
-                                                <li><a class="dropdown-item" href="#">Another action</a></li>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
-                                                <li><a class="dropdown-item" href="#">Something else here</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-
-                                    <div class="card-body">
-                                        <canvas id="myPieChart"></canvas>
-
-                                        <div class="mt-2 text-center small">
-                                            <span class="me-2">
-                                                <i class="fas fa-circle text-primary"></i> Barrowed
-                                            </span>
-                                            <span class="me-2">
-                                                <i class="fas fa-circle text-success"></i> Damage Equipment
-                                            </span>
-                                            <span class="me-2">
-                                                <i class="fas fa-circle text-info"></i> Available
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- Content Row -->
-                        <div class="row">
-
-                            <!-- Content Column -->
-                            <div class="col-lg-6 mb-4">
-
-                                <!-- Project Card Example -->
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3">
-                                        <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <h4 class="small font-weight-bold">Damage Equipment <span
-                                                class="float-right">20%</span></h4>
-                                        <div class="progress mb-4">
-                                            <div class="progress-bar bg-danger" role="progressbar" style="width: 20%"
-                                                aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <h4 class="small font-weight-bold">Pending Request<span
-                                                class="float-right">40%</span></h4>
-                                        <div class="progress mb-4">
-                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 40%"
-                                                aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <h4 class="small font-weight-bold">Users<span class="float-right">60%</span>
-                                        </h4>
-                                        <div class="progress mb-4">
-                                            <div class="progress-bar" role="progressbar" style="width: 60%"
-                                                aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <h4 class="small font-weight-bold">Laboratory usage <span
-                                                class="float-right">80%</span></h4>
-                                        <div class="progress mb-4">
-                                            <div class="progress-bar bg-info" role="progressbar" style="width: 80%"
-                                                aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <h4 class="small font-weight-bold">Account Setup <span
-                                                class="float-right">Complete!</span></h4>
-                                        <div class="progress">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"
-                                                aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Color System -->
-                                <div class="row">
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-primary text-white shadow">
-                                            <div class="card-body">
-                                                Primary
-                                                <div class="text-white-50 small">#4e73df</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-success text-white shadow">
-                                            <div class="card-body">
-                                                Success
-                                                <div class="text-white-50 small">#1cc88a</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-info text-white shadow">
-                                            <div class="card-body">
-                                                Info
-                                                <div class="text-white-50 small">#36b9cc</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-warning text-white shadow">
-                                            <div class="card-body">
-                                                Warning
-                                                <div class="text-white-50 small">#f6c23e</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-danger text-white shadow">
-                                            <div class="card-body">
-                                                Danger
-                                                <div class="text-white-50 small">#e74a3b</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-secondary text-white shadow">
-                                            <div class="card-body">
-                                                Secondary
-                                                <div class="text-white-50 small">#858796</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-light text-black shadow">
-                                            <div class="card-body">
-                                                Light
-                                                <div class="text-black-50 small">#f8f9fc</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card bg-dark text-white shadow">
-                                            <div class="card-body">
-                                                Dark
-                                                <div class="text-white-50 small">#5a5c69</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <div class="col-lg-6 mb-4">
-
-                                <!-- Illustrations -->
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3">
-                                        <h6 class="m-0 font-weight-bold text-primary">Illustrations</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="text-center">
-                                            <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;"
-                                                src="assets/img1.png" alt="...">
-                                        </div>
-                                        <p>"A well-managed lab is not just a room—it’s a launchpad for curiosity and discovery." <a
-                                                target="_blank" rel="nofollow" href="https://undraw.co/">unDraw</a>, a
-                                            constantly updated collection of beautiful svg images that you can use
-                                            completely free and without attribution!</p>
-                                        <a target="_blank" rel="nofollow" href="https://undraw.co/">Browse Illustrations
-                                            on
-                                            unDraw &rarr;</a>
-                                    </div>
-                                </div>
-
-                                <!-- Approach -->
-                                <div class="card shadow mb-4">
-                                    <div class="card-header py-3">
-                                        <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Debitis, voluptas,
-                                            fugiat minima odio repellendus recusandae ex quas laudantium, suscipit ipsam
-                                            nam architecto qui dignissimos. Explicabo necessitatibus ullam voluptates
-                                            temporibus totam?</p>
-                                        <p class="mb-0">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ad,
-                                            eius ipsa! Hic quae aperiam iste perspiciatis, magni reprehenderit officiis
-                                            ut rerum nihil quia, impedit, dolorum voluptatibus cum. Corporis, quam
-                                            voluptas.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- /.container-fluid -->
-                </div>
-                <!-- End of Main Content -->
+                <p class="text-muted mb-0">
+                    Welcome back! Here's what's happening today.
+                </p>
             </div>
-            <!-- End of Content Wrapper -->
+
+            <a href="#" class="btn btn-primary shadow-sm">
+                <i class="fas fa-chart-line me-2"></i>
+                Generate Report
+            </a>
 
         </div>
+
+        <!-- summary card -->
+        <div class="row g-3 mt-3 mb-3">
+
+            <!-- Today's Schedule -->
+            <div class="col-xl-3 col-md-6">
+                <div class="summary-card schedule-card">
+
+                    <div class="summary-icon blue">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <div class="summary-label">
+                            TODAY'S SCHEDULE
+                        </div>
+
+                        <div class="summary-value">
+                            <span class="count" data-count="3">0</span> Schedules
+                        </div>
+                    </div>
+
+                    <i class="fas fa-chevron-right summary-arrow"></i>
+
+                </div>
+            </div>
+
+
+            <!-- Total Laboratories -->
+            <div class="col-xl-3 col-md-6">
+                <div class="summary-card laboratory-card">
+
+                    <div class="summary-icon green">
+                        <i class="fas fa-building"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <div class="summary-label">
+                            TOTAL LABORATORIES
+                        </div>
+
+                        <div class="summary-value">
+                            <span class="count" data-count="11">0</span> Labs
+                        </div>
+                    </div>
+
+                    <i class="fas fa-chevron-right summary-arrow"></i>
+
+                </div>
+            </div>
+
+
+            <!-- Damaged Equipment -->
+            <div class="col-xl-3 col-md-6">
+                <div class="summary-card damage-card">
+
+                    <div class="summary-icon red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <div class="summary-label">
+                            DAMAGED EQUIPMENT
+                        </div>
+
+                        <div class="summary-value">
+                            <span class="count" data-count="8">0</span> Items
+                        </div>
+                    </div>
+
+                    <i class="fas fa-chevron-right summary-arrow"></i>
+
+                </div>
+            </div>
+
+
+
+            <!-- Active Users -->
+            <div class="col-xl-3 col-md-6">
+                <div class="summary-card users-card">
+
+                    <div class="summary-icon cyan">
+                        <i class="fas fa-users"></i>
+                    </div>
+
+                    <div class="summary-content">
+                        <div class="summary-label">
+                            ACTIVE USERS
+                        </div>
+
+                        <div class="summary-value">
+                            <span class="count" data-count="10">0</span> Users
+                        </div>
+                    </div>
+
+                    <i class="fas fa-chevron-right summary-arrow"></i>
+
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- status and chart -->
+        <div class="row g-3 mb-3">
+
+            <!-- Equipment Status -->
+            <div class="col-xl-8">
+
+                <div class="dashboard-panel h-100">
+
+                    <div class="panel-header">
+                        <h5>
+                            <i class="fas fa-cog me-2"></i>
+                            Equipment Status
+                        </h5>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <?php
+
+                        $statusCounts = [
+                            'available' => 0,
+                            'working' => 0,
+                            'damage' => 0,
+                            'under inspection' => 0,
+                            'unavailable' => 0
+                        ];
+
+                        foreach ($equipmentStatus as $status) {
+
+                            $statusName = strtolower(trim($status['status']));
+
+                            if (isset($statusCounts[$statusName])) {
+                                $statusCounts[$statusName] = $status['total'];
+                            }
+                        }
+
+                        ?>
+
+                        <div class="row g-3">
+
+                            <!-- Available -->
+                            <div class="col">
+
+                                <div class="status-box available">
+
+                                    <div class="status-icon">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+
+                                    <div class="status-name">
+                                        Available
+                                    </div>
+
+                                    <div class="status-number">
+                                        <?= $statusCounts['available'] ?>
+                                    </div>
+                                    
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Working -->
+                            <div class="col">
+
+                                <div class="status-box working">
+
+                                    <div class="status-icon">
+                                        <i class="fas fa-cog"></i>
+                                    </div>
+
+                                    <div class="status-name">
+                                        Working
+                                    </div>
+
+                                    <div class="status-number">
+                                        <?= $statusCounts['working'] ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Damage -->
+                            <div class="col">
+
+                                <div class="status-box damage">
+
+                                    <div class="status-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+
+                                    <div class="status-name">
+                                        Damage
+                                    </div>
+
+                                    <div class="status-number">
+                                        <?= $statusCounts['damage'] ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Under Inspection -->
+                            <div class="col">
+
+                                <div class="status-box inspection">
+
+                                    <div class="status-icon">
+                                        <i class="fas fa-search"></i>
+                                    </div>
+
+                                    <div class="status-name">
+                                        Under Inspection
+                                    </div>
+
+                                    <div class="status-number">
+                                        <?= $statusCounts['under inspection'] ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- Unavailable -->
+                            <div class="col">
+
+                                <div class="status-box unavailable">
+
+                                    <div class="status-icon">
+                                        <i class="fas fa-times"></i>
+                                    </div>
+
+                                    <div class="status-name">
+                                        Unavailable
+                                    </div>
+
+                                    <div class="status-number">
+                                        <?= $statusCounts['unavailable'] ?>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Equipment Distribution -->
+            <div class="col-xl-4">
+
+                <div class="dashboard-panel h-100">
+
+                    <div class="panel-header">
+                        <h5>
+                            <i class="fas fa-chart-pie me-2"></i>
+                            Equipment Distribution
+                        </h5>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <div class="chart-container">
+
+                            <canvas id="equipmentChart"></canvas>
+
+                            <div id="equipmentLegend" class="equipment-legend"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- schedule + damage -->
+        <div class="row g-3 mb-3">
+
+            <!-- Today's Schedule -->
+            <div class="col-xl-7">
+
+                <div class="dashboard-panel">
+
+                    <div class="panel-header">
+
+                        <h5>
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Today's Laboratory Schedule
+                        </h5>
+
+                        <a href="<?= BASE_URL ?>/schedule">
+                            View All
+                        </a>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table dashboard-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Laboratory</th>
+                                    <th>Subject</th>
+                                    <th>Instructor</th>
+                                    <th>Section</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>IT Lab 1</td>
+                                    <td>Programming</td>
+                                    <td>Ms. Santos</td>
+                                    <td>BSIT-4A</td>
+                                    <td>8:00 - 10:00</td>
+                                    <td>
+                                        <span class="badge schedule-badge">
+                                            Scheduled
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Physics Lab</td>
+                                    <td>General Physics</td>
+                                    <td>Mr. Reyes</td>
+                                    <td>BSCS-2A</td>
+                                    <td>10:00 - 12:00</td>
+                                    <td>
+                                        <span class="badge schedule-badge">
+                                            Scheduled
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Chemistry Lab</td>
+                                    <td>Organic Chemistry</td>
+                                    <td>Dr. Cruz</td>
+                                    <td>BSCHM-1A</td>
+                                    <td>1:00 - 3:00</td>
+                                    <td>
+                                        <span class="badge schedule-badge">
+                                            Scheduled
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>IT Lab 1</td>
+                                    <td>Capstone</td>
+                                    <td>Dr. Cruz</td>
+                                    <td>BSIS-1A</td>
+                                    <td>3:00 - 4:00</td>
+                                    <td>
+                                        <span class="badge schedule-badge">
+                                            Scheduled
+                                        </span>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Recent Damage Reports -->
+            <div class="col-xl-5">
+
+                <div class="dashboard-panel">
+
+                    <div class="panel-header">
+
+                        <h5>
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Recent Damage Reports
+                        </h5>
+
+                        <a href="<?= BASE_URL ?>/damages">
+                            View All
+                        </a>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table dashboard-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Laboratory</th>
+                                    <th>Status</th>
+                                    <th>Date Reported</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>Microscope</td>
+                                    <td>Physics Lab</td>
+                                    <td>
+                                        <span class="badge badge-danger">
+                                            Damage
+                                        </span>
+                                    </td>
+                                    <td>Apr 25, 2025</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Computer</td>
+                                    <td>IT Lab 1</td>
+                                    <td>
+                                        <span class="badge badge-warning">
+                                            Under Inspection
+                                        </span>
+                                    </td>
+                                    <td>Apr 24, 2025</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Projector</td>
+                                    <td>Chemistry Lab</td>
+                                    <td>
+                                        <span class="badge badge-secondary">
+                                            Unavailable
+                                        </span>
+                                    </td>
+                                    <td>Apr 22, 2025</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Balance</td>
+                                    <td>Biology Lab</td>
+                                    <td>
+                                        <span class="badge badge-danger">
+                                            Damage
+                                        </span>
+                                    </td>
+                                    <td>Apr 21, 2025</td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= RECENT BORROWINGS ================= -->
+        <div class="row">
+
+            <div class="col-12">
+
+                <div class="dashboard-panel">
+
+                    <div class="panel-header">
+
+                        <h5>
+                            <i class="fas fa-hand-holding me-2"></i>
+                            Recent Borrowings
+                        </h5>
+
+                        <a href="<?= BASE_URL ?>/borrow">
+                            View All
+                        </a>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table dashboard-table mb-0">
+
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Borrower</th>
+                                    <th>Laboratory</th>
+                                    <th>Purpose</th>
+                                    <th>Date Borrowed</th>
+                                    <th>Return Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr>
+                                    <td>Laptop</td>
+                                    <td>Juan Dela Cruz</td>
+                                    <td>IT Lab 1</td>
+                                    <td>Research</td>
+                                    <td>Apr 25, 2025</td>
+                                    <td>Apr 28, 2025</td>
+                                    <td>
+                                        <span class="badge badge-success">
+                                            Borrowed
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Camera</td>
+                                    <td>Maria Santos</td>
+                                    <td>Media Lab</td>
+                                    <td>Documentation</td>
+                                    <td>Apr 24, 2025</td>
+                                    <td>Apr 27, 2025</td>
+                                    <td>
+                                        <span class="badge badge-success">
+                                            Borrowed
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Test Tube Set</td>
+                                    <td>Ramon Garcia</td>
+                                    <td>Chemistry Lab</td>
+                                    <td>Laboratory Activity</td>
+                                    <td>Apr 22, 2025</td>
+                                    <td>Apr 25, 2025</td>
+                                    <td>
+                                        <span class="badge schedule-badge">
+                                            Returned
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>Microphone</td>
+                                    <td>Ana Reyes</td>
+                                    <td>Audio Lab</td>
+                                    <td>Project</td>
+                                    <td>Apr 20, 2025</td>
+                                    <td>Apr 23, 2025</td>
+                                    <td>
+                                        <span class="badge schedule-badge">
+                                            Returned
+                                        </span>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
+
 </main>
 
-
 <script src="js/dashboard.js"></script>
-<script>
-    gsap.utils.toArray(".card").forEach((card) => {
-        gsap.from(card, {
-            scrollTrigger: {
-                trigger: card,
-                start: "top 80%",
-                toggleActions: "play none none none",
-            },
-            y: 50,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power3.out"
-        });
-    });
 
-    document.addEventListener("DOMContentLoaded", function() {
-        gsap.fromTo(".dashboard-card", {
-            x: (i) => i % 2 === 0 ? 100 : 100,
-            opacity: 0
-        }, {
-            x: 0,
-            opacity: 3,
-            duration: 1,
-            stagger: 0.15,
-            ease: "power3.out"
-        });
-    });
-</script>
 <?php include 'includes/footer.php'; ?>

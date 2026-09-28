@@ -26,10 +26,10 @@
                         CONCAT(e2.first_name, ' ', e2.last_name) AS approver_id,
                         d.department_name
                     FROM sd_approvals a
-                    LEFT JOIN sms_employee e1 ON a.submit_by   = e1.employee_id
-                    LEFT JOIN sms_employee rv ON a.reviewed_by = rv.employee_id
-                    LEFT JOIN sms_employee e2 ON a.approver_id = e2.employee_id
-                    LEFT JOIN sd_department d ON e1.department = d.department_id
+                    LEFT JOIN em_employees e1 ON a.submit_by   = e1.employee_id
+                    LEFT JOIN em_employees rv ON a.reviewed_by = rv.employee_id
+                    LEFT JOIN em_employees e2 ON a.approver_id = e2.employee_id
+                    LEFT JOIN em_departments d ON e1.department_id = d.department_id
                     WHERE 1=1";
 
             $params = [];
@@ -56,10 +56,10 @@
                         CONCAT(e2.first_name, ' ', e2.last_name) AS decided_by_name,
                         d.department_name
                     FROM sd_approvals a
-                    LEFT JOIN sms_employee e1 ON a.submit_by   = e1.employee_id
-                    LEFT JOIN sms_employee rv ON a.reviewed_by = rv.employee_id
-                    LEFT JOIN sms_employee e2 ON a.approver_id = e2.employee_id
-                    LEFT JOIN sd_department d ON e1.department = d.department_id
+                    LEFT JOIN em_employees e1 ON a.submit_by   = e1.employee_id
+                    LEFT JOIN em_employees rv ON a.reviewed_by = rv.employee_id
+                    LEFT JOIN em_employees e2 ON a.approver_id = e2.employee_id
+                    LEFT JOIN em_departments d ON e1.department_id = d.department_id
                     WHERE a.approval_id = :approval_id
                     LIMIT 1";
             $stmt = $this->conn->prepare($sql);

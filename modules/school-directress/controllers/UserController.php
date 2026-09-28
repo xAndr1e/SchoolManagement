@@ -29,12 +29,12 @@ function getEmployees() {
                 e.first_name,
                 e.middle_name,
                 e.last_name,
-                e.status,
+                e.employment_status,
                 d.department_name,
                 p.position_name
-            FROM sms_employee e
-            LEFT JOIN sd_department d ON e.department = d.department_id
-            LEFT JOIN sd_position   p ON e.position   = p.position_id
+            FROM em_employees e
+            LEFT JOIN em_departments d ON e.department_id = d.department_id
+            LEFT JOIN em_positions   p ON e.position_id   = p.position_id
             ORDER BY e.last_name ASC
         ");
 

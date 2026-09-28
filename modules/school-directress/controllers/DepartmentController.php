@@ -24,9 +24,9 @@ switch ($action) {
                     d.department_name,
                     CONCAT(e.first_name, ' ', e.last_name) AS head_name,
                     COUNT(emp.employee_id) AS employee_count
-                FROM sd_department d
-                LEFT JOIN sms_employee e   ON d.department_head = e.employee_id
-                LEFT JOIN sms_employee emp ON emp.department = d.department_id
+                FROM em_departments d
+                LEFT JOIN em_employees e   ON d.department_head = e.employee_id
+                LEFT JOIN em_employees emp ON emp.department_id = d.department_id
                 GROUP BY d.department_id, d.department_name, e.first_name, e.last_name
                 ORDER BY d.department_name ASC
             ");
@@ -105,7 +105,7 @@ switch ($action) {
             }
 
             $stmt = $pdo->prepare("
-                UPDATE sd_department 
+                UPDATE em_departments 
                 SET department_head = :employee_id 
                 WHERE department_id = :department_id
             ");

@@ -23,19 +23,19 @@ Class Employee {
 
     public function getEmployees() {
     $sql = "SELECT 
-                sms.employee_id,
-                sms.first_name,
-                sms.middle_name,
-                sms.last_name,
-                sd.department_name,
-                sp.position_name,
-                sms.status
-            FROM sms_employee sms
-            LEFT JOIN sd_department sd 
-                ON sms.department = sd.department_id
-            LEFT JOIN sd_position sp
-                ON sms.position = sp.position_id
-            ORDER BY sms.employee_id";
+                em.employee_id,
+                em.first_name,
+                em.middle_name,
+                em.last_name,
+                em.department_id,
+                em.position_id,
+                em.employment_status
+            FROM em_employees em
+            LEFT JOIN em_departments sd 
+                ON em.department_id = sd.department_id
+            LEFT JOIN em_positions sp
+                ON em.position_id = sp.position_id
+            ORDER BY em.employee_id";
 
     $stmt = $this->conn->prepare($sql);
     $stmt->execute();
@@ -53,7 +53,7 @@ Class Employee {
         $employeeId = $_SESSION['employee_id'] ?? null;
 
         if ($employeeId) {
-            $sql = "SELECT first_name, last_name FROM sms_employee WHERE employee_id = :employee_id LIMIT 1";
+            $sql = "SELECT first_name, last_name FROM em_employees WHERE employee_id = :employee_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();
@@ -74,9 +74,9 @@ Class Employee {
 
         if ($employeeId) {
             $sql = "SELECT sp.position_name 
-                    FROM sms_employee sms
-                    LEFT JOIN sd_position sp ON sms.position = sp.position_id
-                    WHERE sms.employee_id = :employee_id LIMIT 1";
+                    FROM em_employees em
+                    LEFT JOIN em_positions sp ON em.position_id = sp.position_id
+                    WHERE em.employee_id = :employee_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();

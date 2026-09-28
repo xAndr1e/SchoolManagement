@@ -62,7 +62,7 @@ class Announcement {
                     a.image_file,
                     CONCAT(e.first_name, ' ', e.last_name) AS created_by
                 FROM `sd_announcements` a
-                LEFT JOIN `sms_employee` e ON a.created_by = e.employee_id
+                LEFT JOIN `em_employees` e ON a.created_by = e.employee_id
                 ORDER BY a.publish_date DESC";
 
         $stmt = $this->conn->prepare($sql);

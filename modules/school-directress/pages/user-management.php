@@ -63,7 +63,7 @@ $positions = $positionClass->getAllPositions();
                                     <td><?= htmlspecialchars($e['first_name'] ?? '—'); ?></td>
                                     <td><?= htmlspecialchars($e['middle_name'] ?? '—'); ?></td>
                                     <td><?= htmlspecialchars($e['last_name'] ?? '—'); ?></td>
-                                    <td><?= htmlspecialchars($e['department_name'] ?? $e['department'] ?? '—'); ?></td>
+                                    <td><?= htmlspecialchars($e['department_n'] ?? $e['department'] ?? '—'); ?></td>
                                     <td><?= htmlspecialchars($e['position_name'] ?? $e['position'] ?? '—'); ?></td>
                                     <td><?= htmlspecialchars(isset($e['status']) && $e['status'] !== '' ? ucfirst(strtolower($e['status'])) : '—'); ?></td>
                                 </tr>

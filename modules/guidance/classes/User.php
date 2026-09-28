@@ -28,9 +28,9 @@ class User {
                         e.last_name,
                         e.middle_name,
                         r.role_name AS role,
-                        e.status
-                    FROM `sms_employee` e
-                    LEFT JOIN `sd_roles` r ON e.role = r.role_id
+                        e.employment_status AS status
+                    FROM `em_employees` e
+                    LEFT JOIN `em_roles` r ON e.role_id = r.role_id
                     WHERE e.employee_id = :employee_id";
 
             $stmt = $this->conn->prepare($sql);
@@ -49,7 +49,7 @@ class User {
     }
 
     // Get the role tied to this department
-    $roleStmt = $this->conn->prepare("SELECT role_id FROM sd_roles WHERE department = :dept_id LIMIT 1");
+    $roleStmt = $this->conn->prepare("SELECT role_id FROM em_roles WHERE department_id = :dept_id LIMIT 1");
     $roleStmt->execute([':dept_id' => $department_id]);
     $role_id = $roleStmt->fetchColumn();
 
@@ -70,14 +70,14 @@ class User {
 
         $user_id = $this->conn->lastInsertId();
 
-        // 2. UPDATE sms_employee
+        // 2. UPDATE em_employees
             $updateStmt = $this->conn->prepare("
-                UPDATE sms_employee
-                SET department = :department_id,
-                    position   = :position_id,
-                    role       = :role_id,
+                UPDATE em_employees
+                SET department_id = :department_id,
+                    position_id   = :position_id,
+                    role_id       = :role_id,
                     user_id    = :user_id,
-                    status     = 'active'
+                    employment_status     = 'active'
                 WHERE employee_id = :employee_id
             ");
             $updateStmt->execute([

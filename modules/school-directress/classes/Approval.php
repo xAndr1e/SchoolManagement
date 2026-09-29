@@ -27,16 +27,16 @@ class Approval {
                     d.department_name,
                     a.file_path
                 FROM sd_approvals a
-                LEFT JOIN sms_employee e1 ON a.submit_by = e1.employee_id
-                LEFT JOIN sms_employee e2 ON a.approver_id = e2.employee_id
-                LEFT JOIN sd_department d ON e1.department = d.department_id
+                LEFT JOIN em_employees e1 ON a.submit_by = e1.employee_id
+                LEFT JOIN em_employees e2 ON a.approver_id = e2.employee_id
+                LEFT JOIN em_departments d ON e1.department_id = d.department_id
                 WHERE 1=1";
 
         $params = [];
 
         // Always filter by the logged-in user's department
         if ($departmentId !== null) {
-            $sql .= " AND e1.department = :department_id";
+            $sql .= " AND e1.department_id = :department_id";
             $params[':department_id'] = $departmentId;
         }
 

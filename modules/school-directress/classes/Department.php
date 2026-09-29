@@ -15,13 +15,13 @@ class Department {
     }
 
     public function getAllDepartments() {
-        $stmt = $this->conn->prepare("SELECT department_id, department_name FROM sd_department");
+        $stmt = $this->conn->prepare("SELECT department_id, department_name FROM em_departments WHERE status = 'Active'");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function countDepartmentEmployees($department_id) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM sms_employee WHERE department = :department_id");
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM em_employees WHERE department_id = :department_id");
         $stmt->execute([':department_id' => $department_id]);
         return $stmt->fetchColumn();
     }
@@ -32,11 +32,12 @@ class Department {
                     d.department_name,
                     CONCAT(e.first_name, ' ', e.last_name) AS department_head_name,
                     COUNT(emp.employee_id) AS employee_count
-                FROM sd_department d
-                LEFT JOIN sms_employee e 
+                FROM em_departments d
+                LEFT JOIN em_employees e 
                     ON d.department_head = e.employee_id
-                LEFT JOIN sms_employee emp 
-                    ON emp.department = d.department_id
+                LEFT JOIN em_employees emp 
+                    ON emp.department_id = d.department_id
+                WHERE d.status = 'Active'
                 GROUP BY d.department_id, d.department_name, e.first_name, e.last_name";
 
         $stmt = $this->conn->prepare($sql);
@@ -45,7 +46,7 @@ class Department {
     }
 
     public function addDepartment($department_name) {
-        $stmt = $this->conn->prepare("INSERT INTO sd_department (department_name) VALUES (:department_name)");
+        $stmt = $this->conn->prepare("INSERT INTO em_departments (department_name) VALUES (:department_name)");
         return $stmt->execute([':department_name' => $department_name]);
     }
 }

@@ -47,19 +47,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ── Authentication ────────────────────────────────────────────────────────
     $stmt = $conn->prepare("
         SELECT
-            user_account.user_id,
-            user_account.employee_id,
-            user_account.password,
-            sms_employee.role,
-            sms_employee.department,
-            sd_roles.role_name,
-            sd_department.department_name
-        FROM user_account
-        INNER JOIN sms_employee  ON sms_employee.employee_id  = user_account.employee_id
-        INNER JOIN sd_roles      ON sd_roles.role_id          = sms_employee.role
-        LEFT  JOIN sd_department ON sd_department.department_id = sms_employee.department
-        WHERE user_account.employee_id = :employeeid
-        AND   sms_employee.status      = 'active'
+            ua.user_id,
+            ua.employee_id,
+            ua.password,
+            e.role_id AS role,
+            e.department_id AS department,
+            CONCAT_WS(' ', e.first_name, e.middle_name, e.last_name) AS employee_name,
+            r.role_name,
+            d.department_code,
+            d.department_name
+        FROM user_account ua
+        INNER JOIN em_employees e ON e.employee_id = ua.employee_id
+        LEFT  JOIN em_roles r ON r.role_id = e.role_id
+        LEFT  JOIN em_departments d ON d.department_id = e.department_id
+        WHERE ua.employee_id = :employeeid
+        AND   e.employment_status = 'Active'
         LIMIT 1
     ");
     $stmt->bindParam(':employeeid', $employeeid);
@@ -74,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id']        = $user['user_id'];
         $_SESSION['employee_id']     = $user['employee_id'];
         $_SESSION['username']        = $user['employee_id'];
+        $_SESSION['employee_name']   = $user['employee_name'];
         $_SESSION['role']            = $user['role'];
         $_SESSION['role_name']       = $user['role_name'];
         $_SESSION['department_id']   = $user['department'];        
@@ -83,37 +86,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['sensitive_timeout'] = 900;
 
         $redirectMap = [
-        1 => 'modules/school-directress/index.php',
-        2 => 'modules/enrollment/index.php',
-        3 => 'modules/registrar/',
-        4 => 'modules/clinic/index.php',
-        5 => 'modules/library/index.php',
-        6 => 'modules/laboratory/',
-        7 => 'modules/monitoring/public/index.php?page=dashboard',
-        8 => 'modules/guidance/index.php',
-        9 => 'modules/college-coor/index.php',
-        10 => 'modules/recruitment/index.php',
-    ];
-
-        $role = (int) $user['role'];
+            'SMS_SD'      => 'modules/school-directress/index.php',
+            'SMS_ENR'     => 'modules/enrollment/index.php',
+            'SMS_REG'     => 'modules/registrar/',
+            'SMS_CLINIC'  => 'modules/clinic/index.php',
+            'SMS_LIB'     => 'modules/library/index.php',
+            'SMS_LAB'     => 'modules/laboratory/',
+            'SMS_MON'     => 'modules/monitoring/public/index.php?page=dashboard',
+            'SMS_GD'      => 'modules/guidance/index.php',
+            'SMS_COORD'   => 'modules/college-coor/index.php',
+            'HR_REC'      => 'modules/recruitment/index.php',
+        ];
 
         $requestedRedirect = $_POST['redirect'] ?? '';
         $allowedRedirects = [
             'modules/monitoring/public/index.php?page=mobile-attendance',
             'modules/monitoring/public/index.php?page=mobile-facilities',
         ];
-        if ($role === 7 && in_array($requestedRedirect, $allowedRedirects, true)) {
-            $redirectMap[$role] = $requestedRedirect;
+        $departmentCode = $user['department_code'] ?? '';
+        if ($departmentCode === 'SMS_MON' && in_array($requestedRedirect, $allowedRedirects, true)) {
+            $redirectMap[$departmentCode] = $requestedRedirect;
         }
 
-        if (!isset($redirectMap[$role])) {
-            echo json_encode(['success' => false, 'locked' => false, 'message' => 'Invalid role.']);
+        if (!isset($redirectMap[$departmentCode])) {
+            echo json_encode(['success' => false, 'locked' => false, 'message' => 'No module is assigned to this account.']);
             exit();
         }
 
         echo json_encode([
             'success'  => true,
-            'redirect' => '/' . ltrim($redirectMap[$role], '/'),
+            'redirect' => '/' . ltrim($redirectMap[$departmentCode], '/'),
         ]);
         exit();
 

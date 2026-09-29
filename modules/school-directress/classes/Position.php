@@ -16,15 +16,16 @@ class Position {
     }
 
     public function getAllPositions() {
-        $stmt = $this->conn->prepare("SELECT position_id, position_name FROM sd_position");
+        $stmt = $this->conn->prepare("SELECT position_id, position_name FROM em_positions WHERE status = 'Active'");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getPositionsByDepartment($department_id) {
     $sql = "SELECT position_id, position_name 
-            FROM sd_position 
-            WHERE department = :dept_id
+            FROM em_positions 
+            WHERE department_id = :dept_id
+              AND status = 'Active'
             ORDER BY position_name";
 
     $stmt = $this->conn->prepare($sql);

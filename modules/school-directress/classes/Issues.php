@@ -14,7 +14,7 @@ class Issues {
     }
 
     public function getDepartments() {
-        $stmt = $this->conn->prepare("SELECT department_id, department_name FROM sd_department ORDER BY department_name");
+        $stmt = $this->conn->prepare("SELECT department_id, department_name FROM em_departments WHERE status = 'Active' ORDER BY department_name");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -44,8 +44,8 @@ class Issues {
                 i.submitted_on,
                 i.status
             FROM sd_issues i
-            JOIN sd_department d ON i.department = d.department_id
-            JOIN sms_employee e ON i.submitted_by = e.employee_id
+            JOIN em_departments d ON i.department = d.department_id
+            JOIN em_employees e ON i.submitted_by = e.employee_id
             WHERE 1=1
         ";
         $params = [];
@@ -80,8 +80,8 @@ class Issues {
                 d.department_name,
                 CONCAT(e.first_name, ' ', e.last_name) AS submitted_by_name
             FROM sd_issues i
-            JOIN sd_department d ON i.department = d.department_id
-            JOIN sms_employee e ON i.submitted_by = e.employee_id
+            JOIN em_departments d ON i.department = d.department_id
+            JOIN em_employees e ON i.submitted_by = e.employee_id
             WHERE i.issue_id = :issue_id
         ");
         $stmt->execute([':issue_id' => $issue_id]);

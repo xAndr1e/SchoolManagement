@@ -29,12 +29,12 @@ Class Employee {
                 sms.last_name,
                 sd.department_name,
                 sp.position_name,
-                sms.status
-            FROM sms_employee sms
-            LEFT JOIN sd_department sd 
-                ON sms.department = sd.department_id
-            LEFT JOIN sd_position sp
-                ON sms.position = sp.position_id
+                sms.employment_status AS status
+            FROM em_employees sms
+            LEFT JOIN em_departments sd 
+                ON sms.department_id = sd.department_id
+            LEFT JOIN em_positions sp
+                ON sms.position_id = sp.position_id
             ORDER BY sms.employee_id";
 
     $stmt = $this->conn->prepare($sql);
@@ -53,7 +53,7 @@ Class Employee {
         $employeeId = $_SESSION['employee_id'] ?? null;
 
         if ($employeeId) {
-            $sql = "SELECT first_name, last_name FROM sms_employee WHERE employee_id = :employee_id LIMIT 1";
+            $sql = "SELECT first_name, last_name FROM em_employees WHERE employee_id = :employee_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();
@@ -74,8 +74,8 @@ Class Employee {
 
         if ($employeeId) {
             $sql = "SELECT sp.position_name 
-                    FROM sms_employee sms
-                    LEFT JOIN sd_position sp ON sms.position = sp.position_id
+                    FROM em_employees sms
+                    LEFT JOIN em_positions sp ON sms.position_id = sp.position_id
                     WHERE sms.employee_id = :employee_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);

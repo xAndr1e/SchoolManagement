@@ -8,7 +8,7 @@ $conn     = $database->getConnection();
 
 $totalStudents     = $conn->query("SELECT COUNT(*) FROM enr_students WHERE enrollment_status = 'enrolled'")->fetchColumn();
 $pendingApplicants = $conn->query("SELECT COUNT(*) FROM enr_applicants WHERE status = 'pending'")->fetchColumn();
-$activeEmployees   = $conn->query("SELECT COUNT(*) FROM sms_employee WHERE status = 'active'")->fetchColumn();
+$activeEmployees   = $conn->query("SELECT COUNT(*) FROM em_employees WHERE employment_status = 'Active'")->fetchColumn();
 $pendingReports    = $conn->query("SELECT COUNT(*) FROM sd_reports WHERE status = 'Pending'")->fetchColumn();
 $openIssues        = $conn->query("SELECT COUNT(*) FROM sd_issues WHERE status = 'open'")->fetchColumn();
 $pendingApprovals  = $conn->query("SELECT COUNT(*) FROM sd_approvals WHERE decision = 'Pending'")->fetchColumn();

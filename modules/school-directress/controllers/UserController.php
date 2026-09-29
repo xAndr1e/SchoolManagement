@@ -116,16 +116,16 @@ function getEmployeeDetails() {
                 e.first_name,
                 e.middle_name,
                 e.last_name,
-                e.department,
-                e.position,
-                e.status,
+                e.department_id AS department,
+                e.position_id AS position,
+                e.employment_status AS status,
                 d.department_name,
                 p.position_name,
                 r.role_name
-            FROM sms_employee e
-            LEFT JOIN sd_department d ON e.department = d.department_id
-            LEFT JOIN sd_position   p ON e.position   = p.position_id
-            LEFT JOIN sd_roles      r ON e.role        = r.role_id
+            FROM em_employees e
+            LEFT JOIN em_departments d ON e.department_id = d.department_id
+            LEFT JOIN em_positions   p ON e.position_id   = p.position_id
+            LEFT JOIN em_roles       r ON e.role_id        = r.role_id
             WHERE e.employee_id = :employee_id
         ");
         $stmt->execute([':employee_id' => $employee_id]);
@@ -177,16 +177,44 @@ function updateEmployee() {
         $db   = new Database();
         $conn = $db->getConnection();
 
-        // Get role for the department
-        $roleStmt = $conn->prepare("SELECT role_id FROM sd_roles WHERE department = :dept_id LIMIT 1");
+        // Get default role for the department
+        $roleStmt = $conn->prepare("
+            SELECT
+                CASE department_code
+                    WHEN 'SMS_SD' THEN 14
+                    WHEN 'SMS_ENR' THEN 17
+                    WHEN 'SMS_REG' THEN 16
+                    WHEN 'SMS_CLINIC' THEN 19
+                    WHEN 'SMS_MON' THEN 18
+                    WHEN 'SMS_GD' THEN 15
+                    WHEN 'SMS_COORD' THEN 22
+                    WHEN 'SMS_LIB' THEN 20
+                    WHEN 'SMS_LAB' THEN 21
+                    WHEN 'HR_REC' THEN 2
+                    WHEN 'HR_PAY' THEN 4
+                    WHEN 'HR_ATT' THEN 5
+                    WHEN 'HR_EMP' THEN 3
+                    WHEN 'HR_COM' THEN 8
+                    WHEN 'HR_WFA' THEN 9
+                    WHEN 'HR_LND' THEN 7
+                    WHEN 'HR_PER' THEN 6
+                    WHEN 'HR_EER' THEN 12
+                    WHEN 'HR_EXIT' THEN 10
+                    WHEN 'HR_CLINIC' THEN 11
+                    ELSE 13
+                END AS role_id
+            FROM em_departments
+            WHERE department_id = :dept_id
+            LIMIT 1
+        ");
         $roleStmt->execute([':dept_id' => $department_id]);
         $role_id = $roleStmt->fetchColumn();
 
         $stmt = $conn->prepare("
-            UPDATE sms_employee
-            SET department = :department_id,
-                position   = :position_id,
-                role       = :role_id
+            UPDATE em_employees
+            SET department_id = :department_id,
+                position_id   = :position_id,
+                role_id       = :role_id
             WHERE employee_id = :employee_id
         ");
         $stmt->execute([
@@ -213,12 +241,12 @@ function updateEmployee() {
                 e.first_name,
                 e.middle_name,
                 e.last_name,
-                e.status,
+                e.employment_status AS status,
                 d.department_name,
                 p.position_name
-            FROM sms_employee e
-            LEFT JOIN sd_department d ON e.department = d.department_id
-            LEFT JOIN sd_position   p ON e.position   = p.position_id
+            FROM em_employees e
+            LEFT JOIN em_departments d ON e.department_id = d.department_id
+            LEFT JOIN em_positions   p ON e.position_id   = p.position_id
             ORDER BY e.last_name ASC
         ");
 

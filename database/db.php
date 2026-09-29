@@ -13,7 +13,7 @@ class Database {
         // Look for Railway's environment variables first, default to local if missing
         $this->host = getenv('DB_HOST') ?: "localhost";
         $this->port = getenv('DB_PORT') ?: "3306"; // Default MySQL port
-        $this->db   = getenv('DB_DATABASE') ?: "sms";
+        $this->db   = getenv('DB_DATABASE') ?: "payr_bcp";
         $this->user = getenv('DB_USER') ?: "root";
         $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "";
 
@@ -32,7 +32,7 @@ class Database {
     }
 
     public function getRoles() {
-        $query = "SELECT role_id, role_name FROM sd_roles ORDER BY role_id";
+        $query = "SELECT role_id, role_name FROM em_roles ORDER BY role_id";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(); // Defaults to FETCH_ASSOC now because of line 23

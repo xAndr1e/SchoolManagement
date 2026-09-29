@@ -33,10 +33,10 @@ switch ($action) {
                     sms.first_name,
                     sms.last_name,
                     sp.position_name
-                FROM sms_employee sms
-                LEFT JOIN sd_position sp ON sms.position = sp.position_id
-                WHERE sms.department = :department_id
-                AND sms.status = 'active'
+                FROM em_employees sms
+                LEFT JOIN em_positions sp ON sms.position_id = sp.position_id
+                WHERE sms.department_id = :department_id
+                AND sms.employment_status = 'Active'
                 ORDER BY sms.last_name, sms.first_name
             ");
             $stmt->execute([':department_id' => $department_id]);

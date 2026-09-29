@@ -65,10 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         WHERE user_account.employee_id = :employeeid
         LIMIT 1
     ");
-
-    $stmt->execute([
-        ':employeeid' => $employeeid
-    ]);
+    $stmt->bindParam(':employeeid', $employeeid);
+    $stmt->execute();
 
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -83,18 +81,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['department_name'] = $user['department_name'];  
 
         $redirectMap = [
-        2 => 'modules/recruitment/index.php',
-        3 => 'modules/employee/index.php',
-        4 => 'modules/payroll/index.php',
-        5 => 'modules/time/index.php',
-        6 => 'modules/performance/index.php',
-        7 => 'modules/learning/index.php',
-        8 => 'modules/compliance/index.php',
-        9 => 'modules/workforce/index.php',
-        10 => 'modules/exit/index.php',
-        11 => 'modules/clinic/index.php',
-        12 => 'modules/engagement/index.php',
-        13 => 'modules/portal/index.php'
+        1 => 'modules/school-directress/index.php',
+        2 => 'modules/enrollment/index.php',
+        3 => 'modules/registrar/',
+        4 => 'modules/clinic/index.php',
+        5 => 'modules/library/index.php',
+        6 => 'modules/laboratory/',
+        7 => 'modules/monitoring/index.php',
+        8 => 'modules/guidance/index.php',
+        22 => 'modules/college-coor/index.php',
+        10 => 'modules/recruitment/index.php',
+        
     ];
 
         $role = (int) $user['role'];

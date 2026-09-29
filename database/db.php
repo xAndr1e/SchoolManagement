@@ -12,10 +12,10 @@ class Database {
     public function __construct() {
         // Look for Railway's environment variables first, default to local if missing
         $this->host = getenv('DB_HOST') ?: "localhost";
-        $this->port = getenv('DB_PORT') ?: "3307"; // Default MySQL port
-        $this->db   = getenv('DB_DATABASE') ?: "ccms_sms";
-        $this->user = getenv('DB_USER') ?: "ccms_sms";
-        $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "WSi4Fo49q@#MK%zO";
+        $this->port = getenv('DB_PORT') ?: "3306"; // Default MySQL port
+        $this->db   = getenv('DB_DATABASE') ?: "payr_bcp";
+        $this->user = getenv('DB_USER') ?: "payr_bestlink";
+        $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "12345";
 
         try {
             // Added port mapping and upgraded charset to utf8mb4 (standard for modern MySQL)

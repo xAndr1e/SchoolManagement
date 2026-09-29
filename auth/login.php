@@ -50,20 +50,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             user_account.user_id,
             user_account.employee_id,
             user_account.password,
-            sms_employee.role,
-            sms_employee.department,
-            sd_roles.role_name,
-            sd_department.department_name
+            em_employees.role_id AS role,
+            em_employees.department_id AS department,
+            em_employees.employment_status,
+            em_roles.role_name,
+            em_departments.department_name
         FROM user_account
-        INNER JOIN sms_employee  ON sms_employee.employee_id  = user_account.employee_id
-        INNER JOIN sd_roles      ON sd_roles.role_id          = sms_employee.role
-        LEFT  JOIN sd_department ON sd_department.department_id = sms_employee.department
+        INNER JOIN em_employees
+            ON em_employees.employee_id = user_account.employee_id
+        LEFT JOIN em_roles
+            ON em_roles.role_id = em_employees.role_id
+        LEFT JOIN em_departments
+            ON em_departments.department_id = em_employees.department_id
         WHERE user_account.employee_id = :employeeid
-        AND   sms_employee.status      = 'active'
         LIMIT 1
     ");
-    $stmt->bindParam(':employeeid', $employeeid);
-    $stmt->execute();
+
+    $stmt->execute([
+        ':employeeid' => $employeeid
+    ]);
 
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -78,16 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['department_name'] = $user['department_name'];  
 
         $redirectMap = [
-        1 => 'modules/school-directress/index.php',
-        2 => 'modules/enrollment/index.php',
-        3 => 'modules/registrar/',
-        4 => 'modules/clinic/index.php',
-        5 => 'modules/library/index.php',
-        6 => 'modules/laboratory/',
-        7 => 'modules/monitoring/index.php',
-        8 => 'modules/guidance/index.php',
-        9 => 'modules/college-coor/index.php',
-        10 => 'modules/recruitment/index.php',
+        2 => 'modules/recruitment/index.php',
+        3 => 'modules/employee/index.php',
+        4 => 'modules/payroll/index.php',
+        5 => 'modules/time/index.php',
+        6 => 'modules/performance/index.php',
+        7 => 'modules/learning/index.php',
+        8 => 'modules/compliance/index.php',
+        9 => 'modules/workforce/index.php',
+        10 => 'modules/exit/index.php',
+        11 => 'modules/clinic/index.php',
+        12 => 'modules/engagement/index.php',
+        13 => 'modules/portal/index.php'
     ];
 
         $role = (int) $user['role'];

@@ -96,12 +96,6 @@ include 'layouts/header.php';
                                 <div class="stat-card-value text-warning" id="pendingApprovals">0</div>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-md-6">
-                            <div class="stat-card">
-                                <div class="stat-card-label">CHECKED OUT TODAY</div>
-                                <div class="stat-card-value text-info" id="checkedOut">0</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -397,7 +391,6 @@ async function loadDashboardStats() {
             $('#totalVisitors').text(stats.today || 0);
             $('#insideVisitors').text(stats.inside || 0);
             $('#pendingApprovals').text(stats.pending || 0);
-            $('#checkedOut').text(stats.checked_out || 0);
         }
     } catch (error) {
         console.error('Error loading stats:', error);

@@ -141,7 +141,7 @@ if (is_numeric($action)) {
 }
 
 // Public frontend routes and auth routes
-$publicRoutes = ['login', 'home', 'register', 'timeout'];
+$publicRoutes = ['login', 'home', 'register'];
 $publicMobileRoutes = ['mobile-attendance', 'mobile-facilities', 'register'];
 $isPublicRoute = in_array($controller, $publicRoutes) || ($controller === 'auth' && in_array($action, ['login', 'check']));
 $isPublicMobileRoute = !$isApiRequest && in_array($controller, $publicMobileRoutes, true);
@@ -177,7 +177,7 @@ if (!$isApiRequest && $controller === 'login') {
 // ============================================
 // Handle Public Views (no auth required)
 // ============================================
-if (!$isApiRequest && in_array($controller, ['register', 'timeout'])) {
+if (!$isApiRequest && $controller === 'register') {
     $viewFile = MONITORING_ROOT . "/views/{$controller}.php";
     if (file_exists($viewFile)) {
         header('Content-Type: text/html; charset=utf-8');
@@ -262,7 +262,6 @@ if ($isApiRequest && $controller === 'auth' && $action === 'check') {
 // ============================================
 $publicApiRoutes = [
     'visitor/register',
-    'visitor/checkout-by-identifier',
     'auth/login',
     'auth/check',
     'schedule/mobile-view',
@@ -541,11 +540,6 @@ if ($isApiRequest) {
             } elseif ($method === 'POST') {
                 if ($action === 'register') {
                     $result = $visitorController->registerVisitor($postData, $uploadedFiles);
-                    echo json_encode($result);
-                    break;
-                }
-                if ($action === 'checkout-by-identifier') {
-                    $result = $visitorController->checkoutByIdentifier($postData);
                     echo json_encode($result);
                     break;
                 }

@@ -136,7 +136,6 @@ include 'layouts/header.php';
                                     <th><i class="bi bi-truck me-1"></i> Vehicle Plate</th>
                                     <th><i class="bi bi-chat me-1"></i> Purpose</th>
                                     <th><i class="bi bi-image me-1"></i> ID Image</th>
-                                    <th><i class="bi bi-clock me-1"></i> Time In</th>
                                     <th><i class="bi bi-info-circle me-1"></i> Status</th>
                                     <th><i class="bi bi-gear me-1"></i> Actions</th>
                                 </tr>
@@ -1092,7 +1091,6 @@ async function loadPendingApprovals() {
                             <tr>
                                 <th><i class="bi bi-person me-1"></i> Name</th>
                                 <th><i class="bi bi-phone me-1"></i> Contact</th>
-                                <th><i class="bi bi-clock me-1"></i> Time In</th>
                                 <th><i class="bi bi-chat me-1"></i> Purpose</th>
                                 <th><i class="bi bi-image me-1"></i> ID Image</th>
                                 <th><i class="bi bi-gear me-1"></i> Action</th>
@@ -1121,7 +1119,6 @@ async function loadPendingApprovals() {
                     <tr>
                         <td><strong>${escapeHtml(visitor.visitor_name)}</strong></td>
                         <td>${escapeHtml(visitor.contact_number)}</td>
-                        <td>${formatDate(visitor.time_in)}</td>
                         <td>${escapeHtml(visitor.purpose_of_visit)}</td>
                         <td>${imageHtml}</td>
                         <td>
@@ -1199,7 +1196,6 @@ function renderVisitors(visitors) {
                     <td>${escapeHtml(visitor.vehicle_plate || 'N/A')}</td>
                     <td>${escapeHtml(visitor.purpose_of_visit)}</td>
                     <td>${imageHtml}</td>
-                    <td>${formatDate(visitor.time_in)}</td>
                     <td><span class="badge ${statusBadge}">${escapeHtml(visitor.status || 'N/A')}</span></td>
                     <td>
                         <span class="text-muted">Logged In</span>
@@ -1211,7 +1207,7 @@ function renderVisitors(visitors) {
         $('#visitorCount').text('0 records');
         tbody.append(`
             <tr>
-                <td colspan="9" class="text-center">
+                <td colspan="8" class="text-center">
                     <div class="empty-state">
                         <i class="bi bi-people"></i>
                         <h6>No visitors found</h6>

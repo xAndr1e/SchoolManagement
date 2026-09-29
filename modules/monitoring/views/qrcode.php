@@ -10,7 +10,6 @@ $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
 $registrationUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.php?page=register';
-$timeoutUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.php?page=timeout';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -133,7 +132,7 @@ $timeoutUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.ph
         
         <div class="row">
             <!-- Registration QR Code -->
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="qr-card text-center">
                     <h4 class="mb-3"><i class="bi bi-person-plus" style="color: #28a745;"></i> Visitor Registration</h4>
                     <div class="qr-code-wrapper">
@@ -150,25 +149,6 @@ $timeoutUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.ph
                     </div>
                 </div>
             </div>
-            
-            <!-- Time Out QR Code -->
-            <div class="col-md-6">
-                <div class="qr-card text-center">
-                    <h4 class="mb-3"><i class="bi bi-door-open" style="color: #dc3545;"></i> Visitor Time Out</h4>
-                    <div class="qr-code-wrapper">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=<?php echo urlencode($timeoutUrl); ?>" 
-                             alt="Time Out QR Code">
-                    </div>
-                    <div class="qr-label">Scan to Check Out</div>
-                    <div class="qr-url">
-                        <i class="bi bi-link-45deg"></i> <?php echo $timeoutUrl; ?>
-                    </div>
-                    <div class="mt-3">
-                        <span class="badge bg-warning text-dark">Active</span>
-                        <span class="badge bg-info">Public</span>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <!-- Instructions -->
@@ -179,8 +159,7 @@ $timeoutUrl = $scheme . $host . ($basePath === '' ? '' : $basePath) . '/index.ph
                     <ol>
                         <li><strong>Print</strong> these QR codes and display them at the school entrance.</li>
                         <li><strong>Registration QR Code</strong> - Visitors scan this to register their visit.</li>
-                        <li><strong>Time Out QR Code</strong> - Visitors scan this when leaving to record their departure.</li>
-                        <li>Both QR codes are <strong>permanent</strong> and can be used indefinitely.</li>
+                        <li>The registration QR code is <strong>permanent</strong> and can be used indefinitely.</li>
                         <li>Visitors will be directed to mobile-friendly pages.</li>
                     </ol>
                     <div class="alert alert-warning mt-2">

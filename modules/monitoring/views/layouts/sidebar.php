@@ -316,7 +316,7 @@
     margin: 3px 0;
     border-radius: 8px;
     background: transparent;
-    transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+    transition: background 0.28s ease, color 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -373,11 +373,12 @@
     background: #4d49b6; /* Updated active pill color */
     color: #ffffff;
     font-weight: 700;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
 .nav .nav-link .dropdown-arrow {
     margin-left: auto;
-    transition: transform 0.3s ease;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
     font-size: 0.72rem;
     color: #c7c4f0;
 }
@@ -409,13 +410,19 @@
     margin: 2px 0 6px 0;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.3s ease;
+    transform: translateY(-4px);
+    visibility: hidden;
+    transition: max-height 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease, transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.38s;
     opacity: 0;
+    will-change: max-height, opacity, transform;
 }
 
 .sub-menu.show {
     max-height: 200px;
     opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+    transition-delay: 0s;
 }
 
 .sub-nav-link {
@@ -423,7 +430,7 @@
     padding: 9px 14px;
     margin: 2px 0;
     border-radius: 6px;
-    transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease;
+    transition: background 0.28s ease, color 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -452,6 +459,7 @@
     color: #ffffff;
     background: rgba(255, 255, 255, 0.15);
     font-weight: 600;
+    box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.55);
 }
 
 /* User Info & Footer */

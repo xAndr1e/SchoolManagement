@@ -619,17 +619,52 @@ body {
     min-width: 90px;
     justify-content: center;
     border-radius: 8px;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: #ffffff;
+    transition: color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+.day-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(135deg, #19006b, #2d1a7a);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+}
+
+.day-btn i {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .day-btn.active {
-    background: linear-gradient(135deg, #19006b, #2d1a7a);
+    background: #ffffff;
     color: #fff;
     border-color: #19006b;
+    box-shadow: 0 6px 14px rgba(25, 0, 107, 0.18);
+    transform: translateY(-1px) scale(1.02);
+}
+
+.day-btn.active::before {
+    opacity: 1;
+}
+
+.day-btn.active i,
+.day-btn.is-switching i {
+    transform: scale(1.08);
 }
 
 .day-btn.active:hover {
-    background: linear-gradient(135deg, #0f0045, #19006b);
     border-color: #0f0045;
+    box-shadow: 0 8px 18px rgba(25, 0, 107, 0.24);
+}
+
+.day-btn.active:hover::before {
+    opacity: 0.95;
 }
 
 .day-btn.btn-outline-primary {
@@ -641,6 +676,28 @@ body {
     background: linear-gradient(135deg, #19006b, #2d1a7a);
     color: #fff;
     border-color: #19006b;
+}
+
+.day-btn.is-switching {
+    animation: daySwitchPop 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes daySwitchPop {
+    0% { transform: translateY(0) scale(0.98); }
+    60% { transform: translateY(-2px) scale(1.035); }
+    100% { transform: translateY(-1px) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .day-btn,
+    .day-btn::before,
+    .day-btn i {
+        transition-duration: 0.01ms;
+    }
+
+    .day-btn.is-switching {
+        animation: none;
+    }
 }
 
 /* Status Colors in Tables */
@@ -1201,9 +1258,13 @@ function updateDayDisplay(day) {
 }
 
 function highlightDay(day) {
-    $('.day-btn').removeClass('active btn-primary').addClass('btn-outline-primary');
+    $('.day-btn').removeClass('active btn-primary is-switching').addClass('btn-outline-primary');
     const $targetBtn = $(`.day-btn[data-day="${day}"]`);
-    $targetBtn.removeClass('btn-outline-primary').addClass('active btn-primary');
+    $targetBtn.removeClass('btn-outline-primary').addClass('active btn-primary is-switching');
+
+    window.setTimeout(function() {
+        $targetBtn.removeClass('is-switching');
+    }, 360);
 }
 
 function updateLastUpdated() {

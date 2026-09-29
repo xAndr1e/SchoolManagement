@@ -6,6 +6,10 @@ if (!in_array($reportType, $validReportTypes, true)) {
     $reportType = 'all';
 }
 $reportPageClass = 'report-page report-' . $reportType;
+$showAcademicReport = in_array($reportType, ['academic', 'all'], true);
+$showFacilitiesReport = in_array($reportType, ['facilities', 'all'], true);
+$showSecurityReport = in_array($reportType, ['security', 'all'], true);
+$showComprehensiveReport = $reportType === 'all';
 include 'layouts/header.php'; 
 ?>
 <style>
@@ -121,33 +125,9 @@ include 'layouts/header.php';
                 </div>
             </div>
             
-            <!-- Report Tabs -->
-            <ul class="nav nav-tabs" id="reportTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="attendance-tab" data-bs-toggle="tab" href="#attendanceReport">
-                        <i class="bi bi-calendar-check"></i> Academic Department
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="facility-tab" data-bs-toggle="tab" href="#facilityReport">
-                        <i class="bi bi-building"></i> Facilities Department
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="visitor-tab" data-bs-toggle="tab" href="#visitorReport">
-                        <i class="bi bi-people"></i> Security Department
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="comprehensive-tab" data-bs-toggle="tab" href="#comprehensiveReport">
-                        <i class="bi bi-file-earmark-text"></i> Executive Summary
-                    </a>
-                </li>
-            </ul>
-            
-            <div class="tab-content mt-3" id="reportTabContent">
+            <div class="report-content">
                 <!-- Academic Department - Attendance Report -->
-                <div class="tab-pane fade show active" id="attendanceReport">
+                <div class="report-section <?php echo $showAcademicReport ? '' : 'd-none'; ?>" id="attendanceReport">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -217,7 +197,7 @@ include 'layouts/header.php';
                 </div>
                 
                 <!-- Facilities Department - Facility Report -->
-                <div class="tab-pane fade" id="facilityReport">
+                <div class="report-section <?php echo $showFacilitiesReport ? '' : 'd-none'; ?>" id="facilityReport">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -279,7 +259,7 @@ include 'layouts/header.php';
                 </div>
                 
                 <!-- Security Department - Visitor Report -->
-                <div class="tab-pane fade" id="visitorReport">
+                <div class="report-section <?php echo $showSecurityReport ? '' : 'd-none'; ?>" id="visitorReport">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -321,7 +301,6 @@ include 'layouts/header.php';
                                             <th><i class="bi bi-truck me-1"></i> Vehicle Plate</th>
                                             <th><i class="bi bi-chat me-1"></i> Purpose</th>
                                             <th><i class="bi bi-image me-1"></i> ID Image</th>
-                                            <th><i class="bi bi-clock me-1"></i> Time In</th>
                                             <th><i class="bi bi-info-circle me-1"></i> Status</th>
                                             <th style="width:100px;"><i class="bi bi-gear me-1"></i> Actions</th>
                                         </tr>
@@ -341,7 +320,7 @@ include 'layouts/header.php';
                 </div>
                 
                 <!-- Executive Summary - Comprehensive Report -->
-                <div class="tab-pane fade" id="comprehensiveReport">
+                <div class="report-section <?php echo $showComprehensiveReport ? '' : 'd-none'; ?>" id="comprehensiveReport">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -899,36 +878,6 @@ body {
     box-shadow: 0 0 0 0.25rem rgba(25, 0, 107, 0.25);
 }
 
-/* Nav Tabs */
-.nav-tabs {
-    border-bottom: 2px solid var(--border);
-}
-
-.nav-tabs .nav-link {
-    border: none;
-    color: var(--muted);
-    font-weight: 500;
-    padding: 0.65rem 1.25rem;
-    border-radius: 0;
-    transition: all var(--transition);
-    position: relative;
-}
-
-.nav-tabs .nav-link:hover {
-    color: var(--primary);
-    background: transparent;
-}
-
-.nav-tabs .nav-link.active {
-    color: var(--primary);
-    background: transparent;
-    border-bottom: 3px solid var(--primary);
-}
-
-.nav-tabs .nav-link i {
-    margin-right: 0.4rem;
-}
-
 /* Dropdown */
 .dropdown-menu {
     border-radius: var(--border-radius);
@@ -1010,7 +959,6 @@ body {
     .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
     .badge { font-size: 0.65em; padding: 0.25em 0.5em; }
     .card-header h5 { font-size: 0.95rem; }
-    .nav-tabs .nav-link { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
 }
 
 @media (max-width: 576px) {
@@ -1097,6 +1045,32 @@ function formatDateDisplay(dateStr) {
     const d = new Date(dateStr);
     if (isNaN(d)) return dateStr;
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatDateTimeDisplay(dateStr) {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    return d.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatStatusLabel(status) {
+    if (!status) return 'N/A';
+    return String(status)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function getUploadPath(path) {
+    if (!path) return '';
+    const cleanPath = String(path).replace(/^\/+/, '');
+    return cleanPath.startsWith('uploads/') ? `/${cleanPath}` : `/uploads/${cleanPath}`;
 }
 
 function escapeHtml(text) {
@@ -1224,7 +1198,7 @@ async function loadAttendanceReport(start, end) {
                 
                 let photoHtml = '<span class="text-muted">No photo</span>';
                 if (item.face_to_face_image) {
-                    const photoPath = `/uploads/${item.face_to_face_image}`;
+                    const photoPath = getUploadPath(item.face_to_face_image);
                     photoHtml = `<img src="${photoPath}" alt="Face photo" style="width:40px;height:40px;object-fit:cover;border-radius:5px;cursor:pointer;" onclick="window.open('${photoPath}','_blank')" onerror="this.style.display='none';">`;
                 }
                 
@@ -1288,7 +1262,7 @@ async function loadFacilityReport(start, end) {
             data.forEach(item => {
                 let photoHtml = '<span class="text-muted">No photo</span>';
                 if (item.photo) {
-                    const photoPath = `/uploads/${item.photo}`;
+                    const photoPath = getUploadPath(item.photo);
                     photoHtml = `<img src="${photoPath}" alt="Damage photo" style="width:40px;height:40px;object-fit:cover;border-radius:5px;cursor:pointer;" onclick="window.open('${photoPath}','_blank')" onerror="this.style.display='none';">`;
                 }
                 
@@ -1361,7 +1335,7 @@ async function loadVisitorReport(start, end) {
                 
                 let idHtml = '<span class="text-muted">No ID</span>';
                 if (item.id_attachment) {
-                    const idPath = `/uploads/${item.id_attachment}`;
+                    const idPath = getUploadPath(item.id_attachment);
                     idHtml = `<img src="${idPath}" alt="ID Image" style="width:40px;height:40px;object-fit:cover;border-radius:5px;cursor:pointer;" onclick="window.open('${idPath}','_blank')" onerror="this.style.display='none';">`;
                 }
                 
@@ -1373,7 +1347,6 @@ async function loadVisitorReport(start, end) {
                         <td>${escapeHtml(item.vehicle_plate || 'N/A')}</td>
                         <td>${escapeHtml(item.purpose_of_visit || 'N/A')}</td>
                         <td>${idHtml}</td>
-                        <td>${formatDate(item.time_in)}</td>
                         <td><span class="badge ${statusBadge}">${escapeHtml(item.status || 'N/A')}</span></td>
                         <td>
                             <button class="btn btn-sm btn-success" onclick="editVisitor(${item.id || 0})">
@@ -1391,11 +1364,11 @@ async function loadVisitorReport(start, end) {
             $('#visInsideCount').text(0);
             $('#visLeftCount').text(0);
             $('#visPendingCount').text(0);
-            tbody.append('<tr><td colspan="9" class="text-center text-muted py-4">No visitor records found for the selected period</td></tr>');
+            tbody.append('<tr><td colspan="8" class="text-center text-muted py-4">No visitor records found for the selected period</td></tr>');
         }
     } catch (error) {
         console.error('Error loading visitor report:', error);
-        $('#visitorReportBody').html('<tr><td colspan="9" class="text-center text-danger py-4">Error loading visitor report</td></tr>');
+        $('#visitorReportBody').html('<tr><td colspan="8" class="text-center text-danger py-4">Error loading visitor report</td></tr>');
     }
 }
 
@@ -1526,8 +1499,8 @@ async function loadVisitorDetails() {
         const data = result.data || result;
         currentDetailData = data || [];
         renderDetails(currentDetailData, [
-            'Name', 'Contact', 'Purpose', 'Time In', 'Time Out', 'Status', 'Action'
-        ], ['visitor_name', 'contact_number', 'purpose_of_visit', 'time_in', 'time_out', 'status']);
+            'Name', 'Contact', 'Purpose', 'Status', 'Action'
+        ], ['visitor_name', 'contact_number', 'purpose_of_visit', 'status']);
     } catch (error) {
         console.error('Error loading visitor details:', error);
         showToast('Error loading visitor details', 'error');
@@ -1642,8 +1615,8 @@ async function exportSinglePDF(type, singleData) {
     showLoading();
     
     try {
-        const SCHOOL_NAME = 'YOUR SCHOOL NAME';
-        const SCHOOL_ADDRESS = 'School Address, City, Province';
+        const SCHOOL_NAME = 'Bestlink College of the Philippines';
+        const SCHOOL_ADDRESS = 'School Monitoring System';
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'in', format: 'letter', orientation: 'landscape' });
@@ -1667,9 +1640,9 @@ async function exportSinglePDF(type, singleData) {
                     item.subject_code || 'N/A',
                     item.room || 'N/A',
                     item.student_count || 0,
-                    item.status || 'N/A',
+                    formatStatusLabel(item.status),
                     item.verification_method || 'N/A',
-                    formatDateDisplay(item.attendance_date)
+                    formatDateTimeDisplay(item.check_time || item.attendance_date)
                 ])
             },
             facility: {
@@ -1685,7 +1658,7 @@ async function exportSinglePDF(type, singleData) {
                     (item.description || 'N/A').substring(0, 50),
                     item.reported_by || 'N/A',
                     formatDateDisplay(item.date || item.report_date),
-                    (item.status || 'N/A').toUpperCase()
+                    formatStatusLabel(item.status)
                 ])
             },
             visitor: {
@@ -1693,16 +1666,14 @@ async function exportSinglePDF(type, singleData) {
                 subtitle: 'Single Visitor Record',
                 recipient: 'Security Department Head',
                 color: [46, 204, 113],
-                tableHead: [['Name', 'Contact', 'ID Type', 'Vehicle Plate', 'Purpose', 'Time In', 'Time Out', 'Status']],
+                tableHead: [['Name', 'Contact', 'ID Type', 'Vehicle Plate', 'Purpose', 'Status']],
                 tableBody: singleData.map(item => [
                     item.visitor_name || 'N/A',
                     item.contact_number || 'N/A',
                     item.id_type || 'N/A',
                     item.vehicle_plate || 'N/A',
                     (item.purpose_of_visit || 'N/A').substring(0, 50),
-                    formatDateDisplay(item.time_in),
-                    item.time_out ? formatDateDisplay(item.time_out) : 'Still Inside',
-                    (item.status || 'N/A').toUpperCase()
+                    formatStatusLabel(item.status)
                 ])
             },
             comprehensive: {
@@ -1946,8 +1917,8 @@ async function exportReport(type = 'comprehensive') {
             visitor = result.data || result || [];
         }
 
-        const SCHOOL_NAME = 'YOUR SCHOOL NAME';
-        const SCHOOL_ADDRESS = 'School Address, City, Province';
+        const SCHOOL_NAME = 'Bestlink College of the Philippines';
+        const SCHOOL_ADDRESS = 'School Monitoring System';
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'in', format: 'letter', orientation: 'landscape' });
@@ -1971,9 +1942,9 @@ async function exportReport(type = 'comprehensive') {
                     item.subject_code || 'N/A',
                     item.room || 'N/A',
                     item.student_count || 0,
-                    item.status || 'N/A',
+                    formatStatusLabel(item.status),
                     item.verification_method || 'N/A',
-                    formatDateDisplay(item.attendance_date)
+                    formatDateTimeDisplay(item.check_time || item.attendance_date)
                 ]) : [['No attendance data found', '', '', '', '', '', '', '']]
             },
             facility: {
@@ -1983,14 +1954,14 @@ async function exportReport(type = 'comprehensive') {
                 color: [243, 156, 18],
                 tableHead: [['Photo', 'Room', 'Equipment', 'Qty Damaged', 'Description', 'Reported By', 'Date Reported', 'Status', 'Resolved Date']],
                 tableBody: facility.length ? facility.map(item => [
-                    item.photo ? '📷' : 'No photo',
+                    item.photo ? 'Yes' : 'No',
                     item.room_number || 'N/A',
                     item.equipment || item.broken_equipment || 'N/A',
                     item.quantity || item.quantity_damaged || 1,
                     (item.description || 'N/A').substring(0, 50) + ((item.description || '').length > 50 ? '...' : ''),
                     item.reported_by || 'N/A',
                     formatDateDisplay(item.date || item.report_date),
-                    (item.status || 'N/A').toUpperCase(),
+                    formatStatusLabel(item.status),
                     item.resolved_date ? formatDateDisplay(item.resolved_date) : 'N/A'
                 ]) : [['No facility data found', '', '', '', '', '', '', '', '']]
             },
@@ -1999,7 +1970,7 @@ async function exportReport(type = 'comprehensive') {
                 subtitle: 'Visitor Records Report',
                 recipient: 'Security Department Head',
                 color: [46, 204, 113],
-                tableHead: [['Name', 'Contact', 'ID Type', 'ID Number', 'Vehicle Plate', 'Purpose', 'Person to Visit', 'Time In', 'Time Out', 'Status']],
+                tableHead: [['Name', 'Contact', 'ID Type', 'ID Number', 'Vehicle Plate', 'Purpose', 'Person to Visit', 'Status']],
                 tableBody: visitor.length ? visitor.map(item => [
                     item.visitor_name || 'N/A',
                     item.contact_number || 'N/A',
@@ -2008,10 +1979,8 @@ async function exportReport(type = 'comprehensive') {
                     item.vehicle_plate || 'N/A',
                     (item.purpose_of_visit || 'N/A').substring(0, 40) + ((item.purpose_of_visit || '').length > 40 ? '...' : ''),
                     item.person_to_visit || 'N/A',
-                    formatDateDisplay(item.time_in),
-                    item.time_out ? formatDateDisplay(item.time_out) : 'Still Inside',
-                    (item.status || 'N/A').toUpperCase()
-                ]) : [['No visitor data found', '', '', '', '', '', '', '', '', '']]
+                    formatStatusLabel(item.status)
+                ]) : [['No visitor data found', '', '', '', '', '', '', '']]
             },
             comprehensive: {
                 title: 'EXECUTIVE SUMMARY',
@@ -2078,7 +2047,7 @@ async function exportReport(type = 'comprehensive') {
 
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
-            doc.text('📊 Summary Statistics', marginX, cursorY);
+            doc.text('Summary Statistics', marginX, cursorY);
             cursorY += 0.2;
 
             doc.setFont('helvetica', 'normal');
@@ -2117,15 +2086,15 @@ async function exportReport(type = 'comprehensive') {
             if (cursorY + 0.8 > bottomLimit) { doc.addPage(); cursorY = 0.75; }
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.text('📝 Notes:', marginX, cursorY);
+            doc.text('Notes:', marginX, cursorY);
             cursorY += 0.15;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
-            doc.text('• This report shows all facility maintenance and damage reports for the selected period.', marginX, cursorY);
+            doc.text('- This report shows all facility maintenance and damage reports for the selected period.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• "Photo" column indicates if a damage photo is available (📷 = has photo).', marginX, cursorY);
+            doc.text('- The Photo column indicates whether a damage photo is available.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• Status: Reported → In Progress → Resolved/Replaced', marginX, cursorY);
+            doc.text('- Status flow: Reported -> In Progress -> Resolved or Replaced.', marginX, cursorY);
 
         // ==========================================
         // VISITOR DETAILED REPORT
@@ -2135,11 +2104,9 @@ async function exportReport(type = 'comprehensive') {
             const inside = visitor.filter(item => item.status === 'inside').length;
             const left = visitor.filter(item => item.status === 'left').length;
             const pending = visitor.filter(item => item.status === 'pending_approval').length;
-            const approved = visitor.filter(item => item.status === 'approved').length;
-
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
-            doc.text('📊 Summary Statistics', marginX, cursorY);
+            doc.text('Summary Statistics', marginX, cursorY);
             cursorY += 0.2;
 
             doc.setFont('helvetica', 'normal');
@@ -2148,8 +2115,7 @@ async function exportReport(type = 'comprehensive') {
                 `Total Visitors: ${totalVisitors}`,
                 `Currently Inside: ${inside}`,
                 `Left: ${left}`,
-                `Pending Approval: ${pending}`,
-                `Approved: ${approved}`
+                `Pending Approval: ${pending}`
             ];
             doc.text(statsText.join('  |  '), marginX, cursorY);
             cursorY += 0.3;
@@ -2163,15 +2129,13 @@ async function exportReport(type = 'comprehensive') {
                 body: config.tableBody,
                 columnStyles: {
                     0: { cellWidth: 1.0 },
-                    1: { cellWidth: 0.7 },
-                    2: { cellWidth: 0.6 },
-                    3: { cellWidth: 0.7 },
-                    4: { cellWidth: 0.7 },
-                    5: { cellWidth: 1.3 },
-                    6: { cellWidth: 0.7 },
-                    7: { cellWidth: 0.8 },
-                    8: { cellWidth: 0.8 },
-                    9: { cellWidth: 0.7 }
+                    1: { cellWidth: 0.8 },
+                    2: { cellWidth: 0.7 },
+                    3: { cellWidth: 0.8 },
+                    4: { cellWidth: 0.8 },
+                    5: { cellWidth: 1.8 },
+                    6: { cellWidth: 1.2 },
+                    7: { cellWidth: 0.8 }
                 }
             });
             cursorY = doc.lastAutoTable.finalY + 0.5;
@@ -2179,15 +2143,13 @@ async function exportReport(type = 'comprehensive') {
             if (cursorY + 0.8 > bottomLimit) { doc.addPage(); cursorY = 0.75; }
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.text('📝 Notes:', marginX, cursorY);
+            doc.text('Notes:', marginX, cursorY);
             cursorY += 0.15;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
-            doc.text('• This report shows all visitor records for the selected period.', marginX, cursorY);
+            doc.text('- This report shows all visitor records for the selected period.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• "Still Inside" indicates the visitor has not checked out yet.', marginX, cursorY);
-            cursorY += 0.15;
-            doc.text('• Status: pending_approval → approved → inside → left', marginX, cursorY);
+            doc.text('- Status flow: Pending Approval -> Inside -> Left.', marginX, cursorY);
 
         // ==========================================
         // ATTENDANCE DETAILED REPORT
@@ -2202,7 +2164,7 @@ async function exportReport(type = 'comprehensive') {
 
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
-            doc.text('📊 Summary Statistics', marginX, cursorY);
+            doc.text('Summary Statistics', marginX, cursorY);
             cursorY += 0.2;
 
             doc.setFont('helvetica', 'normal');
@@ -2231,15 +2193,15 @@ async function exportReport(type = 'comprehensive') {
             if (cursorY + 0.8 > bottomLimit) { doc.addPage(); cursorY = 0.75; }
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.text('📝 Notes:', marginX, cursorY);
+            doc.text('Notes:', marginX, cursorY);
             cursorY += 0.15;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
-            doc.text('• This report shows all attendance records for the selected period.', marginX, cursorY);
+            doc.text('- This report shows all attendance records for the selected period.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• Status indicates the attendance state of each faculty member.', marginX, cursorY);
+            doc.text('- Status indicates the attendance state of each faculty member.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• Verification method shows how attendance was confirmed.', marginX, cursorY);
+            doc.text('- Verification method shows how attendance was confirmed.', marginX, cursorY);
 
         // ==========================================
         // COMPREHENSIVE REPORT
@@ -2278,9 +2240,9 @@ async function exportReport(type = 'comprehensive') {
                     item.subject_code || 'N/A',
                     item.room || 'N/A',
                     item.student_count || 0,
-                    item.status || 'N/A',
+                    formatStatusLabel(item.status),
                     item.verification_method || 'N/A',
-                    formatDateDisplay(item.attendance_date)
+                    formatDateTimeDisplay(item.check_time || item.attendance_date)
                 ]) : [['No attendance data found', '', '', '', '', '', '', '']]
             });
             cursorY = doc.lastAutoTable.finalY + 0.3;
@@ -2312,14 +2274,14 @@ async function exportReport(type = 'comprehensive') {
                 headStyles: { fillColor: [243, 156, 18] },
                 head: [['Photo', 'Room', 'Equipment', 'Qty', 'Description', 'Reported By', 'Date', 'Status']],
                 body: facility.length ? facility.map(item => [
-                    item.photo ? '📷' : 'No photo',
+                    item.photo ? 'Yes' : 'No',
                     item.room_number || 'N/A',
                     item.equipment || item.broken_equipment || 'N/A',
                     item.quantity || item.quantity_damaged || 1,
                     (item.description || 'N/A').substring(0, 40) + ((item.description || '').length > 40 ? '...' : ''),
                     item.reported_by || 'N/A',
                     formatDateDisplay(item.date || item.report_date),
-                    item.status || 'N/A'
+                    formatStatusLabel(item.status)
                 ]) : [['No facility data found', '', '', '', '', '', '', '']]
             });
             cursorY = doc.lastAutoTable.finalY + 0.3;
@@ -2349,16 +2311,15 @@ async function exportReport(type = 'comprehensive') {
                 margin: { left: marginX, right: marginX },
                 styles: { fontSize: 6.5, cellPadding: 0.04 },
                 headStyles: { fillColor: [46, 204, 113] },
-                head: [['Name', 'Contact', 'ID Type', 'Vehicle', 'Purpose', 'Time In', 'Status']],
+                head: [['Name', 'Contact', 'ID Type', 'Vehicle', 'Purpose', 'Status']],
                 body: visitor.length ? visitor.map(item => [
                     item.visitor_name || 'N/A',
                     item.contact_number || 'N/A',
                     item.id_type || 'N/A',
                     item.vehicle_plate || 'N/A',
                     (item.purpose_of_visit || 'N/A').substring(0, 35) + ((item.purpose_of_visit || '').length > 35 ? '...' : ''),
-                    formatDateDisplay(item.time_in),
-                    item.status || 'N/A'
-                ]) : [['No visitor data found', '', '', '', '', '', '']]
+                    formatStatusLabel(item.status)
+                ]) : [['No visitor data found', '', '', '', '', '']]
             });
             cursorY = doc.lastAutoTable.finalY + 0.5;
 
@@ -2366,17 +2327,17 @@ async function exportReport(type = 'comprehensive') {
             if (cursorY + 0.8 > bottomLimit) { doc.addPage(); cursorY = 0.75; }
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.text('📝 Executive Summary Notes:', marginX, cursorY);
+            doc.text('Executive Summary Notes:', marginX, cursorY);
             cursorY += 0.15;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
-            doc.text('• This comprehensive report combines data from all three departments.', marginX, cursorY);
+            doc.text('- This comprehensive report combines data from all three departments.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• Academic: Tracks faculty attendance with status (Present, Absent, Late, Online, Excused).', marginX, cursorY);
+            doc.text('- Academic: Tracks faculty attendance with status (Present, Absent, Late, Online, Excused).', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• Facilities: Tracks equipment damage reports and maintenance status.', marginX, cursorY);
+            doc.text('- Facilities: Tracks equipment damage reports and maintenance status.', marginX, cursorY);
             cursorY += 0.15;
-            doc.text('• Security: Tracks visitor entries, exits, and ID verification status.', marginX, cursorY);
+            doc.text('- Security: Tracks visitor entries, exits, and ID verification status.', marginX, cursorY);
         }
 
         // ============== SIGNATURE BLOCK ==============

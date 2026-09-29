@@ -701,8 +701,8 @@
                         <div class="value" id="visitorNameDisplay">-</div>
                     </div>
                     <div class="info-item">
-                        <span class="label"><i class="bi bi-clock"></i> Time In</span>
-                        <div class="value"><i class="bi bi-check-circle-fill"></i> <span id="timeInDisplay">-</span></div>
+                        <span class="label"><i class="bi bi-chat"></i> Purpose</span>
+                        <div class="value" id="purposeDisplay">-</div>
                     </div>
                     <div class="info-item">
                         <span class="label"><i class="bi bi-building"></i> Department</span>
@@ -1156,7 +1156,7 @@
             document.getElementById('visitorQRCode').textContent = qrCode;
             document.getElementById('visitorNameDisplay').textContent = visitor.visitor_name || 'Visitor';
             document.getElementById('departmentDisplay').textContent = visitor.department || 'N/A';
-            document.getElementById('timeInDisplay').textContent = visitor.time_in ? new Date(visitor.time_in).toLocaleString() : 'Just now';
+            document.getElementById('purposeDisplay').textContent = visitor.purpose_of_visit || 'N/A';
             
             if (checkInterval) {
                 clearInterval(checkInterval);

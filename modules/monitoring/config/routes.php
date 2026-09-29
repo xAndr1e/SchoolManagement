@@ -48,7 +48,6 @@ $router->addRoute('GET', 'api/visitor/archive', 'VisitorController', 'getArchive
 
 // Public Visitor Routes (no auth required)
 $router->addRoute('POST', 'api/visitor/register', 'VisitorController', 'registerVisitor');
-$router->addRoute('POST', 'api/visitor/checkout-by-identifier', 'VisitorController', 'checkoutByIdentifier');
 
 // Protected Visitor Routes (auth required)
 $router->addRoute('POST', 'api/visitor/entry', 'VisitorController', 'logEntry');
@@ -81,7 +80,6 @@ $router->addRoute('GET', 'reports', 'ViewController', 'reports');
 $router->addRoute('GET', 'online-classes', 'ViewController', 'onlineClasses');
 $router->addRoute('GET', 'archive', 'ViewController', 'archive');
 $router->addRoute('GET', 'register', 'ViewController', 'register');
-$router->addRoute('GET', 'timeout', 'ViewController', 'timeout');
 $router->addRoute('GET', 'qrcode', 'ViewController', 'qrcode');
 $router->addRoute('GET', 'mobile-attendance', 'ViewController', 'mobileAttendance');
 $router->addRoute('GET', 'mobile-facilities', 'ViewController', 'mobileFacilities');

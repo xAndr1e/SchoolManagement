@@ -21,6 +21,7 @@ class Report extends Model {
                         meeting_link,
                         remarks,
                         check_time,
+                        face_to_face_image,
                         created_at
                     FROM mon_attendance_records 
                     WHERE attendance_date BETWEEN ? AND ? 
@@ -55,11 +56,11 @@ class Report extends Model {
                         visitor_name, 
                         contact_number, 
                         email,
+                        id_type,
+                        id_number,
                         purpose_of_visit,
                         person_to_visit,
                         department,
-                        time_in, 
-                        time_out, 
                         status,
                         id_attachment,
                         vehicle_type,
@@ -97,6 +98,7 @@ class Report extends Model {
                     meeting_link,
                     remarks,
                     check_time,
+                    face_to_face_image,
                     created_at
                 FROM mon_attendance_records
                 WHERE attendance_date BETWEEN ? AND ?
@@ -146,11 +148,11 @@ class Report extends Model {
                     visitor_name,
                     contact_number,
                     email,
+                    id_type,
+                    id_number,
                     purpose_of_visit,
                     person_to_visit,
                     department,
-                    time_in,
-                    time_out,
                     status,
                     id_attachment,
                     vehicle_type,

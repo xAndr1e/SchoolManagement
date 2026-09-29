@@ -34,7 +34,8 @@ class ViewController {
     }
     
     public function timeout() {
-        include '../views/timeout.php';
+        header('Location: /register');
+        exit;
     }
     
     public function qrcode() {

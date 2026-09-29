@@ -263,7 +263,6 @@ include 'layouts/header.php';
                                             <th><i class="bi bi-telephone me-1"></i> Contact</th>
                                             <th><i class="bi bi-chat me-1"></i> Purpose</th>
                                             <th><i class="bi bi-person-check me-1"></i> Person to Visit</th>
-                                            <th><i class="bi bi-clock me-1"></i> Time In</th>
                                             <th><i class="bi bi-info-circle me-1"></i> Status</th>
                                             <th><i class="bi bi-person-badge me-1"></i> Monitored By</th>
                                             <th><i class="bi bi-clock-history me-1"></i> Archived At</th>
@@ -1097,7 +1096,6 @@ async function loadVisitorsArchive() {
                         <td>${escapeHtml(item.contact_number)}</td>
                         <td>${escapeHtml(item.purpose_of_visit)}</td>
                         <td>${escapeHtml(item.person_to_visit || 'N/A')}</td>
-                        <td>${formatDate(item.time_in)}</td>
                         <td><span class="badge ${statusBadge}">${escapeHtml(item.status)}</span></td>
                         <td>${escapeHtml(item.monitored_by || 'N/A')}</td>
                         <td>${formatDate(item.archived_at)}</td>
@@ -1112,7 +1110,7 @@ async function loadVisitorsArchive() {
         } else {
             $('#visitorsCount').text('0 records');
             $('#totalVisitorsArchived').text(0);
-            tbody.append('<tr><td colspan="10" class="text-center text-muted py-4">No archived visitor logs found</td></tr>');
+            tbody.append('<tr><td colspan="9" class="text-center text-muted py-4">No archived visitor logs found</td></tr>');
         }
         updateSelectionCounter('visitors');
         updateHeaderCount();

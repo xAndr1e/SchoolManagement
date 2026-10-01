@@ -2,10 +2,11 @@
 // ============================================================
 // includes/config.php — Connected to SMS database
 // ============================================================
-define('DB_HOST',    'localhost');
-define('DB_USER',    'root');       // ← your MySQL username
-define('DB_PASS',    '');           // ← your MySQL password
-define('DB_NAME',    'sms');        // ← your actual database name
+define('DB_HOST',    getenv('DB_HOST') ?: 'localhost');
+define('DB_PORT',    getenv('DB_PORT') ?: '3306');
+define('DB_USER',    getenv('DB_USER') ?: 'root');
+define('DB_PASS',    getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : (getenv('DB_PASS') ?: ''));
+define('DB_NAME',    getenv('DB_DATABASE') ?: getenv('DB_NAME') ?: 'sms');
 define('DB_CHARSET', 'utf8mb4');
 
 define('UPLOAD_DIR', __DIR__ . '/../uploads/covers/');

@@ -1,9 +1,10 @@
 <?php
 
-$host    = 'localhost';
-$db      = 'sms';
-$user    = 'root';
-$pass    = '';
+$host    = getenv('DB_HOST') ?: 'localhost';
+$port    = getenv('DB_PORT') ?: '3306';
+$db      = getenv('DB_DATABASE') ?: getenv('DB_NAME') ?: 'sms';
+$user    = getenv('DB_USER') ?: 'root';
+$pass    = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : (getenv('DB_PASS') ?: '');
 $charset = 'utf8mb4';
 
 $students = [];
@@ -12,7 +13,7 @@ $error    = null;
 $stats    = ['total' => 0, 'enrolled' => 0, 'on_leave' => 0, 'graduated' => 0, 'dropped' => 0];
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=$charset", $user, $pass, [
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=$charset", $user, $pass, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);

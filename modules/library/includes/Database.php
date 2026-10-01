@@ -11,8 +11,8 @@ class Database
     {
         if (self::$instance === null) {
             $dsn = sprintf(
-                'mysql:host=%s;dbname=%s;charset=%s',
-                DB_HOST, DB_NAME, DB_CHARSET
+                'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+                DB_HOST, DB_PORT, DB_NAME, DB_CHARSET
             );
             try {
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, [

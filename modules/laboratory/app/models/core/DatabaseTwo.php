@@ -7,10 +7,16 @@ class DatabaseTwo
 
     private function __construct()
     {
+        $host = getenv('DB_HOST') ?: 'localhost';
+        $port = getenv('DB_PORT') ?: '3306';
+        $db = getenv('DB_DATABASE') ?: getenv('DB_NAME') ?: 'sms';
+        $user = getenv('DB_USER') ?: 'root';
+        $pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : (getenv('DB_PASS') ?: '');
+
         $this->conn = new PDO(
-            "mysql:host=localhost;dbname=sms;charset=utf8",
-            "root",
-            "",
+            "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4",
+            $user,
+            $pass,
             [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC

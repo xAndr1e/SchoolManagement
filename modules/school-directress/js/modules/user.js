@@ -5,7 +5,7 @@
 
 const PAGE_KEY = 'user-management';
 
-const UM_ENDPOINT = '/sms/modules/school-directress/controllers/UserController.php';
+const UM_ENDPOINT = 'controllers/UserController.php';
 const UM_SEARCH_DELAY = 300;
 const UM_REQUEST_TIMEOUT = 15000;
 

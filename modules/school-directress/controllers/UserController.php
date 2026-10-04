@@ -1,47 +1,82 @@
 <?php
+ob_start();
 
-include_once __DIR__ . '/../../../database/db.php';
-include_once __DIR__ . '/../../../auth/session.php';
-include_once __DIR__ . '/../../../auth/guard.php';
+const UM_PER_PAGE = 10;
 
-header('Content-Type: application/json');
-
-$action = $_REQUEST['action'] ?? '';
-
-switch ($action) {
-    case 'get_employees':
-        getEmployees();
-        break;
-
-    default:
-        echo json_encode(['success' => false, 'message' => 'Invalid action.']);
-        break;
+function um_respond(array $payload, int $code = 200) {
+    if (ob_get_length()) {
+        ob_clean(); // discard any stray warnings/notices before the JSON
+    }
+    http_response_code($code);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    exit;
 }
 
-function getEmployees() {
-    try {
-        $db   = new Database();
-        $conn = $db->getConnection();
-
-        $stmt = $conn->query("
-            SELECT 
-                e.employee_id,
-                e.first_name,
-                e.middle_name,
-                e.last_name,
-                e.employment_status,
-                d.department_name,
-                p.position_name
-            FROM em_employees e
-            LEFT JOIN em_departments d ON e.department_id = d.department_id
-            LEFT JOIN em_positions   p ON e.position_id   = p.position_id
-            ORDER BY e.last_name ASC
-        ");
-
-        $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['success' => true, 'data' => $employees]);
-
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (ob_get_length()) {
+            ob_clean();
+        }
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => 'Server error.']);
     }
+});
+
+try {
+    // All includes live inside the try block
+    include_once __DIR__ . '/../../../auth/session.php';
+    include_once __DIR__ . '/../../../auth/guard.php';
+    require_once __DIR__ . '/../classes/Employee.php';
+
+    $action = $_GET['action'] ?? '';
+
+    $filters = [
+        'search'     => trim((string) ($_GET['search'] ?? '')),
+        'department' => trim((string) ($_GET['department'] ?? '')),
+        'position'   => trim((string) ($_GET['position'] ?? '')),
+        'status'     => trim((string) ($_GET['status'] ?? '')),
+    ];
+
+    $model = new Employee();
+
+    switch ($action) {
+
+        case 'list':
+            $page    = max(1, (int) ($_GET['page'] ?? 1));
+            $total   = $model->countEmployeesFiltered($filters);
+            $pages   = max(1, (int) ceil($total / UM_PER_PAGE));
+            if ($page > $pages) {
+                $page = $pages;
+            }
+            $rows = $model->getEmployeesFiltered($filters, UM_PER_PAGE, ($page - 1) * UM_PER_PAGE);
+
+            um_respond([
+                'success' => true,
+                'data'    => [
+                    'rows'     => $rows,
+                    'total'    => $total,
+                    'page'     => $page,
+                    'pages'    => $pages,
+                    'per_page' => UM_PER_PAGE,
+                ],
+            ]);
+            break;
+
+        case 'export':
+            um_respond([
+                'success' => true,
+                'data'    => ['rows' => $model->getEmployeesFiltered($filters)],
+            ]);
+            break;
+
+        default:
+            um_respond(['success' => false, 'message' => 'Unknown action.'], 400);
+    }
+
+} catch (\Throwable $e) {
+    error_log('UserManagementController: ' . $e->getMessage());
+    um_respond(['success' => false, 'message' => 'Unable to load employees.'], 500);
 }

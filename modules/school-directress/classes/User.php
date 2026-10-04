@@ -27,12 +27,15 @@ class User {
                         e.first_name,
                         e.last_name,
                         e.middle_name,
-                        e.department_id AS department,
+                        e.department_id AS department_id,
+                        e.unit_id AS unit_id,
+                        u.unit_name AS unit_name,
                         d.department_name,
                         r.role_name AS role_id,
                         e.employment_status
                     FROM `em_employees` e
                     LEFT JOIN `em_roles` r ON e.role_id = r.role_id
+                    LEFT JOIN `em_units` u ON e.unit_id = u.unit_id
                     LEFT JOIN `em_departments` d ON e.department_id = d.department_id
                     WHERE e.employee_id = :employee_id";
 

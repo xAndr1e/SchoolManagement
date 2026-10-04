@@ -409,7 +409,7 @@ Matches Student Monitoring / User Management styling.
 .concern-modal {
     width: 480px;
     max-width: 92vw;
-    max-height: 88vh;
+    max-height: 82vh;
     overflow-y: auto;
     background: var(--color3);
     border: 1px solid var(--color9);

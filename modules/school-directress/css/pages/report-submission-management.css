@@ -198,7 +198,20 @@
     background: var(--color3);
 }
 
-.rsm-table th,
+.rsm-table tbody td[colspan] {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--color5);
+}
+
+.rsm-table th {
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--color9);
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--color2);
+}
+
 .rsm-table td {
     padding: 0.85rem 1.1rem;
     border-bottom: 1px solid var(--color9);
@@ -245,12 +258,6 @@
     text-align: center;
     color: var(--color5);
 }
-
-.rsm-muted {
-    color: var(--color5);
-    font-size: 0.82rem;
-}
-
 /* ── Status badges ─────────────────────────────────────── */
 
 .rsm-status {
@@ -308,7 +315,7 @@
 .rsm-modal {
     width: 560px;
     max-width: 92vw;
-    max-height: 88vh;
+    max-height: 82vh;
     overflow-y: auto;
     background: var(--color3);
     border: 1px solid var(--color9);

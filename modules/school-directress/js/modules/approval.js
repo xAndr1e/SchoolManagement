@@ -318,7 +318,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('approval-pdf-modal-overlay');
     const frame   = document.getElementById('approval-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `${pdfPath}`;
+    frame.src = `/${pdfPath}`;
     overlay.classList.add('active');
 }
 

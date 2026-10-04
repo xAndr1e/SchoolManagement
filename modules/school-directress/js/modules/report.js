@@ -328,7 +328,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('rsm-pdf-modal-overlay');
     const frame   = document.getElementById('rsm-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `/sms/${pdfPath}`;
+    frame.src = `/../${pdfPath}`;
     overlay.classList.add('active');
 }
 

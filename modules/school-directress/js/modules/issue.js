@@ -327,7 +327,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('concern-pdf-modal-overlay');
     const frame   = document.getElementById('concern-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `/sms/${pdfPath}`;
+    frame.src = `/../${pdfPath}`;
     overlay.classList.add('active');
 }
 

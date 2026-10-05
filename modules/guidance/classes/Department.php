@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . '/../../../database/db.php';
 
 class Department {
     private $conn;
@@ -32,6 +33,7 @@ class Department {
                     d.department_name,
                     CONCAT(e.first_name, ' ', e.last_name) AS department_head_name,
                     COUNT(emp.employee_id) AS employee_count
+                    
                 FROM em_departments d
                 LEFT JOIN em_employees e 
                     ON d.department_head = e.employee_id

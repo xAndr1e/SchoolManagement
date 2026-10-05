@@ -27,10 +27,16 @@ class User {
                         e.first_name,
                         e.last_name,
                         e.middle_name,
-                        r.role_name AS role,
-                        e.employment_status AS status
+                        e.department_id AS department_id,
+                        e.unit_id AS unit_id,
+                        u.unit_name AS unit_name,
+                        d.department_name,
+                        r.role_name AS role_id,
+                        e.employment_status
                     FROM `em_employees` e
                     LEFT JOIN `em_roles` r ON e.role_id = r.role_id
+                    LEFT JOIN `em_units` u ON e.unit_id = u.unit_id
+                    LEFT JOIN `em_departments` d ON e.department_id = d.department_id
                     WHERE e.employee_id = :employee_id";
 
             $stmt = $this->conn->prepare($sql);
@@ -41,7 +47,6 @@ class User {
     }
 
     public function registerEmployee($employee_id, $department_id, $position_id, $password) {
-    // Check if employee already has a user account
     $checkStmt = $this->conn->prepare("SELECT user_id FROM user_account WHERE employee_id = :employee_id");
     $checkStmt->execute([':employee_id' => $employee_id]);
     if ($checkStmt->fetchColumn()) {
@@ -70,14 +75,14 @@ class User {
 
         $user_id = $this->conn->lastInsertId();
 
-        // 2. UPDATE em_employees
+        // 2. UPDATE sms_employee
             $updateStmt = $this->conn->prepare("
                 UPDATE em_employees
-                SET department_id = :department_id,
-                    position_id   = :position_id,
-                    role_id       = :role_id,
+                SET department = :department_id,
+                    position   = :position_id,
+                    role       = :role_id,
                     user_id    = :user_id,
-                    employment_status     = 'active'
+                    status     = 'active'
                 WHERE employee_id = :employee_id
             ");
             $updateStmt->execute([

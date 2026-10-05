@@ -1,4 +1,4 @@
-const ReportController = 'controller/ReportController.php';
+const ReportController = 'controllers/ReportController.php';
 
 const STATUS_LABELS = {
     draft: 'Draft',
@@ -38,7 +38,6 @@ function initReportModule() {
         document.getElementById('report-id').value = '';
         modalOverlay?.classList.add('active');
     };
-    
     const closeCreateModal = () => {
         modalOverlay?.classList.remove('active');
         const formError = document.getElementById('report-form-error');
@@ -146,6 +145,7 @@ async function submitReportForm(action) {
 
         if (json.success) {
             document.getElementById('rsm-modal-overlay')?.classList.remove('active');
+            if (json.debug) console.error('PDF generation debug:', json.debug);
             showToast(action === 'submit' ? 'Report submitted successfully!' : 'Draft saved.', 'success');
             loadReports();
         } else {
@@ -328,7 +328,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('rsm-pdf-modal-overlay');
     const frame   = document.getElementById('rsm-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `/sms/${pdfPath}`;
+    frame.src = `/../${pdfPath}`;
     overlay.classList.add('active');
 }
 
@@ -392,6 +392,7 @@ async function summarizeReport(reportId) {
             if (text) text.textContent = json.summary;
             if (btn) btn.textContent = 'Regenerate';
         } else {
+            if (json.debug) console.error('AI summarization debug:', json.debug);
             showToast(json.message, 'error');
             if (btn) btn.textContent = 'Generate Summary';
         }

@@ -1,4 +1,4 @@
-const ApprovalController = 'controller/ApprovalController.php';
+const ApprovalController = 'controllers/ApprovalController.php';
 
 const APPROVAL_STATUS_LABELS = {
     draft: 'Draft',
@@ -318,7 +318,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('approval-pdf-modal-overlay');
     const frame   = document.getElementById('approval-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `/sms/${pdfPath}`;
+    frame.src = `/../${pdfPath}`;
     overlay.classList.add('active');
 }
 

@@ -119,8 +119,8 @@ $error = $data['error'];
                 <td><span class="sm-year"><?= StudentMonitoring::yearLabel($s['year_level']) ?></span></td>
 
                 <td>
-                    <?php if (!empty($s['section'])): ?>
-                    <span class="sm-section-tag"><?= htmlspecialchars($s['section']) ?></span>
+                    <?php if (!empty($s['section_code'])): ?>
+                    <span class="sm-section-tag"><?= htmlspecialchars($s['section_code']) ?></span>
                     <?php else: ?>
                     <span class="sm-unassigned">Unassigned</span>
                     <?php endif; ?>

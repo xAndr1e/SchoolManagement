@@ -1,4 +1,4 @@
-const ApprovalController = '/sms/modules/school-directress/controllers/ApprovalController.php';
+const ApprovalController = 'controller/ApprovalController.php';
 
 const APPROVAL_STATUS_LABELS = {
     draft: 'Draft',

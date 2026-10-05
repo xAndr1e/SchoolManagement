@@ -1,4 +1,4 @@
-const ReportController = '/sms/modules/school-directress/controllers/ReportController.php';
+const ReportController = 'controller/ReportController.php';
 
 const STATUS_LABELS = {
     draft: 'Draft',

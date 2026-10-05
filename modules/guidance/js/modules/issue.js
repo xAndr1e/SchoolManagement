@@ -1,4 +1,4 @@
-const IssuesController = '/sms/modules/school-directress/controllers/IssueController.php';
+const IssuesController = 'controller/IssueController.php';
 
 const CONCERN_STATUS_LABELS = {
     draft: 'Draft',

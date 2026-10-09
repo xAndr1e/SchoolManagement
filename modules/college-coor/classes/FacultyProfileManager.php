@@ -50,7 +50,7 @@ class FacultyProfileManager {
                     e.suffix,
                     e.email,
                     d.department_name AS department,
-                    e.position,
+                    e.position_id,
                     e.employment_type,
                     e.employment_status,
                     e.created_at
@@ -367,7 +367,7 @@ class FacultyProfileManager {
                     last_name,
                     suffix,
                     employment_type,
-                    position,
+                    position_id,
                     employment_status
                 FROM em_employees
                 WHERE is_archived = 0

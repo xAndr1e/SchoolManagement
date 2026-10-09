@@ -76,7 +76,7 @@ class FacultyProfileManager {
                     e.suffix,
                     e.email,
                     d.department_name AS department,
-                    e.position,
+                    e.position_id,
                     e.employment_type,
                     e.employment_status,
                     e.created_at

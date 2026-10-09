@@ -9,11 +9,12 @@ class Database2 {
     private $conn;
 
     public function __construct() {
-        $this->host = getenv('DB_HOST') ?: "localhost";
-        $this->port = getenv('DB_PORT') ?: "3306";
-        $this->db   = getenv('DB_DATABASE') ?: getenv('DB_NAME') ?: "payr_bcp";
-        $this->user = getenv('DB_USER') ?: "root";
-        $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : (getenv('DB_PASS') ?: "");
+        $config = require __DIR__ . '/config.php';
+        $this->host = $config['host'];
+        $this->port = $config['port'];
+        $this->db   = $config['dbname'];
+        $this->user = $config['username'];
+        $this->pass = $config['password'];
 
         try {
             $this->conn = new PDO("mysql:host={$this->host};port={$this->port};dbname={$this->db};charset=utf8mb4", $this->user, $this->pass);

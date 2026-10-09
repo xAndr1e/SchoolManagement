@@ -9,25 +9,19 @@ class Model {
         date_default_timezone_set('Asia/Manila');
         
         try {
-            $host = getenv('DB_HOST') ?: '127.0.0.1';
-            $port = getenv('DB_PORT') ?: '3306';
-            $database = getenv('DB_DATABASE') ?: 'sms';
-            $user = getenv('DB_USER') ?: 'root';
-            $password = getenv('DB_PASSWORD');
+            $config = require __DIR__ . '/../config/database.php';
+            $host = $config['host'];
+            $port = $config['port'];
+            $database = $config['dbname'];
 
             $this->db = new PDO(
-                "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4",
-                $user,
-                $password === false ? '' : $password,
-                [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
-                ]
+                "mysql:host={$host};port={$port};dbname={$database};charset={$config['charset']}",
+                $config['username'],
+                $config['password'],
+                $config['options']
             );
             
-            $this->db->exec("SET time_zone = '+08:00'");
-            $this->db->exec("SET SESSION time_zone = '+08:00'");
+            $this->db->exec('SET SESSION time_zone = ' . $this->db->quote($config['timezone']));
             
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());

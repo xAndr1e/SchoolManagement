@@ -2,13 +2,18 @@
 .sm-toolbar {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    flex-wrap: wrap;
     gap: 0.75rem;
     background: var(--color3);
-    border: 1px solid var(--color9);
     border-radius: 10px;
-    padding: 1.1rem 1.6rem;
+    padding: 1rem;
+    justify-content: space-between;
+}
+
+.sm-toolbar h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color2);
 }
 
 .sm-search {
@@ -46,19 +51,13 @@
 }
 
 .sm-toolbar .sm-sel {
-    width: auto;
-    flex: 0 0 auto;
-    padding: 0.65rem 2.1rem 0.65rem 1rem;
-    border: 1.5px solid var(--color4, #bababa);
+    border: 1px solid var(--color9);
     border-radius: 7px;
-    font-size: 0.85rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.82rem;
     color: var(--color2);
     background: var(--color3);
-    min-width: 150px;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23bababa' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.9rem center;
+    min-width: 100px;
     cursor: pointer;
 }
 
@@ -120,8 +119,8 @@
 .sm-table thead th:first-child { width: 36px; }
 
 .sm-table tbody td {
-    padding: 0.95rem 1.2rem;
     font-size: 0.85rem;
+    padding: 1.2rem 1.2rem;
     color: var(--color2);
     border-bottom: 1px solid var(--color9);
     vertical-align: middle;
@@ -234,7 +233,7 @@
 
 .sm-empty {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 1.5rem 1rem;
     color: var(--color5);
     font-size: 0.85rem;
 }

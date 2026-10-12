@@ -25,6 +25,7 @@ $error = $data['error'];
 
     <!-- ── Toolbar: search + filters + export ── -->
     <div class="sm-toolbar">
+        <h3>Students</h3>
         <div class="sm-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" id="smSearch" placeholder="Search by name, student no., email…" autocomplete="off">
@@ -118,8 +119,8 @@ $error = $data['error'];
                 <td><span class="sm-year"><?= StudentMonitoring::yearLabel($s['year_level']) ?></span></td>
 
                 <td>
-                    <?php if (!empty($s['section'])): ?>
-                    <span class="sm-section-tag"><?= htmlspecialchars($s['section']) ?></span>
+                    <?php if (!empty($s['section_code'])): ?>
+                    <span class="sm-section-tag"><?= htmlspecialchars($s['section_code']) ?></span>
                     <?php else: ?>
                     <span class="sm-unassigned">Unassigned</span>
                     <?php endif; ?>

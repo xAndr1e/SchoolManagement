@@ -137,10 +137,10 @@
         }
 
         private function getEmployeeDepartment($employee_id) {
-            $stmt = $this->conn->prepare("SELECT department FROM sms_employee WHERE employee_id = :employee_id");
+            $stmt = $this->conn->prepare("SELECT department_id FROM em_employees WHERE employee_id = :employee_id");
             $stmt->execute([':employee_id' => $employee_id]);
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $employee['department'] ?? null;
+            return $employee['department_id'] ?? null;
         }
 
         // ── REVIEW / DECISION (School Directress) ────────────────────

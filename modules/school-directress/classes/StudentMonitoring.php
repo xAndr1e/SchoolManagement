@@ -70,6 +70,7 @@ class StudentMonitoring
                 es.enrollment_status AS academic_status,
                 es.enrolled_at
             FROM enr_students AS es
+            JOIN cc_sections AS cs ON es.section_id = cs.id
             JOIN enr_applicants AS ea ON es.applicant_id = ea.applicant_id
             JOIN rgr_courses AS rc ON es.course_id = rc.id
             ORDER BY es.enrolled_at DESC

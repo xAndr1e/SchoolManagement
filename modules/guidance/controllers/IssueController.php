@@ -1,9 +1,6 @@
 <?php
 // Buffer everything from this point on so any stray warning/notice from an
 // include below lands in this buffer instead of corrupting the JSON response.
-ob_start();
-ini_set('display_errors', '0'); // never leak raw PHP errors into the JSON response
-error_reporting(E_ALL);         // still log real errors — do NOT silently suppress them
 
 header('Content-Type: application/json');
 

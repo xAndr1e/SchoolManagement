@@ -34,7 +34,7 @@
 
             $params = [];
             if (!is_null($department_id)) {
-                $sql .= " AND e1.department = :department_id";
+                $sql .= " AND e1.department_id = :department_id";
                 $params[':department_id'] = $department_id;
             }
             if (!is_null($status)) {

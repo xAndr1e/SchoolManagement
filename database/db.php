@@ -45,14 +45,6 @@ class Database
         }
     }
 
-    public function getRoles()
-    {
-        $query = "SELECT role_id, role_name FROM em_roles ORDER BY role_id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(); // Defaults to FETCH_ASSOC now because of line 23
-    }
-
     public function getConnection()
     {
         return $this->conn;

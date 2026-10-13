@@ -24,7 +24,7 @@ class Approval {
                     a.remarks,
                     a.approved_at,
                     a.decision,
-                    d.department_name,
+                    d.department_name,  
                     a.file_path
                 FROM sd_approvals a
                 LEFT JOIN sms_employee e1 ON a.submit_by = e1.employee_id

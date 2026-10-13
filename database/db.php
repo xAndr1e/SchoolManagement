@@ -24,9 +24,9 @@ class Database
             $this->pass = $config['password'];
         } else {
             // Local development configuration
-            $this->host = "localhost";
+            $this->host = "localhost";            
             $this->port = "3306";
-            $this->db   = "bcp";
+            $this->db   = "payr_bcp";
             $this->user = "root";
             $this->pass = "";
         }
@@ -43,6 +43,14 @@ class Database
         } catch (PDOException $e) {
             die("DB Connection failed: " . $e->getMessage());
         }
+    }
+
+    public function getRoles()
+    {
+        $query = "SELECT role_id, role_name FROM em_roles ORDER BY role_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(); // Defaults to FETCH_ASSOC now because of line 23
     }
 
     public function getConnection()

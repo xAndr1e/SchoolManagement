@@ -65,96 +65,91 @@
 
         <!-- dashboard -->
 
-        <h2>Dashboard</h2>
+        <h2>
+            DASHBOARD
+        </h2>
+
+           <hr>
+
         <ul>
-            <li><a href="<?php echo BASE_URL ?>/home" class="menu-link <?php echo CURRENT_URI  === "home" ? 'active' : '' ?> " id="dashboard">Dashboard</a></li>
+            <li><a href="<?php echo BASE_URL ?>/home" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">Dashboard</a></li>
         </ul>
          <ul>
-            <li><a href="<?php echo BASE_URL ?>/grades" class="menu-link <?php echo CURRENT_URI  === "grades" ? 'active' : '' ?> " id="dashboard">Semestal Grades</a></li>
+            <li><a href="<?php echo BASE_URL ?>/grades" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">Semestal Grades</a></li>
         </ul>
         <ul>
-            <li><a href="<?php echo BASE_URL ?>/enrollment" class="menu-link <?php echo CURRENT_URI  === "enrollment" ? 'active' : '' ?> " id="dashboard">Enrollment</a></li>
+            <li><a href="<?php echo BASE_URL ?>/enrollment" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">Enrollment</a></li>
         </ul>
         <ul>
-            <li><a href="<?php echo BASE_URL ?>/events" class="menu-link <?php echo CURRENT_URI  === "events" ? 'active' : '' ?> " id="dashboard">Events</a></li>
+            <li><a href="<?php echo BASE_URL ?>/events" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">Events</a></li>
         </ul>
 
         <div class="separator"></div>
         <h2>Scholarship</h2>
+           <hr>
+
         <ul>
-            <li><a href="<?php echo BASE_URL ?>/scholarship" class="menu-link <?php echo CURRENT_URI  === "scholarship" ? 'active' : '' ?> " id="dashboard">
+            <li><a href="<?php echo BASE_URL ?>/scholarship" class="menu-link  d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">
                 Scholarship</a></li>
         </ul>
         <ul>
-            <li><a href="<?php echo BASE_URL ?>/scholarship-offered" class="menu-link <?php echo CURRENT_URI  === "scholarship-offered" ? 'active' : '' ?> " id="dashboard">
+            <li><a href="<?php echo BASE_URL ?>/scholarship-offered" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">
                 Scholarship Offerred</a></li>
         </ul>
         <ul>
-            <li><a href="<?php echo BASE_URL ?>/my-applications" class="menu-link <?php echo CURRENT_URI  === "my-applications" ? 'active' : '' ?> " id="dashboard">
+            <li><a href="<?php echo BASE_URL ?>/my-applications" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">
                 My Applications</a></li>
         </ul>
  
         <!-- settings  -->
+     
         <div class="separator"></div>
-        <h2>
-            <a href="#schoolSettings" class="d-flex justify-content-between align-items-center text-decoration-none text-white">
-                Settings
-            </a>
-        </h2>
-        <div id="schoolSettings" <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
- 
-        <!-- settings  -->
-        <hr>
-        <h2>
-            <a data-bs-toggle="collapse" href="#schoolSettings" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
-                Settings
-                <i class="fa-solid fa-chevron-down"></i>
-            </a>
-        </h2>
-        <div id="schoolSettings" class="collapse <?php echo in_array(CURRENT_URI, ['activity']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
-            <ul>
-                <li><a href="<?php echo BASE_URL ?>students" class="menu-link" id="profile">Profile</a></li>
-            </ul>
-        </div>
+        <h2>SETTINGS</h2>
+
+           <hr>
+
+
+         <ul>
+            <li>
+                <a href="<?php echo BASE_URL ?>/my-applications" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="dashboard" style="margin-left: 8px;">
+                Profile
+            </a></li>
+        </ul>
+       
+     
         <div class="separator"></div>
- 
+
+           <hr>
+
+
          <!-- request -->
         <h2>
             <a href="#docuRequest" class="d-flex justify-content-between align-items-center text-decoration-none text-white">
                 Request Documents
             </a>
         </h2>
-        <div id="docuRequest"<?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
+
         <hr>
- 
-         <!-- request -->
-        <h2>
-            <a data-bs-toggle="collapse" href="#docuRequest" class="menu-toggle d-flex justify-content-between align-items-center text-decoration-none text-white">
-                Request Documents
-                <i class="fa-solid fa-chevron-down"></i>
-            </a>
-        </h2>
-        <div id="docuRequest" class="collapse <?php echo in_array(CURRENT_URI, ['document-request','document-status']) ? 'show' : '' ?>" data-bs-parent="#sidebarMenu">
-            <ul>
-                <li><a href="<?php echo BASE_URL ?>/document-request" class="menu-link <?php echo CURRENT_URI  === "document-request" ? 'active' : '' ?> " id="request">Document Request</a></li>
-                <li><a href="<?php echo BASE_URL ?>/document-status" class="menu-link <?php echo CURRENT_URI  === "document-status" ? 'active' : '' ?>" id="status">Document Status</a></li>
-            </ul>
-        </div>
+
+        <ul>
+           <li><a href="<?php echo BASE_URL ?>/document-request" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="request" style="margin-left: 8px;">Document Request</a></li>
+        </ul>
+
+        <ul>
+         <li><a href="<?php echo BASE_URL ?>/document-status" class="menu-link d-flex justify-content-between align-items-center text-decoration-none text-white" id="status" style="margin-left: 8px;">Document Status</a></li>
+        </ul>
+  
+
         <div class="separator"></div>
+
         <hr>
-
-
-        <div class="mt-3">
+         <div class="mt-3">
             <a href="<?= BASE_URL ?>/logout"
                 class="d-flex justify-content-between align-items-center text-decoration-none text-white"
                 style="margin-left: 8px;">
                 <span>Logout</span>
-                class="d-flex justify-content-between align-items-center text-decoration-none text-white text-uppercase"
-                style="margin-left: 8px;">
-                <span>Logout</span>
-                <i class="fa-solid fa-right-from-bracket"></i>
             </a>
         </div>
-    </div>
+
 
 </aside>

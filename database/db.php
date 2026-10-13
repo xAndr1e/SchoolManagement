@@ -10,15 +10,6 @@ class Database
     private $pass;
     private $conn;
 
-<<<<<<< HEAD
-    public function __construct() {
-        // Look for Railway's environment variables first, default to local if missing
-        $this->host = getenv('DB_HOST') ?: "localhost";
-        $this->port = getenv('DB_PORT') ?: "3306"; // Default MySQL port
-        $this->db   = getenv('DB_DATABASE') ?: "payr_bcp";
-        $this->user = getenv('DB_USER') ?: "payr_bestlink";
-        $this->pass = getenv('DB_PASSWORD') !== false ? getenv('DB_PASSWORD') : "12345";
-=======
     public function __construct()
     {
         $configFile = dirname(__DIR__, 2) . '/db_config.php';
@@ -39,7 +30,6 @@ class Database
             $this->user = "root";
             $this->pass = "";
         }
->>>>>>> origin/main
 
         try {
             // Added port mapping and upgraded charset to utf8mb4 (standard for modern MySQL)
@@ -54,9 +44,7 @@ class Database
             die("DB Connection failed: " . $e->getMessage());
         }
     }
-
-    public function getConnection()
-    {
+    
     public function getConnection()
     {
         return $this->conn;

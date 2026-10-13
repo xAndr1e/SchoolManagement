@@ -53,7 +53,7 @@ class Scholarship
                 ON s.student_number = sc.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            LEFT JOIN sms_employee e
+            LEFT JOIN em_employees e
                 ON e.employee_id = sc.counselor_id
             {$whereSql}
             ORDER BY sc.applied_at DESC
@@ -87,7 +87,7 @@ class Scholarship
                 ON s.student_number = sc.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            LEFT JOIN sms_employee e
+            LEFT JOIN em_employees e
                 ON e.employee_id = sc.counselor_id
             {$whereSql}
         ";
@@ -184,9 +184,9 @@ class Scholarship
                 ON s.student_number = sc.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            LEFT JOIN sms_employee e
+            LEFT JOIN em_employees e
                 ON e.employee_id = sc.counselor_id
-            LEFT JOIN sms_employee r
+            LEFT JOIN em_employees r
                 ON r.employee_id = sc.reviewed_by
             WHERE sc.scholarship_id = :scholarship_id
         ");
@@ -403,11 +403,11 @@ class Scholarship
                 e.employee_id,
                 CONCAT(e.first_name, ' ', e.last_name) AS name,
                 p.position_name
-            FROM sms_employee e
-            JOIN sd_position p
-                ON p.position_id = e.position
-            WHERE e.department = 8
-            AND e.status = 'active'
+            FROM em_employees e
+            JOIN em_positions p
+                ON p.position_id = e.position_id
+            WHERE e.department_id = 8
+            AND e.employment_status = 'active'
             ORDER BY e.last_name ASC
         ");
 

@@ -14,7 +14,7 @@
         }
 
         public function getDepartments() {
-            $stmt = $this->conn->prepare("SELECT department_id, department_name FROM sd_department ORDER BY department_name");
+            $stmt = $this->conn->prepare("SELECT department_id, department_name FROM em_departments ORDER BY department_name");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -30,10 +30,10 @@
                         CONCAT(rv.first_name, ' ', rv.last_name) AS reviewed_by_name,
                         CONCAT(rs.first_name, ' ', rs.last_name) AS resolved_by_name
                     FROM sd_issues i
-                    JOIN sd_department d ON i.department = d.department_id
-                    JOIN sms_employee e  ON i.submitted_by = e.employee_id
-                    LEFT JOIN sms_employee rv ON i.reviewed_by = rv.employee_id
-                    LEFT JOIN sms_employee rs ON i.resolved_by = rs.employee_id
+                    JOIN em_departments d ON i.department = d.department_id
+                    JOIN em_employees e  ON i.submitted_by = e.employee_id
+                    LEFT JOIN em_employees rv ON i.reviewed_by = rv.employee_id
+                    LEFT JOIN em_employees rs ON i.resolved_by = rs.employee_id
                     WHERE 1=1";
 
             $params = [];
@@ -65,10 +65,10 @@
                         CONCAT(rv.first_name, ' ', rv.last_name) AS reviewed_by_name,
                         CONCAT(rs.first_name, ' ', rs.last_name) AS resolved_by_name
                     FROM sd_issues i
-                    JOIN sd_department d ON i.department = d.department_id
-                    JOIN sms_employee e  ON i.submitted_by = e.employee_id
-                    LEFT JOIN sms_employee rv ON i.reviewed_by = rv.employee_id
-                    LEFT JOIN sms_employee rs ON i.resolved_by = rs.employee_id
+                    JOIN em_departments d ON i.department = d.department_id
+                    JOIN em_employees e  ON i.submitted_by = e.employee_id
+                    LEFT JOIN em_employees rv ON i.reviewed_by = rv.employee_id
+                    LEFT JOIN em_employees rs ON i.resolved_by = rs.employee_id
                     WHERE i.issue_id = :issue_id
                     LIMIT 1";
             $stmt = $this->conn->prepare($sql);

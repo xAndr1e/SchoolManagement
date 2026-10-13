@@ -25,10 +25,10 @@
                         CONCAT(dc.first_name, ' ', dc.last_name) AS decided_by_name,
                         rt.report_type AS report_type
                     FROM `sd_reports` r
-                    LEFT JOIN `sd_department` d ON r.department_id = d.department_id
-                    LEFT JOIN `sms_employee` e  ON r.submitted_by = e.employee_id
-                    LEFT JOIN `sms_employee` rv ON r.reviewed_by = rv.employee_id
-                    LEFT JOIN `sms_employee` dc ON r.decided_by = dc.employee_id
+                    LEFT JOIN `em_departments` d ON r.department_id = d.department_id
+                    LEFT JOIN `em_employees` e  ON r.submitted_by = e.employee_id
+                    LEFT JOIN `em_employees` rv ON r.reviewed_by = rv.employee_id
+                    LEFT JOIN `em_employees` dc ON r.decided_by = dc.employee_id
                     LEFT JOIN `sd_report_type` rt ON r.report_type = rt.type_id
                     WHERE 1=1";
 
@@ -57,10 +57,10 @@
                         CONCAT(dc.first_name, ' ', dc.last_name) AS decided_by_name,
                         rt.report_type AS report_type
                     FROM `sd_reports` r
-                    LEFT JOIN `sd_department` d ON r.department_id = d.department_id
-                    LEFT JOIN `sms_employee` e  ON r.submitted_by = e.employee_id
-                    LEFT JOIN `sms_employee` rv ON r.reviewed_by = rv.employee_id
-                    LEFT JOIN `sms_employee` dc ON r.decided_by = dc.employee_id
+                    LEFT JOIN `em_departments` d ON r.department_id = d.department_id
+                    LEFT JOIN `em_employees` e  ON r.submitted_by = e.employee_id
+                    LEFT JOIN `em_employees` rv ON r.reviewed_by = rv.employee_id
+                    LEFT JOIN `em_employees` dc ON r.decided_by = dc.employee_id
                     LEFT JOIN `sd_report_type` rt ON r.report_type = rt.type_id
                     WHERE r.report_id = :report_id
                     LIMIT 1";
@@ -137,10 +137,10 @@
         }
 
         private function getEmployeeDepartment($employee_id) {
-            $stmt = $this->conn->prepare("SELECT department FROM sms_employee WHERE employee_id = :employee_id");
+            $stmt = $this->conn->prepare("SELECT department_id FROM em_employees WHERE employee_id = :employee_id");
             $stmt->execute([':employee_id' => $employee_id]);
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $employee['department'] ?? null;
+            return $employee['department_id'] ?? null;
         }
 
         // ── REVIEW / DECISION (School Directress) ────────────────────

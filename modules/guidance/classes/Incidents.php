@@ -44,7 +44,7 @@ class Incidents
                 ON s.student_number = i.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = i.reported_by
             LEFT JOIN gd_cases c
                 ON c.case_id = i.case_id
@@ -73,7 +73,7 @@ class Incidents
                 ON s.student_number = i.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = i.reported_by
             LEFT JOIN gd_cases c
                 ON c.case_id = i.case_id
@@ -141,7 +141,7 @@ class Incidents
                 ON s.student_number = i.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = i.reported_by
             LEFT JOIN gd_cases c
                 ON c.case_id = i.case_id

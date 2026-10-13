@@ -6,7 +6,7 @@
     /*User Class*/
     $userClass = new User();
     $userInfo = $userClass->userSession();
-    $isDirectress = ($userInfo['role'] === 'School Directress');
+    $isDirectress = ($userInfo['role_id'] === 'School Directress');
 
     /*Issues Class*/
     $issuesClass = new Issues();

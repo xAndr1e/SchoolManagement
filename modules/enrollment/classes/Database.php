@@ -5,12 +5,13 @@ if (!class_exists('Database')) {
 
 class Database {
     private static $instance = null;
+
     private $connection;
-    private $host     = 'localhost';
-    private $username = 'payr_bestlink';
-    private $password = '12345';
-    private $database = 'payr_bcp';
-    private $port     = 3306;
+    private $host;
+    private $username;
+    private $password;
+    private $database;
+    private $port;
     private $charset  = 'utf8mb4';
     private $options;
     private $connected = false;
@@ -20,14 +21,33 @@ class Database {
     private $transactionLevel = 0;
 
     private function __construct() {
+        // Load config (adjust path to match your layout)
+        $configFile = dirname(__DIR__) . '/db_config.php';
+
+        if (file_exists($configFile)) {
+            $config = require $configFile;
+
+            $this->host     = $config['host'];
+            $this->port     = $config['port'];
+            $this->database = $config['database'];
+            $this->username = $config['username'];
+            $this->password = $config['password'];
+        } else {
+            $this->host     = getenv('MYSQLHOST')     ?: 'localhost';
+            $this->port     = getenv('MYSQLPORT')     ?: 3306;
+            $this->database = getenv('MYSQLDATABASE') ?: 'payr_bcp';
+            $this->username = getenv('MYSQLUSER')     ?: 'payr_bestlink';
+            $this->password = getenv('MYSQLPASSWORD') ?: '12345';
+        }
+
         $this->options = [
-            PDO::ATTR_ERRMODE               => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE    => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES      => false,
-            PDO::ATTR_STRINGIFY_FETCHES     => false,
-            PDO::MYSQL_ATTR_INIT_COMMAND    => "SET NAMES {$this->charset}",
+            PDO::ATTR_ERRMODE                  => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE       => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES         => false,
+            PDO::ATTR_STRINGIFY_FETCHES        => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND       => "SET NAMES {$this->charset}",
             PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-            PDO::ATTR_TIMEOUT               => 30,
+            PDO::ATTR_TIMEOUT                  => 30,
         ];
 
         $this->connect();
@@ -74,155 +94,86 @@ class Database {
         return $this->connection;
     }
 
-    public function isConnected() {
-        return $this->connected;
-    }
-
-    public function getLastError() {
-        return $this->lastError;
-    }
+    public function isConnected() { return $this->connected; }
+    public function getLastError() { return $this->lastError; }
 
     public function prepare($sql) {
-        try {
-            if (!$this->connected || $this->connection === null) {
-                $this->connect();
-            }
-            return $this->connection->prepare($sql);
-        } catch (PDOException $e) {
-            error_log('Prepare Error: ' . $e->getMessage());
-            error_log('SQL: ' . $sql);
-            throw $e;
-        }
+        if (!$this->connected || $this->connection === null) $this->connect();
+        return $this->connection->prepare($sql);
     }
 
     public function query($sql) {
-        try {
-            if (!$this->connected || $this->connection === null) {
-                $this->connect();
-            }
-            $this->logQuery($sql);
-            return $this->connection->query($sql);
-        } catch (PDOException $e) {
-            error_log('Query Error: ' . $e->getMessage());
-            error_log('SQL: ' . $sql);
-            throw $e;
-        }
+        if (!$this->connected || $this->connection === null) $this->connect();
+        $this->logQuery($sql);
+        return $this->connection->query($sql);
     }
 
     public function execute($sql, $params = []) {
-        try {
-            if (!$this->connected || $this->connection === null) {
-                $this->connect();
-            }
+        if (!$this->connected || $this->connection === null) $this->connect();
+        $stmt = $this->connection->prepare($sql);
+        $this->logQuery($sql, $params);
 
-            $stmt = $this->connection->prepare($sql);
-            $this->logQuery($sql, $params);
-
-            foreach ($params as $key => $value) {
-                $target = is_int($key) ? $key + 1 : $key;
-                $this->bindValue($stmt, $target, $value);
-            }
-
-            $stmt->execute();
-            return $stmt;
-        } catch (PDOException $e) {
-            error_log('Query Execution Error: ' . $e->getMessage());
-            error_log('SQL: ' . $sql);
-            error_log('Params: ' . print_r($params, true));
-            throw $e;
+        foreach ($params as $key => $value) {
+            $target = is_int($key) ? $key + 1 : $key;
+            $this->bindValue($stmt, $target, $value);
         }
+        $stmt->execute();
+        return $stmt;
     }
 
     private function bindValue($stmt, $key, $value) {
-        if (is_int($value)) {
-            $stmt->bindValue($key, $value, PDO::PARAM_INT);
-        } elseif (is_bool($value)) {
-            $stmt->bindValue($key, $value, PDO::PARAM_BOOL);
-        } elseif (is_null($value)) {
-            $stmt->bindValue($key, $value, PDO::PARAM_NULL);
-        } else {
-            $stmt->bindValue($key, $value, PDO::PARAM_STR);
-        }
+        if (is_int($value))         $stmt->bindValue($key, $value, PDO::PARAM_INT);
+        elseif (is_bool($value))    $stmt->bindValue($key, $value, PDO::PARAM_BOOL);
+        elseif (is_null($value))    $stmt->bindValue($key, $value, PDO::PARAM_NULL);
+        else                        $stmt->bindValue($key, $value, PDO::PARAM_STR);
     }
 
     public function lastInsertId() {
-        if (!$this->connected || $this->connection === null) {
-            $this->connect();
-        }
+        if (!$this->connected || $this->connection === null) $this->connect();
         return $this->connection->lastInsertId();
     }
 
     public function beginTransaction() {
-        try {
-            if (!$this->connected || $this->connection === null) {
-                $this->connect();
-            }
-            if ($this->transactionLevel === 0) {
-                $this->connection->beginTransaction();
-            }
-            $this->transactionLevel++;
-            return true;
-        } catch (PDOException $e) {
-            error_log('Begin Transaction Error: ' . $e->getMessage());
-            return false;
-        }
+        if (!$this->connected || $this->connection === null) $this->connect();
+        if ($this->transactionLevel === 0) $this->connection->beginTransaction();
+        $this->transactionLevel++;
+        return true;
     }
 
     public function commit() {
-        try {
-            if (!$this->connected || $this->connection === null) {
-                $this->connect();
-            }
-            $this->transactionLevel--;
-            if ($this->transactionLevel <= 0) {
-                $this->transactionLevel = 0;
-                return $this->connection->commit();
-            }
-            return true;
-        } catch (PDOException $e) {
-            error_log('Commit Error: ' . $e->getMessage());
-            return false;
+        if (!$this->connected || $this->connection === null) $this->connect();
+        $this->transactionLevel--;
+        if ($this->transactionLevel <= 0) {
+            $this->transactionLevel = 0;
+            return $this->connection->commit();
         }
+        return true;
     }
 
     public function rollBack() {
-        try {
-            if (!$this->connected || $this->connection === null) {
-                $this->connect();
-            }
-            $this->transactionLevel = 0;
-            if ($this->connection->inTransaction()) {
-                return $this->connection->rollBack();
-            }
-            return true;
-        } catch (PDOException $e) {
-            error_log('Rollback Error: ' . $e->getMessage());
-            return false;
+        if (!$this->connected || $this->connection === null) $this->connect();
+        $this->transactionLevel = 0;
+        if ($this->connection->inTransaction()) {
+            return $this->connection->rollBack();
         }
+        return true;
     }
 
     public function inTransaction() {
-        if (!$this->connected || $this->connection === null) {
-            $this->connect();
-        }
+        if (!$this->connected || $this->connection === null) $this->connect();
         return $this->connection->inTransaction();
     }
 
-    public function getTransactionLevel() {
-        return $this->transactionLevel;
-    }
+    public function getTransactionLevel() { return $this->transactionLevel; }
 
     public function escape($string) {
-        if (!$this->connected || $this->connection === null) {
-            $this->connect();
-        }
+        if (!$this->connected || $this->connection === null) $this->connect();
         return $this->connection->quote($string);
     }
 
     public function getTableColumns($table) {
         try {
-            $sql  = "SHOW COLUMNS FROM `{$table}`";
-            $stmt = $this->execute($sql);
+            $stmt = $this->execute("SHOW COLUMNS FROM `{$table}`");
             return $stmt->fetchAll();
         } catch (Exception $e) {
             error_log('Error getting table columns: ' . $e->getMessage());
@@ -232,8 +183,7 @@ class Database {
 
     public function tableExists($table) {
         try {
-            $sql  = "SHOW TABLES LIKE ?";
-            $stmt = $this->execute($sql, [$table]);
+            $stmt = $this->execute("SHOW TABLES LIKE ?", [$table]);
             return $stmt->rowCount() > 0;
         } catch (Exception $e) {
             error_log('Error checking table existence: ' . $e->getMessage());
@@ -297,7 +247,6 @@ class Database {
     private function isDevelopment() {
         $host  = $_SERVER['HTTP_HOST'] ?? '';
         $debug = defined('DEBUG_MODE') ? DEBUG_MODE : false;
-
         return $debug
             || $host === 'localhost'
             || $host === '127.0.0.1'
@@ -311,7 +260,6 @@ class Database {
         if ($username !== null) $this->username = $username;
         if ($password !== null) $this->password = $password;
         if ($database !== null) $this->database = $database;
-
         $this->connected  = false;
         $this->connection = null;
         $this->connect();
@@ -321,15 +269,12 @@ class Database {
     public function getHost()         { return $this->host; }
 
     public function close() {
-        $this->connection      = null;
-        $this->connected       = false;
+        $this->connection       = null;
+        $this->connected        = false;
         $this->transactionLevel = 0;
     }
 
-    public function __destruct() {
-        $this->close();
-    }
-
+    public function __destruct() { $this->close(); }
     private function __clone() {}
     public function __wakeup() {}
 }

@@ -19,7 +19,7 @@ include_once __DIR__ . "/../classes/StudentMonitoring.php";
 
 header('Content-Type: application/json');
 
-$model  = new StudentMonitoring();
+$model = new StudentMonitoring();
 $action = $_REQUEST['action'] ?? '';
 
 switch ($action) {
@@ -29,10 +29,10 @@ switch ($action) {
         echo json_encode([
             'success' => $data['error'] === null,
             'message' => $data['error'] ?? 'OK',
-            'data'    => [
+            'data' => [
                 'students' => $data['students'],
-                'courses'  => $data['courses'],
-                'stats'    => $data['stats'],
+                'courses' => $data['courses'],
+                'stats' => $data['stats'],
             ],
         ]);
         break;
@@ -42,7 +42,8 @@ switch ($action) {
         echo json_encode([
             'success' => false,
             'message' => 'Unknown action.',
-            'data'    => null,
+            'data' => null,
         ]);
         break;
 }
+

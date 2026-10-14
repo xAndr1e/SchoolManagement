@@ -1,5 +1,4 @@
-const ReportController = '/modules/school-directress/controllers/ReportController.php';
-
+const ReportController = 'controllers/ReportController.php';
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initReportModule() {
 

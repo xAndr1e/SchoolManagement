@@ -40,7 +40,7 @@ class Appointments
                 ON s.student_number = ap.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = ap.counselor_id
             {$whereSql}
             ORDER BY ap.appointment_date DESC
@@ -72,7 +72,7 @@ class Appointments
                 ON s.student_number = ap.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = ap.counselor_id
             {$whereSql}
         ";
@@ -148,7 +148,7 @@ class Appointments
                 ON s.student_number = ap.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = ap.counselor_id
             WHERE ap.appointment_id = :appointment_id
         ");
@@ -208,7 +208,7 @@ class Appointments
                 ON s.student_number = c.student_number
             JOIN enr_applicants a
                 ON a.applicant_id = s.applicant_id
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = c.counselor_id
             WHERE c.status IN ('Open', 'In Progress')
             ORDER BY c.opened_at DESC
@@ -397,11 +397,11 @@ class Appointments
                 e.employee_id,
                 CONCAT(e.first_name, ' ', e.last_name) AS name,
                 p.position_name
-            FROM sms_employee e
-            JOIN sd_position p
-                ON p.position_id = e.position
-            WHERE e.department = 8
-              AND e.status = 'active'
+            FROM em_employees e
+            JOIN em_positions p
+                ON p.position_id = e.position_id
+            WHERE e.department_id = 8
+              AND e.employment_status = 'active'
             ORDER BY e.last_name ASC
         ");
 

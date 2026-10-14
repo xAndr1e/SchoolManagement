@@ -70,43 +70,107 @@
 
         // ── CREATE / SAVE ────────────────────────────────────────────
         // $data keys: title, description, justification, file_path (nullable)
+        
         public function saveDraft($data, $approval_id = null) {
-            $submit_by = $_SESSION['employee_id'];
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                session_start();
+            }
+
+            $submit_by = $_SESSION['employee_id'] ?? null;
+
+            if (!$submit_by) {
+                throw new RuntimeException('You must be logged in to save an approval.');
+            }
+
+            // Get the department from the authenticated employee record.
+            $stmt = $this->conn->prepare(
+                "SELECT department_id
+                FROM em_employees
+                WHERE employee_id = :employee_id
+                LIMIT 1"
+            );
+            $stmt->execute([':employee_id' => $submit_by]);
+
+            $departmentId = $stmt->fetchColumn();
+
+            if ($departmentId === false || $departmentId === null) {
+                throw new RuntimeException(
+                    'Cannot save approval: your employee account has no department assigned.'
+                );
+            }
 
             if ($approval_id) {
+                // Update only a draft owned by the current employee.
                 $sql = "UPDATE sd_approvals SET
-                            title = :title, description = :description, justification = :justification
-                            " . (array_key_exists('file_path', $data) ? ", file_path = :file_path" : "") . "
-                        WHERE approval_id = :approval_id AND submit_by = :submit_by AND status = 'draft'";
+                            title = :title,
+                            description = :description,
+                            justification = :justification,
+                            department = :department"
+                            . (array_key_exists('file_path', $data)
+                                ? ", file_path = :file_path"
+                                : "") . "
+                        WHERE approval_id = :approval_id
+                        AND submit_by = :submit_by
+                        AND status = 'draft'";
+
                 $stmt = $this->conn->prepare($sql);
+
                 $params = [
                     ':title'         => $data['title'],
                     ':description'   => $data['description'],
                     ':justification' => $data['justification'],
+                    ':department'    => $departmentId,
                     ':approval_id'   => $approval_id,
                     ':submit_by'     => $submit_by,
                 ];
+
                 if (array_key_exists('file_path', $data)) {
                     $params[':file_path'] = $data['file_path'];
                 }
+
                 $stmt->execute($params);
+
                 return $approval_id;
             }
 
+            // Create a new draft with its department recorded.
             $sql = "INSERT INTO sd_approvals
-                        (title, description, justification, file_path, submit_by, status, created_at)
+                        (
+                            title,
+                            description,
+                            justification,
+                            department,
+                            file_path,
+                            submit_by,
+                            status,
+                            created_at
+                        )
                     VALUES
-                        (:title, :description, :justification, :file_path, :submit_by, 'draft', NOW())";
+                        (
+                            :title,
+                            :description,
+                            :justification,
+                            :department,
+                            :file_path,
+                            :submit_by,
+                            'draft',
+                            NOW()
+                        )";
+
             $stmt = $this->conn->prepare($sql);
+
             $stmt->execute([
                 ':title'         => $data['title'],
                 ':description'   => $data['description'],
                 ':justification' => $data['justification'],
+                ':department'    => $departmentId,
                 ':file_path'     => $data['file_path'] ?? null,
                 ':submit_by'     => $submit_by,
             ]);
+
             return $this->conn->lastInsertId();
         }
+
 
         // Create (or promote an existing draft belonging to the current user) straight to 'submitted'
         public function submitApproval($data, $approval_id = null) {

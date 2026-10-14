@@ -1,20 +1,20 @@
-<?php 
+<?php
 
+require_once __DIR__ . '/../models/HomeModel.php';
 
+class HomeController
+{
+    private $model;
 
-
-class HomeController {
-
-
+    public function __construct()
+    {
+        $this->model = new HomeModel();
+    }
 
     public function index()
     {
+        $equipmentStatus = $this->model->getEquipmentStatus();
 
-        require __DIR__ . '/../views/home.php';
-
+        require_once __DIR__ . '/../views/home.php';
     }
-
-
-
-
 }

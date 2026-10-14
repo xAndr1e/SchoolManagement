@@ -7,9 +7,9 @@ class Database {
     private static $instance = null;
     private $connection;
     private $host     = 'localhost';
-    private $username = 'root';
-    private $password = '';
-    private $database = 'bcp';
+    private $username = 'payr_bestlink';
+    private $password = '12345';
+    private $database = 'bayr_bcp';
     private $port     = 3306;
     private $charset  = 'utf8mb4';
     private $options;

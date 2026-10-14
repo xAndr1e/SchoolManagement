@@ -22,6 +22,13 @@ class Database
             $this->db   = $config['database'];
             $this->user = $config['username'];
             $this->pass = $config['password'];
+        } else {
+            // Local development configuration
+            $this->host = "localhost";
+            $this->port = "3306";
+            $this->db   = "bcp";
+            $this->user = "root";
+            $this->pass = "";
         }
 
         try {

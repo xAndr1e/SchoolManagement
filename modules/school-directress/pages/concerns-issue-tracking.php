@@ -69,7 +69,7 @@
             <table class="concern-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Concern ID</th>
                         <th>Title</th>
                         <th>Department</th>
                         <th>Submitted By</th>

@@ -14,19 +14,20 @@ use App\Models\Semester;
 use App\Models\Student;
 use App\Models\Subject;
 
- class HomeController extends Controller
- {
-  
+require_once __DIR__ . '/../Models/HomeModel.php';
 
+class HomeController extends Controller
+{
     public function index()
     {   
-        
+        // CPU Usage
         $cpuUsage = 0;
 
         $cmd = "wmic cpu get loadpercentage";
         @exec($cmd, $output);
+
         if (!empty($output[1])) {
-              $cpuUsage = (int)$output[1];
+            $cpuUsage = (int)$output[1];
         }
 
         $user = Employee::find('1003'); 
@@ -43,6 +44,7 @@ use App\Models\Subject;
             ]);
 
     }
+
 
     public function countNumber()
     {
@@ -94,7 +96,6 @@ use App\Models\Subject;
          Response::json($courses);
     }
 
-
-    
- }
- 
+        echo json_encode($active_count);     
+    }
+}

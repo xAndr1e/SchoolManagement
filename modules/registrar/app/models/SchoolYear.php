@@ -14,6 +14,20 @@ class SchoolYear extends Model {
     public $primaryKey = 'id';
 
 
+    protected function activeSchoolYear()
+    {
+        $sql= "SELECT 
+              name 
+              FROM $this->tableName
+              WHERE is_active = 1
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
+
+
+
     protected function allSchoolYear($paginate=true)
     {
 

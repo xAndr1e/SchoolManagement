@@ -10,14 +10,6 @@
     gap: 1.75rem;
 }
 
-/* ── Post Announcement (form card) ─────────────── */
-.comm-controls {
-    background: var(--color3);
-    border: 1px solid var(--color9);
-    border-radius: 10px;
-    padding: 1.4rem 1.6rem;
-}
-
 .comm-form h3 {
     font-size: 0.95rem;
     font-weight: 700;
@@ -135,13 +127,39 @@
     padding: 1.4rem 1.6rem;
 }
 
-.announcements-list h2 {
+.comm-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--color9);
+    margin-bottom: 1.1rem;
+}
+
+.comm-list-header h2 {
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--color2);
-    margin: 0 0 1.1rem 0;
-    padding-bottom: 0.9rem;
-    border-bottom: 1px solid var(--color9);
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.comm-add-btn {
+    padding: 0.6rem 1.1rem;
+    border: none;
+    border-radius: 7px;
+    background: var(--color1);
+    color: var(--color3);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.comm-add-btn:hover {
+    background: var(--color7);
 }
 
 .muted {
@@ -200,6 +218,65 @@
     gap: 0.35rem;
 }
 
+/* ── Modal ─────────────────────────────────────────────── */
+
+.comm-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.comm-modal-overlay.active {
+    display: flex;
+}
+
+.comm-modal {
+    width: 520px;
+    max-width: 92vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--color3);
+    border: 1px solid var(--color9);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.comm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.6rem;
+    border-bottom: 1px solid var(--color9);
+}
+
+.comm-modal-header h3 {
+    margin: 0;
+    color: var(--color2);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.comm-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--color5);
+    cursor: pointer;
+}
+
+.comm-modal-close:hover {
+    color: var(--color2);
+}
+
+.comm-modal-body {
+    padding: 1.6rem;
+}
+
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 700px) {
     .form-row {
@@ -210,5 +287,9 @@
 
     .btn-cancel {
         margin-left: 0;
+    }
+
+    .comm-modal {
+        width: 94vw;
     }
 }

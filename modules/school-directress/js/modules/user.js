@@ -1,297 +1,369 @@
-window.addEventListener('page:loaded', function () {
-    const base = window.location.origin + '/sms';
+/* ============================================================
+   School Directress — User Management (AJAX)
+   Prefix: um / UM_
+   ============================================================ */
 
-    // ── Shared Helper ─────────────────────────────────────────────────────────
-    function showAlert(id, message, success = false) {
-        const msg = document.getElementById(id);
-        if (!msg) return;
-        msg.textContent           = message;
-        msg.style.display         = 'block';
-        msg.style.padding         = '10px 15px';
-        msg.style.borderRadius    = '5px';
-        msg.style.marginBottom    = '15px';
-        msg.style.backgroundColor = success ? '#d4edda' : '#f8d7da';
-        msg.style.color           = success ? '#155724' : '#721c24';
-        msg.style.border          = success ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
-        setTimeout(() => { msg.style.display = 'none'; }, 4000);
-    }
+const PAGE_KEY = 'user-management';
 
-    function esc(str) {
-        const d = document.createElement('div');
-        d.textContent = String(str ?? '');
-        return d.innerHTML;
-    }
+const UM_ENDPOINT = 'controllers/UserController.php';
+const UM_SEARCH_DELAY = 300;
+const UM_REQUEST_TIMEOUT = 15000;
 
-    // ── Load Employee Table ───────────────────────────────────────────────────
-    async function loadEmployeeTable() {
-        const tbody = document.getElementById('employee-table-body');
-        if (!tbody) return;
+let umEls = {};
+let umPage = 1;
+let umTotalPages = 1;
+let umRequestId = 0;
+let umSearchTimer = null;
 
-        try {
-            const res  = await fetch(`${base}/modules/school-directress/controllers/UserController.php?action=get_employees`);
-            const json = await res.json();
+/* ── Setup ──────────────────────────────────────── */
 
-            if (!json.success || !json.data?.length) {
-                tbody.innerHTML = `<tr><td colspan="6">No employees found.</td></tr>`;
-                return;
-            }
+function umQueryElements() {
+    umEls = {
+        search:    document.getElementById('umSearch'),
+        dept:      document.getElementById('umDepartment'),
+        position:  document.getElementById('umPosition'),
+        status:    document.getElementById('umStatus'),
+        exportBtn: document.getElementById('umExportBtn'),
+        body:      document.getElementById('umBody'),
+        showing:   document.getElementById('umShowing'),
+        pageNav:   document.getElementById('umPageNav')
+    };
+    return !!umEls.body;
+}
 
-            tbody.innerHTML = json.data.map(e => `
-                <tr class="employee-row">
-                    <td>${esc(e.first_name  ?? '—')}</td>
-                    <td>${esc(e.middle_name ?? '—')}</td>
-                    <td>${esc(e.last_name   ?? '—')}</td>
-                    <td>${esc(e.department_name ?? '—')}</td>
-                    <td>${esc(e.position_name   ?? '—')}</td>
-                    <td>${esc(e.status ? e.status.charAt(0).toUpperCase() + e.status.slice(1).toLowerCase() : '—')}</td>
-                </tr>
-            `).join('');
+function umBindOnce(el, flag, evt, handler) {
+    if (!el || el.dataset[flag]) return;
+    el.dataset[flag] = '1';
+    el.addEventListener(evt, handler);
+}
 
-            // re-apply filters and pagination after reload
-            applyFilters();
+function umInit() {
+    if (!umQueryElements()) return;
 
-        } catch (err) {
-            console.error('loadEmployeeTable error:', err);
-        }
-    }
-
-    // ── Employee List: Filter + Pagination ────────────────────────────────────
-    const tbody            = document.getElementById('employee-table-body');
-    const prevBtn          = document.getElementById('emp-prev-btn');
-    const nextBtn          = document.getElementById('emp-next-btn');
-    const pageInfo         = document.getElementById('emp-page-info');
-    const filterDepartment = document.getElementById('filter-department');
-    const filterPosition   = document.getElementById('filter-position');
-    const filterResetBtn   = document.getElementById('filter-reset-btn');
-
-    const rowsPerPage = 10;
-    let currentPage   = 1;
-    let filteredRows  = [];
-
-    function getColText(row, index) {
-        return row.querySelectorAll('td')[index]?.textContent.trim() ?? '';
-    }
-
-    function applyFilters() {
-        const allEmpRows = Array.from(document.querySelectorAll('.employee-row'));
-        const dept = filterDepartment?.value.toLowerCase() ?? '';
-        const pos  = filterPosition?.value.toLowerCase()  ?? '';
-
-        filteredRows = allEmpRows.filter(row => {
-            const rowDept = getColText(row, 3).toLowerCase();
-            const rowPos  = getColText(row, 4).toLowerCase();
-            return (!dept || rowDept === dept) && (!pos || rowPos === pos);
-        });
-
-        currentPage = 1;
-        renderPage();
-    }
-
-    function renderPage() {
-        const allEmpRows = Array.from(document.querySelectorAll('.employee-row'));
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
-        const start      = (currentPage - 1) * rowsPerPage;
-        const end        = start + rowsPerPage;
-
-        allEmpRows.forEach(row => row.style.display = 'none');
-        filteredRows.slice(start, end).forEach(row => row.style.display = '');
-
-        if (pageInfo) pageInfo.textContent = filteredRows.length
-            ? `Page ${currentPage} of ${totalPages}`
-            : 'No results found';
-
-        if (prevBtn) prevBtn.disabled = currentPage === 1;
-        if (nextBtn) nextBtn.disabled = currentPage >= totalPages || filteredRows.length === 0;
-    }
-
-    filterDepartment?.addEventListener('change', () => {
-        if (filterPosition) filterPosition.value = '';
-        applyFilters();
-    });
-    filterPosition?.addEventListener('change', applyFilters);
-    filterResetBtn?.addEventListener('click', () => {
-        if (filterDepartment) filterDepartment.value = '';
-        if (filterPosition)   filterPosition.value   = '';
-        applyFilters();
+    umBindOnce(umEls.search, 'umBound', 'input', function () {
+        clearTimeout(umSearchTimer);
+        umSearchTimer = setTimeout(function () {
+            umPage = 1;
+            umLoad();
+        }, UM_SEARCH_DELAY);
     });
 
-    if (prevBtn) prevBtn.addEventListener('click', () => { currentPage--; renderPage(); });
-    if (nextBtn) nextBtn.addEventListener('click', () => { currentPage++; renderPage(); });
-
-    // initial load
-    loadEmployeeTable();
-
-    // ── Employee Registration ─────────────────────────────────────────────────
-    const registrationForm = document.getElementById('add-user-form');
-
-    if (registrationForm) {
-        const freshForm   = registrationForm.cloneNode(true);
-        registrationForm.parentNode.replaceChild(freshForm, registrationForm);
-
-        const deptSelect = freshForm.querySelector('#department');
-        const posSelect  = freshForm.querySelector('#position');
-        const roleInput  = freshForm.querySelector('#role');
-
-        deptSelect.addEventListener('change', function () {
-            const deptId = this.value;
-
-            posSelect.innerHTML = '<option value="">Select Position</option>';
-            posSelect.disabled  = true;
-            roleInput.value     = '';
-            roleInput.disabled  = true;
-
-            if (!deptId || deptId === 'default') return;
-
-            fetch(`${base}/modules/school-directress/controllers/UserController.php?action=get_positions_roles&department_id=${deptId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) { console.error(data.message); return; }
-
-                    if (data.positions.length > 0) {
-                        data.positions.forEach(pos => {
-                            const opt       = document.createElement('option');
-                            opt.value       = pos.position_id;
-                            opt.textContent = pos.position_name;
-                            posSelect.appendChild(opt);
-                        });
-                        posSelect.disabled = false;
-                    } else {
-                        posSelect.innerHTML = '<option value="">No positions available</option>';
-                    }
-
-                    roleInput.value    = data.roles.length > 0 ? data.roles[0].role_name : 'No role assigned';
-                    roleInput.disabled = false;
-                })
-                .catch(err => console.error('AJAX error:', err));
+    [umEls.dept, umEls.position, umEls.status].forEach(function (sel) {
+        umBindOnce(sel, 'umBound', 'change', function () {
+            umPage = 1;
+            umLoad();
         });
+    });
 
-        freshForm.addEventListener('submit', function (e) {
-            e.preventDefault();
+    umBindOnce(umEls.exportBtn, 'umBound', 'click', umExportCsv);
 
-            const formData = new FormData(freshForm);
-            formData.append('action', 'register_employee');
+    umBindOnce(umEls.body, 'umBound', 'click', function (e) {
+        const row = e.target.closest('tr.um-row');
+        if (row) umToggle(row, row.dataset.detail);
+    });
 
-            fetch(`${base}/modules/school-directress/controllers/UserController.php`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => {
-                if (!res.ok) throw new Error(`Server error: ${res.status}`);
-                return res.text();                         // ← text() first, not json()
-            })
-            .then(text => {
-                console.log('Raw response:', text);        // ← add this temporarily to debug
-                const data = JSON.parse(text);             // ← now parse manually
-                showAlert('registration-message', data.message, data.success);
-                if (data.success) {
-                    freshForm.reset();
-                    posSelect.disabled = true;
-                    roleInput.disabled = true;
-                    loadEmployeeTable();
-                }
-            })
-            .catch(err => console.error('Submit error:', err));
+    umBindOnce(umEls.pageNav, 'umBound', 'click', function (e) {
+        const btn = e.target.closest('.um-page-btn');
+        if (!btn || btn.disabled) return;
+        umPage = parseInt(btn.dataset.page, 10) || 1;
+        umLoad();
+    });
+
+    // Initial load once per rendered page (init fires on both DOMContentLoaded and page:loaded)
+    if (!umEls.body.dataset.umLoaded) {
+        umEls.body.dataset.umLoaded = '1';
+        umPage = 1;
+        umLoad();
+    }
+}
+
+/* ── Helpers ────────────────────────────────────── */
+
+function umEsc(v) {
+    return String(v === null || v === undefined ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function umDash(v) {
+    return (v === null || v === undefined || String(v).trim() === '') ? '—' : v;
+}
+
+function umFullName(e) {
+    const parts = [e.first_name, e.middle_name, e.last_name]
+        .filter(function (p) { return p && String(p).trim() !== ''; });
+    return parts.length ? parts.join(' ') : '—';
+}
+
+function umInitials(e) {
+    const f = String(e.first_name || '').trim().charAt(0);
+    const l = String(e.last_name || '').trim().charAt(0);
+    return (f + l).toUpperCase() || '?';
+}
+
+function umStatusMeta(status) {
+    const s = String(status || '').trim().toLowerCase();
+    const map = {
+        'active':       'um-badge--active',
+        'probationary': 'um-badge--probation',
+        'resigned':     'um-badge--inactive',
+        'terminated':   'um-badge--inactive'
+    };
+    if (!s) return { cls: 'um-badge--muted', label: '—' };
+    return { cls: map[s] || 'um-badge--muted', label: s.charAt(0).toUpperCase() + s.slice(1) };
+}
+
+function umFormatDate(d) {
+    if (!d) return '—';
+    const dt = new Date(String(d).substring(0, 10) + 'T00:00:00');
+    if (isNaN(dt.getTime())) return '—';
+    return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function umFilterParams() {
+    return {
+        search:     umEls.search ? umEls.search.value.trim() : '',
+        department: umEls.dept ? umEls.dept.value : '',
+        position:   umEls.position ? umEls.position.value : '',
+        status:     umEls.status ? umEls.status.value : ''
+    };
+}
+
+/* ── AJAX ───────────────────────────────────────── */
+
+async function umRequest(action, extra) {
+    const params = new URLSearchParams(Object.assign({ action: action }, umFilterParams(), extra || {}));
+    const controller = new AbortController();
+    const timer = setTimeout(function () { controller.abort(); }, UM_REQUEST_TIMEOUT);
+
+    let res;
+    try {
+        res = await fetch(UM_ENDPOINT + '?' + params.toString(), {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' },
+            signal: controller.signal
         });
+    } catch (err) {
+        throw new Error(err.name === 'AbortError' ? 'The request timed out.' : 'Network error.');
+    } finally {
+        clearTimeout(timer);
     }
 
-    // ── Employee Management ───────────────────────────────────────────────────
-    const manageForm = document.getElementById('manage-employee-form');
+    let json;
+    try {
+        json = await res.json();
+    } catch (err) {
+        throw new Error('Unexpected server response.');
+    }
+    if (!res.ok || !json.success) {
+        throw new Error((json && json.message) || 'Request failed.');
+    }
+    return json.data;
+}
 
-    if (manageForm) {
-        const manageEmployeeSelect = document.getElementById('manage-employee');
-        const manageFullname       = document.getElementById('manage-fullname');
-        const manageDeptSelect     = document.getElementById('manage-department');
-        const managePosSelect      = document.getElementById('manage-position');
-        const manageRoleInput      = document.getElementById('manage-role');
-        const manageSubmitBtn      = document.getElementById('manage-submit-btn');
+async function umLoad() {
+    if (!umEls.body) return;
 
-        function populatePositions(positions, selectedId = null) {
-            managePosSelect.innerHTML = '<option value="">Select Position</option>';
-            positions.forEach(pos => {
-                const opt       = document.createElement('option');
-                opt.value       = pos.position_id;
-                opt.textContent = pos.position_name;
-                if (selectedId && pos.position_id == selectedId) opt.selected = true;
-                managePosSelect.appendChild(opt);
-            });
-            managePosSelect.disabled = positions.length === 0;
-        }
+    const requestId = ++umRequestId; // ignore out-of-order responses
+    umRenderMessage('Loading employees…');
 
-        function resetManageForm() {
-            manageFullname.value      = '';
-            manageDeptSelect.value    = 'default';
-            manageDeptSelect.disabled = true;
-            managePosSelect.innerHTML = '<option value="">Select Position</option>';
-            managePosSelect.disabled  = true;
-            manageRoleInput.value     = '';
-            manageRoleInput.disabled  = true;
-            manageSubmitBtn.disabled  = true;
-        }
+    try {
+        const data = await umRequest('list', { page: umPage });
+        if (requestId !== umRequestId) return;
 
-        manageEmployeeSelect.addEventListener('change', function () {
-            const employeeId = this.value;
-            resetManageForm();
+        umPage = data.page;
+        umTotalPages = data.pages;
+        umRenderRows(data.rows);
+        umRenderShowing(data);
+        umRenderPager();
+    } catch (err) {
+        if (requestId !== umRequestId) return;
+        umRenderMessage(err.message || 'Unable to load employees.', true);
+        if (umEls.showing) umEls.showing.textContent = '';
+        if (umEls.pageNav) umEls.pageNav.innerHTML = '';
+    }
+}
 
-            if (!employeeId || employeeId === 'default') return;
+/* ── Row expand / collapse ──────────────────────── */
 
-            fetch(`${base}/modules/school-directress/controllers/UserController.php?action=get_employee_details&employee_id=${employeeId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) { showAlert('management-message', data.message, false); return; }
+function umToggle(row, detailId) {
+    const detail = document.getElementById(detailId);
+    if (!detail) return;
+    const open = !row.classList.contains('um-open');
+    row.classList.toggle('um-open', open);
+    detail.classList.toggle('um-open', open);
+}
 
-                    const e = data.employee;
-                    manageFullname.value = [e.first_name, e.middle_name, e.last_name].filter(Boolean).join(' ');
+/* ── Render ─────────────────────────────────────── */
 
-                    if (e.department) {
-                        manageDeptSelect.value    = e.department;
-                        manageDeptSelect.disabled = false;
-                    }
+function umRenderMessage(text, isError) {
+    umEls.body.innerHTML =
+        '<tr><td colspan="8"><div class="um-empty' + (isError ? ' um-empty--error' : '') + '">' +
+        umEsc(text) + '</div></td></tr>';
+}
 
-                    populatePositions(data.positions, e.position);
-                    manageRoleInput.value    = e.role_name || 'No role assigned';
-                    manageRoleInput.disabled = false;
-                    manageSubmitBtn.disabled = false;
-                })
-                .catch(err => console.error('Fetch employee error:', err));
-        });
-
-        manageDeptSelect.addEventListener('change', function () {
-            const deptId = this.value;
-
-            managePosSelect.innerHTML = '<option value="">Select Position</option>';
-            managePosSelect.disabled  = true;
-            manageRoleInput.value     = '';
-
-            if (!deptId || deptId === 'default') return;
-
-            fetch(`${base}/modules/school-directress/controllers/UserController.php?action=get_positions_roles&department_id=${deptId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) { console.error(data.message); return; }
-                    populatePositions(data.positions);
-                    manageRoleInput.value    = data.roles.length > 0 ? data.roles[0].role_name : 'No role assigned';
-                    manageRoleInput.disabled = false;
-                })
-                .catch(err => console.error('AJAX error:', err));
-        });
-
-        manageForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(manageForm);
-            formData.append('action', 'update_employee');
-
-            fetch(`${base}/modules/school-directress/controllers/UserController.php`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                showAlert('management-message', data.message, data.success);
-                if (data.success) loadEmployeeTable(); // ← refresh after update
-            })
-            .catch(err => console.error('Update error:', err));
-        });
+function umRenderRows(rows) {
+    if (!rows || !rows.length) {
+        umRenderMessage('No employees found.');
+        return;
     }
 
-});
+    umEls.body.innerHTML = rows.map(function (e) {
+        const name = umFullName(e);
+        const em_code = umDash(e.employee_code);
+        const sm = umStatusMeta(e.employment_status);
+        const unit = umDash(e.unit_name);
+        const dept = umDash(e.department_name);
+        const pos = umDash(e.position_name);
+        const rid = 'umd-' + e.employee_id;
+
+        return '' +
+        '<tr class="um-row" data-detail="' + umEsc(rid) + '">' +
+            '<td><div class="um-toggle">' +
+                '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>' +
+            '</div></td>' +
+            '<td><div class="um-employee">' +
+                '<div class="um-avatar">' + umEsc(umInitials(e)) + '</div>' +
+                '<div><div class="um-name">' + umEsc(name) + '</div>' +
+                '<div class="um-meta">' + umEsc(pos) + '</div></div>' +
+            '</div></td>' +
+            '<td>' + umEsc(em_code) + '</td>' +
+            '<td>' + umEsc(dept) + '</td>' +
+            '<td>' + umEsc(unit) + '</td>' +
+            '<td>' + umEsc(pos) + '</td>' +
+            '<td><span class="um-badge ' + sm.cls + '">' + umEsc(sm.label) + '</span></td>' +
+        '</tr>' +
+        '<tr class="um-detail-row" id="' + umEsc(rid) + '">' +
+            '<td class="um-detail-cell" colspan="8"><div class="um-detail-inner">' +
+                umDetailField('Employee Code', umDash(e.employee_code)) +
+                umDetailField('Department', dept) +
+                umDetailField('Unit', unit) +
+                umDetailField('Position', pos) +
+                umDetailField('Status', sm.label) +
+                umDetailField('Employment Type', umDash(e.employment_type)) +
+                umDetailField('Email', umDash(e.email)) +
+                umDetailField('Mobile No.', umDash(e.mobile_no)) +
+                umDetailField('Hire Date', umFormatDate(e.hire_date)) +
+            '</div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function umDetailField(label, value) {
+    return '<div><div class="um-fl__k">' + umEsc(label) + '</div>' +
+           '<div class="um-fl__v">' + umEsc(value) + '</div></div>';
+}
+
+function umRenderShowing(data) {
+    if (!umEls.showing) return;
+    if (!data.total) {
+        umEls.showing.textContent = '';
+        return;
+    }
+    const from = (data.page - 1) * data.per_page + 1;
+    const to = from + data.rows.length - 1;
+    umEls.showing.textContent = 'Showing ' + from + '-' + to + ' of ' + data.total;
+}
+
+function umRenderPager() {
+    if (!umEls.pageNav) return;
+    if (umTotalPages <= 1) {
+        umEls.pageNav.innerHTML = '';
+        return;
+    }
+
+    const nums = [];
+    for (let p = 1; p <= umTotalPages; p++) {
+        if (p === 1 || p === umTotalPages || Math.abs(p - umPage) <= 1) nums.push(p);
+    }
+
+    let html = '<button type="button" class="um-page-btn" data-page="' + (umPage - 1) + '"' +
+               (umPage === 1 ? ' disabled' : '') + '>&laquo; Prev</button>';
+
+    let prev = 0;
+    nums.forEach(function (p) {
+        if (p - prev > 1) html += '<span class="um-page-gap">…</span>';
+        html += '<button type="button" class="um-page-btn' + (p === umPage ? ' um-page-btn--active' : '') +
+                '" data-page="' + p + '">' + p + '</button>';
+        prev = p;
+    });
+
+    html += '<button type="button" class="um-page-btn" data-page="' + (umPage + 1) + '"' +
+            (umPage === umTotalPages ? ' disabled' : '') + '>Next &raquo;</button>';
+
+    umEls.pageNav.innerHTML = html;
+}
+
+/* ── Export (all rows matching current filters) ─── */
+
+function umCsvCell(v) {
+    return '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"';
+}
+
+async function umExportCsv() {
+    const btn = umEls.exportBtn;
+    if (!btn || btn.disabled) return;
+
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Exporting…';
+
+    try {
+        const data = await umRequest('export');
+        if (!data.rows.length) return;
+
+        const lines = [['Employee Code', 'First Name', 'Middle Name', 'Last Name', 'Department', 'Position', 'Status', 'Email', 'Mobile No.']
+            .map(umCsvCell).join(',')];
+
+        data.rows.forEach(function (e) {
+            lines.push([
+                e.employee_code, e.first_name, e.middle_name, e.last_name,
+                e.department_name, e.position_name, e.employment_status,
+                e.email, e.mobile_no
+            ].map(umCsvCell).join(','));
+        });
+
+        const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'employees_' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert(err.message || 'Export failed.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+    }
+}
+
+/* ── Lifecycle ──────────────────────────────────── */
+
+document.addEventListener('DOMContentLoaded', umInit);
+document.addEventListener('page:loaded', umInit);
+
+// Safety net: the router may insert the page after (or without) firing the events
+// above, so also watch for #umBody appearing. umInit is safe to call repeatedly —
+// the initial load is guarded by a flag on the table body.
+function umWatchDom() {
+    if (window.__umObserver || !document.body) return;
+    window.__umObserver = new MutationObserver(function () {
+        const body = document.getElementById('umBody');
+        if (body && !body.dataset.umLoaded) umInit();
+    });
+    window.__umObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+umWatchDom();
+document.addEventListener('DOMContentLoaded', umWatchDom);
+
+if (document.readyState !== 'loading') {
+    umInit();
+}

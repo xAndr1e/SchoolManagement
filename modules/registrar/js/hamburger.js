@@ -4,6 +4,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const mainContent = document.querySelector('.main-content');
     const footer = document.querySelector('footer');
     const header = document.querySelector('header');
+    const schoolYearLabel = document.getElementById('schoolYearLabel');
+    const semesterLabel = document.getElementById('semesterLabel');
+
+ 
+     // clock 
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    updateSchoolYear();
+
     
     // Create overlay for mobile
     let overlay = document.querySelector('.sidebar-overlay');
@@ -121,3 +132,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 });
+
+
+// clock 
+
+ function updateClock() {
+    const now = new Date();
+
+    document.getElementById('live-clock').textContent =
+        now.toLocaleTimeString('en-PH', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+}
+
+function updateSchoolYear()
+{
+    
+      fetch(`${BASE_URL}/school-year/active`)
+        .then(response => response.json())
+        .then(result => {
+            schoolYearLabel.textContent =
+                result.name;
+
+        });
+  
+    
+}
+
+
+
+
+
+
+

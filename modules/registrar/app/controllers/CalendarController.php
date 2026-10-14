@@ -4,6 +4,8 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Employee;
 use App\Models\Event;
+use App\Models\SchoolYear;
+use App\Models\Semester;
 
 
 class CalendarController extends Controller {
@@ -13,8 +15,15 @@ class CalendarController extends Controller {
        
         
         $user = Employee::find('1003'); 
+        $semester = Semester::activeSemester();
+        $schoolYear = SchoolYear::activeSchoolYear();
       
-        $this->render('/tools/calendar', ['user' => $user]);
+        $this->render('/tools/calendar', 
+        [
+            'user' => $user,
+            'semester' => $semester,
+            'schoolYear' => $schoolYear
+        ]);
     }
 
     public function allEvents()

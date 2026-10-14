@@ -14,7 +14,8 @@ class Page {
         'analytics-reports'     => 'Analytics Reports',
         'report-submission'     => 'Report Submission',
         'concern-submission'    => 'Concern Submission',
-        'approval-submission'   => 'Approval Submission'
+        'approval-submission'   => 'Approval Submission',
+        'scholarship' => 'Scholarship'
     ];
 
     /*Content Sections*/ 
@@ -24,7 +25,8 @@ class Page {
         'counseling-services'   => ['cases','appointments'],
         'disciplinary'          => ['incident'],  
         'analytics'             => ['analytics-reports'],
-        'requests-and-reports'  => ['report-submission', 'concern-submission', 'approval-submission']
+        'requests-and-reports'  => ['report-submission', 'concern-submission', 'approval-submission'],
+        'scholar' => ['scholarship']
     ];
 
     public function __construct($pagesDir = null) {
@@ -71,7 +73,7 @@ class Page {
         }
 
         // Grouped sections
-        $sectionOrder = ['student-management', 'counseling-services', 'disciplinary', 'analytics', 'requests-and-reports'];
+        $sectionOrder = ['student-management', 'counseling-services', 'disciplinary', 'analytics', 'scholar', 'requests-and-reports'];
         foreach ($sectionOrder as $section) {
             echo '<div class="separator"></div>';
             echo '<h3>' . ucwords(str_replace('-', ' ', $section)) . '</h3>';

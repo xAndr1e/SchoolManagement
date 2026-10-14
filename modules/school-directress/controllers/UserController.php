@@ -1,231 +1,82 @@
 <?php
-include_once __DIR__ . '/../../../database/db.php';
-include_once __DIR__ . '/../../../auth/session.php';
-include_once __DIR__ . '/../../../auth/guard.php';
-include_once __DIR__ . '/../classes/Position.php';
-include_once __DIR__ . '/../classes/Role.php';
-include_once __DIR__ . '/../classes/User.php'; // add this
+ob_start();
 
-header('Content-Type: application/json');
+const UM_PER_PAGE = 10;
 
-$action = $_REQUEST['action'] ?? '';
-
-switch ($action) {
-    case 'get_positions_roles':
-        getPositionsAndRoles();
-        break;
-
-    case 'register_employee':
-        registerEmployee();
-        break;
-
-    case 'get_employee_details':
-    getEmployeeDetails();
-    break;
-
-    case 'update_employee':
-        updateEmployee();
-        break;    
-
-    case 'get_employees':
-        getEmployees();
-        break;    
-
-    default:
-        echo json_encode(['success' => false, 'message' => 'Invalid action.']);
-        break;
+function um_respond(array $payload, int $code = 200) {
+    if (ob_get_length()) {
+        ob_clean(); // discard any stray warnings/notices before the JSON
+    }
+    http_response_code($code);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    exit;
 }
 
-function getPositionsAndRoles() {
-    $department_id = intval($_GET['department_id'] ?? 0);
-
-    if (!$department_id) {
-        echo json_encode(['success' => false, 'message' => 'No department ID provided.']);
-        return;
-    }
-
-    try {
-        $positionClass = new Position();
-        $positions     = $positionClass->getPositionsByDepartment($department_id);
-
-        $roleClass = new Role();
-        $roles     = $roleClass->getRolesByDepartment($department_id);
-
-        echo json_encode([
-            'success'   => true,
-            'positions' => $positions,
-            'roles'     => $roles
-        ]);
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-    }
-}
-
-function registerEmployee() {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
-        return;
-    }
-
-    $employee_id   = intval($_POST['employee']          ?? 0);
-    $department_id = intval($_POST['department']        ?? 0);
-    $position_id   = intval($_POST['position']          ?? 0);
-    $password      = trim($_POST['password']            ?? '');
-    $confirm_pass  = trim($_POST['confirm_password']    ?? '');
-
-    if (!$employee_id || !$department_id || !$position_id) {
-        echo json_encode(['success' => false, 'message' => 'Please fill in all required fields.']);
-        return;
-    }
-
-    if (empty($password)) {
-        echo json_encode(['success' => false, 'message' => 'Password cannot be empty.']);
-        return;
-    }
-
-    if ($password !== $confirm_pass) {
-        echo json_encode(['success' => false, 'message' => 'Passwords do not match.']);
-        return;
-    }
-
-    if (strlen($password) < 8) {
-        echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters.']);
-        return;
-    }
-
-    $userClass = new User();
-    $result    = $userClass->registerEmployee($employee_id, $department_id, $position_id, $password);
-    echo json_encode($result);
-}
-
-function getEmployeeDetails() {
-    $employee_id = intval($_GET['employee_id'] ?? 0);
-
-    if (!$employee_id) {
-        echo json_encode(['success' => false, 'message' => 'No employee ID provided.']);
-        return;
-    }
-
-    try {
-        $db   = new Database();
-        $conn = $db->getConnection();
-
-        $stmt = $conn->prepare("
-            SELECT 
-                e.employee_id,
-                e.first_name,
-                e.middle_name,
-                e.last_name,
-                e.department,
-                e.position,
-                e.status,
-                d.department_name,
-                p.position_name,
-                r.role_name
-            FROM sms_employee e
-            LEFT JOIN sd_department d ON e.department = d.department_id
-            LEFT JOIN sd_position   p ON e.position   = p.position_id
-            LEFT JOIN sd_roles      r ON e.role        = r.role_id
-            WHERE e.employee_id = :employee_id
-        ");
-        $stmt->execute([':employee_id' => $employee_id]);
-        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$employee) {
-            echo json_encode(['success' => false, 'message' => 'Employee not found.']);
-            return;
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (ob_get_length()) {
+            ob_clean();
         }
-
-        // Also fetch positions for the employee's current department
-        $positionClass = new Position();
-        $positions     = $employee['department']
-            ? $positionClass->getPositionsByDepartment($employee['department'])
-            : [];
-
-        $roleClass = new Role();
-        $roles     = $employee['department']
-            ? $roleClass->getRolesByDepartment($employee['department'])
-            : [];
-
-        echo json_encode([
-            'success'   => true,
-            'employee'  => $employee,
-            'positions' => $positions,
-            'roles'     => $roles,
-        ]);
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => 'Server error.']);
     }
-}
+});
 
-function updateEmployee() {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
-        return;
+try {
+    // All includes live inside the try block
+    include_once __DIR__ . '/../../../auth/session.php';
+    include_once __DIR__ . '/../../../auth/guard.php';
+    require_once __DIR__ . '/../classes/Employee.php';
+
+    $action = $_GET['action'] ?? '';
+
+    $filters = [
+        'search'     => trim((string) ($_GET['search'] ?? '')),
+        'department' => trim((string) ($_GET['department'] ?? '')),
+        'position'   => trim((string) ($_GET['position'] ?? '')),
+        'status'     => trim((string) ($_GET['status'] ?? '')),
+    ];
+
+    $model = new Employee();
+
+    switch ($action) {
+
+        case 'list':
+            $page    = max(1, (int) ($_GET['page'] ?? 1));
+            $total   = $model->countEmployeesFiltered($filters);
+            $pages   = max(1, (int) ceil($total / UM_PER_PAGE));
+            if ($page > $pages) {
+                $page = $pages;
+            }
+            $rows = $model->getEmployeesFiltered($filters, UM_PER_PAGE, ($page - 1) * UM_PER_PAGE);
+
+            um_respond([
+                'success' => true,
+                'data'    => [
+                    'rows'     => $rows,
+                    'total'    => $total,
+                    'page'     => $page,
+                    'pages'    => $pages,
+                    'per_page' => UM_PER_PAGE,
+                ],
+            ]);
+            break;
+
+        case 'export':
+            um_respond([
+                'success' => true,
+                'data'    => ['rows' => $model->getEmployeesFiltered($filters)],
+            ]);
+            break;
+
+        default:
+            um_respond(['success' => false, 'message' => 'Unknown action.'], 400);
     }
 
-    $employee_id   = intval($_POST['employee_id']   ?? 0);
-    $department_id = intval($_POST['department']    ?? 0);
-    $position_id   = intval($_POST['position']      ?? 0);
-
-    if (!$employee_id || !$department_id || !$position_id) {
-        echo json_encode(['success' => false, 'message' => 'Please fill in all required fields.']);
-        return;
-    }
-
-    try {
-        $db   = new Database();
-        $conn = $db->getConnection();
-
-        // Get role for the department
-        $roleStmt = $conn->prepare("SELECT role_id FROM sd_roles WHERE department = :dept_id LIMIT 1");
-        $roleStmt->execute([':dept_id' => $department_id]);
-        $role_id = $roleStmt->fetchColumn();
-
-        $stmt = $conn->prepare("
-            UPDATE sms_employee
-            SET department = :department_id,
-                position   = :position_id,
-                role       = :role_id
-            WHERE employee_id = :employee_id
-        ");
-        $stmt->execute([
-            ':department_id' => $department_id,
-            ':position_id'   => $position_id,
-            ':role_id'       => $role_id ?: null,
-            ':employee_id'   => $employee_id,
-        ]);
-
-        echo json_encode(['success' => true, 'message' => 'Employee updated successfully.']);
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-    }
-}
-
-    function getEmployees() {
-    try {
-        $db   = new Database();
-        $conn = $db->getConnection();
-
-        $stmt = $conn->query("
-            SELECT 
-                e.employee_id,
-                e.first_name,
-                e.middle_name,
-                e.last_name,
-                e.status,
-                d.department_name,
-                p.position_name
-            FROM sms_employee e
-            LEFT JOIN sd_department d ON e.department = d.department_id
-            LEFT JOIN sd_position   p ON e.position   = p.position_id
-            ORDER BY e.last_name ASC
-        ");
-
-        $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['success' => true, 'data' => $employees]);
-
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-    }
+} catch (\Throwable $e) {
+    error_log('UserManagementController: ' . $e->getMessage());
+    um_respond(['success' => false, 'message' => 'Unable to load employees.'], 500);
 }

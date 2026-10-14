@@ -29,7 +29,7 @@ class Concern extends Model
 
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-    $where = " WHERE 1=1 ";
+    $where = "WHERE submitted_by = 1003 ";
     $params = [];
 
 
@@ -55,7 +55,7 @@ class Concern extends Model
     // Base query
    $dataSql = "SELECT 
             s.*,
-            sd.department_name AS department,
+            sd.department_name AS departments,
             CONCAT(se.first_name,' ',se.last_name) AS approver
         FROM {$this->tableName} s
         LEFT JOIN sd_department sd ON s.department = sd.department_id

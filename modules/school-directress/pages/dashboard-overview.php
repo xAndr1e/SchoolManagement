@@ -2,15 +2,17 @@
 include_once __DIR__ . "/../../../auth/session.php";
 include_once __DIR__ . "/../classes/Employee.php";
 include_once __DIR__ . "/../classes/Overview.php";
+include_once __DIR__ . "/../classes/StudentMonitoring.php";
 include_once __DIR__ . "/../../../database/db.php";
 
 $employeeClass = new Employee();
 $employeeName  = $employeeClass->getEmployeeName();
 
+$studentClass = new StudentMonitoring();
+$totalStudents = count($studentClass->getStudents());
+
 $database = new Database();
 $conn     = $database->getConnection();
-
-// --- Summary Card Queries ---
 
 ?>
 
@@ -32,7 +34,7 @@ $conn     = $database->getConnection();
         <div class="date-month"><?= date('F Y') ?></div>
     </div>
 </div>
-
+    
 <!-- Row 1: Enrollment & Personnel -->
 <p class="cards-section-label">Enrollment &amp; Personnel</p>
 <div class="summary-cards-grid">

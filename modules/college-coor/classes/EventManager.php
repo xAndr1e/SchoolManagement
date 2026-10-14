@@ -91,6 +91,11 @@ class EventManager {
      */
     public function getAllEvents() {
         try {
+            // include optional columns if they exist
+            $extra = '';
+            if ($this->hasColumn('cc_events', 'template_id')) $extra .= ', template_id';
+            if ($this->hasColumn('cc_events', 'priority')) $extra .= ', priority';
+
             $query = "SELECT 
                         event_id,
                         event_title,
@@ -101,7 +106,7 @@ class EventManager {
                         description,
                         location,
                         target_audience,
-                        status,
+                        status" . $extra . ",
                         created_at
                     FROM cc_events
                     ORDER BY event_date DESC, start_time DESC";
@@ -130,6 +135,39 @@ class EventManager {
     }
 
     /**
+     * Check whether a table column exists
+     */
+    private function hasColumn($table, $column) {
+        try {
+            $stmt = $this->conn->prepare("SHOW COLUMNS FROM {$table} LIKE :column");
+            $stmt->bindParam(':column', $column);
+            $stmt->execute();
+            return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Return list of event templates (if table exists)
+     */
+    public function getEventTemplates() {
+        try {
+            $stmt = $this->conn->prepare("SHOW TABLES LIKE 'cc_event_templates'");
+            $stmt->execute();
+            $exists = (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$exists) return [];
+
+            $q = "SELECT * FROM cc_event_templates ORDER BY template_name ASC";
+            $s = $this->conn->prepare($q);
+            $s->execute();
+            return $s->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
      * Create new event
      */
     public function createEvent($data) {
@@ -153,15 +191,28 @@ class EventManager {
             $location = trim($data['location']);
             $target_audience = isset($data['target_audience']) ? trim($data['target_audience']) : '';
             $status = trim($data['status']);
+            // optional fields
+            $priority = isset($data['priority']) ? trim($data['priority']) : null;
+            $template_id = isset($data['template_id']) ? $data['template_id'] : null;
+            if ($template_id === '') $template_id = null;
+            if ($priority === '') $priority = null;
 
-            // Insert event
-            $query = "INSERT INTO cc_events 
-                      (event_title, event_type, event_date, start_time, end_time, description, location, target_audience, status, created_at)
-                      VALUES 
-                      (:event_title, :event_type, :event_date, :start_time, :end_time, :description, :location, :target_audience, :status, NOW())";
-            
+            // Insert event, include optional template_id and priority if columns exist
+            $columns = ['event_title','event_type','event_date','start_time','end_time','description','location','target_audience','status'];
+            $placeholders = [':event_title',':event_type',':event_date',':start_time',':end_time',':description',':location',':target_audience',':status'];
+
+            if ($this->hasColumn('cc_events','template_id')) {
+                $columns[] = 'template_id';
+                $placeholders[] = ':template_id';
+            }
+            if ($this->hasColumn('cc_events','priority')) {
+                $columns[] = 'priority';
+                $placeholders[] = ':priority';
+            }
+
+            $query = "INSERT INTO cc_events (" . implode(',', $columns) . ", created_at) VALUES (" . implode(',', $placeholders) . ", NOW())";
             $stmt = $this->conn->prepare($query);
-            
+
             $stmt->bindParam(':event_title', $event_title);
             $stmt->bindParam(':event_type', $event_type);
             $stmt->bindParam(':event_date', $event_date);
@@ -171,7 +222,14 @@ class EventManager {
             $stmt->bindParam(':location', $location);
             $stmt->bindParam(':target_audience', $target_audience);
             $stmt->bindParam(':status', $status);
-            
+
+            if ($this->hasColumn('cc_events','template_id')) {
+                $stmt->bindValue(':template_id', $template_id === null ? null : $template_id, PDO::PARAM_INT);
+            }
+            if ($this->hasColumn('cc_events','priority')) {
+                $stmt->bindValue(':priority', $priority);
+            }
+
             $stmt->execute();
             
             return [
@@ -203,6 +261,8 @@ class EventManager {
             $location = isset($data['location']) ? trim($data['location']) : null;
             $target_audience = isset($data['target_audience']) ? trim($data['target_audience']) : null;
             $status = isset($data['status']) ? trim($data['status']) : null;
+            $priority = array_key_exists('priority', $data) ? (trim($data['priority']) === '' ? null : trim($data['priority'])) : null;
+            $template_id = array_key_exists('template_id', $data) ? ($data['template_id'] === '' ? null : $data['template_id']) : null;
 
             // Build update query
             $updates = [];
@@ -243,6 +303,16 @@ class EventManager {
             if ($status !== null) {
                 $updates[] = "status = :status";
                 $params[':status'] = $status;
+            }
+
+            // include optional columns if present in DB and in payload
+            if ($this->hasColumn('cc_events','template_id') && array_key_exists('template_id', $data)) {
+                $updates[] = "template_id = :template_id";
+                $params[':template_id'] = $template_id;
+            }
+            if ($this->hasColumn('cc_events','priority') && array_key_exists('priority', $data)) {
+                $updates[] = "priority = :priority";
+                $params[':priority'] = $priority;
             }
 
             if (empty($updates)) {

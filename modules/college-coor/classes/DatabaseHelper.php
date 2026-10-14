@@ -13,7 +13,7 @@ class DatabaseHelper {
     // Get calendar events with upcoming status
     public function getCalendarEvents() {
         try {
-            $stmt = $this->conn->prepare("SELECT event_title, event_date, start_time, status FROM cc_events WHERE status = 'upcoming' ORDER BY event_date ASC");
+            $stmt = $this->conn->prepare("SELECT event_title, event_date, start_time, status FROM cc_events WHERE event_date >= CURDATE() ORDER BY event_date ASC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
@@ -51,13 +51,16 @@ class DatabaseHelper {
     // Chart Data Methods
     public function getStudentsPerProgram() {
         try {
-            // Use the actual enrolled students to compute counts per course
+            // Enrollment System is the source of truth for current student counts.
+            // Keep the program master data from rgr_courses so labels come from
+            // the existing SMS database program records.
             $stmt = $this->conn->prepare("SELECT 
-                course as program_code,
-                COUNT(*) as student_count
-            FROM rgr_students
-            WHERE course IS NOT NULL AND course != ''
-            GROUP BY course
+                c.code AS program_code,
+                COUNT(es.student_id) AS student_count
+            FROM rgr_courses c
+            INNER JOIN enr_students es ON es.course_id = c.id
+                AND es.enrollment_status = 'enrolled'
+            GROUP BY c.id, c.code, c.name
             ORDER BY student_count DESC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -69,15 +72,21 @@ class DatabaseHelper {
     public function getFacultyLoadDistribution() {
         try {
             $stmt = $this->conn->prepare("SELECT 
-                CONCAT(f.first_name, ' ', f.last_name) as faculty_name,
-                COUNT(DISTINCT cs.id) as classes_assigned,
-                COALESCE(SUM(s.units), 0) as total_units
+                CONCAT(f.first_name, ' ', f.last_name) AS faculty_name,
+                COUNT(DISTINCT fl.id) AS classes_assigned,
+                COALESCE(SUM(s.units), 0) AS total_units
             FROM cc_faculty f
-            LEFT JOIN cc_schedule cs ON f.id = cs.faculty_id
-            LEFT JOIN rgr_subjects s ON cs.subject_code = s.code
+            LEFT JOIN (
+                SELECT fl.id, fl.faculty_id, fl.subject_id
+                FROM cc_faculty_load fl
+                INNER JOIN rgr_school_years sy ON sy.id = fl.school_year_id
+                    AND sy.is_active = 1
+                INNER JOIN rgr_semesters sem ON sem.id = fl.semester_id
+                    AND sem.is_active = 1
+            ) fl ON fl.faculty_id = f.id
+            LEFT JOIN rgr_subjects s ON fl.subject_id = s.id
             GROUP BY f.id, f.first_name, f.last_name
-            ORDER BY total_units DESC
-            LIMIT 10");
+            ORDER BY total_units DESC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
@@ -89,19 +98,21 @@ class DatabaseHelper {
         try {
             $stmt = $this->conn->prepare("SELECT 
                 CASE 
-                    WHEN academic_status = 'active' THEN 'Active'
-                    WHEN academic_status = 'inactive' THEN 'Inactive'
-                    WHEN academic_status = 'graduated' THEN 'Graduated'
-                    ELSE academic_status
+                    WHEN enrollment_status = 'enrolled' THEN 'Active'
+                    WHEN enrollment_status = 'on_leave' THEN 'On Leave'
+                    WHEN enrollment_status = 'graduated' THEN 'Graduated'
+                    WHEN enrollment_status = 'dropped' THEN 'Dropped'
+                    ELSE enrollment_status
                 END as status,
                 COUNT(*) as count
-            FROM rgr_students
-            GROUP BY academic_status
+            FROM enr_students
+            GROUP BY enrollment_status
             ORDER BY 
-                CASE academic_status
-                    WHEN 'active' THEN 1
-                    WHEN 'inactive' THEN 2
+                CASE enrollment_status
+                    WHEN 'enrolled' THEN 1
+                    WHEN 'on_leave' THEN 2
                     WHEN 'graduated' THEN 3
+                    WHEN 'dropped' THEN 4
                     ELSE 4
                 END");
             $stmt->execute();
@@ -209,6 +220,120 @@ class DatabaseHelper {
                         'description' => 'New student enrolled: ' . $stud['first_name'] . ' ' . $stud['last_name'],
                         'module' => 'Enrollment',
                         'timestamp' => $stud['created_at']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            // 6. Faculty Management: certifications, engagements, and faculty loads
+            try {
+                $stmt = $this->conn->prepare("SELECT ce.id, ce.title, ce.created_at,
+                        CONCAT(e.first_name, ' ', e.last_name) AS faculty_name
+                    FROM cc_certification_engagements ce
+                    LEFT JOIN em_employees e ON e.employee_id = ce.employee_id
+                    ORDER BY ce.created_at DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'engagement-' . $row['id'],
+                        'type' => 'Faculty Management',
+                        'description' => 'Added engagement for ' . ($row['faculty_name'] ?? 'Faculty') . ': ' . ($row['title'] ?? 'Untitled'),
+                        'module' => 'Faculty Management',
+                        'timestamp' => $row['created_at']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $stmt = $this->conn->prepare("SELECT id, faculty_id, created_at
+                    FROM cc_faculty_load ORDER BY created_at DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'faculty-load-' . $row['id'],
+                        'type' => 'Faculty Management',
+                        'description' => 'Updated faculty load assignment',
+                        'module' => 'Faculty Management',
+                        'timestamp' => $row['created_at']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            // 7. Academics Management: sections and academic assignments
+            try {
+                $stmt = $this->conn->prepare("SELECT id, section_code, created_at
+                    FROM cc_sections ORDER BY created_at DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'section-' . $row['id'],
+                        'type' => 'Academics Management',
+                        'description' => 'Created or updated section ' . ($row['section_code'] ?? 'Section'),
+                        'module' => 'Academics Management',
+                        'timestamp' => $row['created_at']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            // 8. Class Scheduling
+            try {
+                $stmt = $this->conn->prepare("SELECT id, subject_code, created_at
+                    FROM cc_schedule ORDER BY created_at DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'schedule-' . $row['id'],
+                        'type' => 'Class Scheduling',
+                        'description' => 'Created class schedule' . (!empty($row['subject_code']) ? ': ' . $row['subject_code'] : ''),
+                        'module' => 'Class Scheduling',
+                        'timestamp' => $row['created_at']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            // 9. Requests and Reports / Report Submission
+            try {
+                $stmt = $this->conn->prepare("SELECT report_id, title, submitted_at
+                    FROM sd_reports ORDER BY submitted_at DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'report-' . $row['report_id'],
+                        'type' => 'Report Submission',
+                        'description' => 'Submitted report: ' . ($row['title'] ?? 'Untitled report'),
+                        'module' => 'Requests and Reports',
+                        'timestamp' => $row['submitted_at']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            // 10. Concern Submission
+            try {
+                $stmt = $this->conn->prepare("SELECT issue_id, title, submitted_on
+                    FROM sd_issues ORDER BY submitted_on DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'concern-' . $row['issue_id'],
+                        'type' => 'Concern Submission',
+                        'description' => 'Submitted concern: ' . ($row['title'] ?? 'Untitled concern'),
+                        'module' => 'Requests and Reports',
+                        'timestamp' => $row['submitted_on']
+                    ];
+                }
+            } catch (Exception $e) {}
+
+            // 11. Approval Submission
+            try {
+                $stmt = $this->conn->prepare("SELECT approval_id, title, submitted_on
+                    FROM sd_approvals ORDER BY submitted_on DESC LIMIT 10");
+                $stmt->execute();
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $activities[] = [
+                        'id' => 'approval-' . $row['approval_id'],
+                        'type' => 'Approval Submission',
+                        'description' => 'Submitted approval request: ' . ($row['title'] ?? 'Untitled request'),
+                        'module' => 'Requests and Reports',
+                        'timestamp' => $row['submitted_on']
                     ];
                 }
             } catch (Exception $e) {}

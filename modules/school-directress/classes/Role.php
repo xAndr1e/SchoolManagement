@@ -15,14 +15,14 @@ class Role {
     }
 
     public function getRoles() {
-        $sql = "SELECT role_id, role_name FROM sd_roles";
+        $sql = "SELECT role_id, role_name FROM em_roles";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getRolesByDepartment($departmentId) {
-        $sql = "SELECT role_id, role_name FROM sd_roles WHERE department = :department_id";
+        $sql = "SELECT role_id, role_name FROM em_roles WHERE department = :department_id";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([':department_id' => $departmentId]);
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

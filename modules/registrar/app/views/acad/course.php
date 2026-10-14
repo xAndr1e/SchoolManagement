@@ -214,6 +214,24 @@
                         <div class="invalid-feedback" id="error-course_name"></div>
                     </div>
 
+                     <!-- Course Name -->
+
+                                    <div class="col-12">
+                    <label for="course_name" class="form-label fw-semibold">
+                        Course Description
+                    </label>
+
+                    <textarea
+                        class="form-control ai-clean"
+                        name="course_description"
+                        id="course_description"
+                        placeholder="e.g. Bachelor of Science in Information Systems"
+                        rows="3"
+                    ></textarea>
+
+                    <div class="invalid-feedback" id="error-course_description"></div>
+                </div>
+
                 </form>
 
             </div>
@@ -275,6 +293,12 @@
             <div class="invalid-feedback" id="error-edit_course_name"></div>
         </div>
         
+          <div class="col-md-12">
+            <label for="inputPassword4" class="form-label">Course Name</label>
+            <input type="text" class="form-control" name="edit_course_name" id="edit_course_name">
+            <div class="invalid-feedback" id="error-edit_course_name"></div>
+        </div>
+
         </form>
 
         </div>
@@ -312,6 +336,13 @@
             <label for="inputPassword4" class="form-label">Course Name</label>
             <textarea type="text" class="form-control" id="show_course_name" readonly></textarea>
         </div>
+
+        <div class="col-md-12">
+            <label for="inputPassword4" class="form-label">Course Description</label>
+            <textarea type="text" class="form-control" id="show_description" readonly></textarea>
+        </div>
+
+        
         
         </form>
 

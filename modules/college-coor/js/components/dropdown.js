@@ -5,7 +5,6 @@ const bellBtn      = document.getElementById('bellBtn');
     const userDropdown = document.getElementById('userDropdown');
     const userWrapper  = document.getElementById('userWrapper');
     const notifBadge   = document.getElementById('notifBadge');
-    const markAllRead  = document.querySelector('.mark-all-read');
 
     function closeAll() {
         bellDropdown.classList.remove('open');
@@ -40,11 +39,4 @@ const bellBtn      = document.getElementById('bellBtn');
         if (!bellWrapper.contains(e.target) && !userWrapper.contains(e.target)) {
             closeAll();
         }
-    });
-
-    markAllRead.addEventListener('click', function () {
-        document.querySelectorAll('.notif-item.unread').forEach(item => {
-            item.classList.remove('unread');
-        });
-        notifBadge.classList.add('hidden');
     });

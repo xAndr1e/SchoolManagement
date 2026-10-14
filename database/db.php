@@ -44,7 +44,7 @@ class Database
             die("DB Connection failed: " . $e->getMessage());
         }
     }
-
+    
     public function getConnection()
     {
         return $this->conn;

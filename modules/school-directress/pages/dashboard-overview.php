@@ -1,28 +1,24 @@
 <?php
+
 include_once __DIR__ . "/../../../auth/session.php";
+include_once __DIR__ . "/../../../database/db.php";
 include_once __DIR__ . "/../classes/Employee.php";
 include_once __DIR__ . "/../classes/Overview.php";
 include_once __DIR__ . "/../classes/StudentMonitoring.php";
-include_once __DIR__ . "/../../../database/db.php";
+
+$database = new Database();
+$conn = $database->getConnection();
 
 $employeeClass = new Employee();
-$employeeName  = $employeeClass->getEmployeeName();
+$employeeName = $employeeClass->getEmployeeName();
 
 $studentClass = new StudentMonitoring();
 $totalStudents = count($studentClass->getStudents());
-
-$database = new Database();
-$conn     = $database->getConnection();
 
 ?>
 
 
 <!-- Module Header -->
-<div class="module-header">
-    <h1>School Directress Dashboard</h1>
-    <p>Here's an overview of your dashboard and recent activities.</p>
-</div>
-
 <!-- Welcome Banner -->
 <div class="welcome-banner">
     <div class="welcome-text">
@@ -84,5 +80,4 @@ $conn     = $database->getConnection();
         <div class="card-value"><?= number_format($overdueBooks) ?></div>
         <div class="card-label">Overdue Library Books</div>
     </div>
-
 </div>

@@ -15,7 +15,6 @@
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #f5f7ff;
             color: var(--dark);
-            padding: 20px;
             min-height: 100vh;
         }
 

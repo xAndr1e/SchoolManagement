@@ -384,13 +384,13 @@ function renderCredentialsRow($faculty) {
         data-department="<?= htmlspecialchars($faculty['department']) ?>"
         data-email="<?= htmlspecialchars($faculty['email']) ?>"
         data-created-at="<?= htmlspecialchars($faculty['created_at']) ?>"
-        data-position="<?= htmlspecialchars($faculty['position']) ?>"
+        data-position-id="<?= htmlspecialchars($faculty['position_id']) ?>"
         data-employment-type="<?= htmlspecialchars($faculty['employment_type']) ?>"
         data-employment-status="<?= htmlspecialchars($faculty['employment_status']) ?>">
         <td><?= htmlspecialchars($faculty['employee_code']) ?></td>
         <td><?= $fullName ?></td>
         <td><?= htmlspecialchars($faculty['department']) ?></td>
-        <td><?= htmlspecialchars($faculty['position']) ?></td>
+        <td><?= htmlspecialchars($faculty['position_id']) ?></td>
         <td><?= htmlspecialchars($faculty['employment_type']) ?></td>
         <td><?= htmlspecialchars($faculty['employment_status']) ?></td>
         <td class="actions">
@@ -477,7 +477,7 @@ function renderCredentialsTableRows($facultyList, $term = '') {
             $faculty['last_name'] ?? '',
             $faculty['suffix'] ?? '',
             $faculty['department'] ?? '',
-            $faculty['position'] ?? '',
+            $faculty['position_id'] ?? '',
             $faculty['employment_type'] ?? '',
             $faculty['employment_status'] ?? '',
         ]);
@@ -783,7 +783,7 @@ function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
                         <option value="">Select employee</option>
                         <?php foreach ($eligibleEmployees as $f): ?>
                             <?php $fullname = htmlspecialchars(trim($f['first_name'] . ' ' . ($f['middle_name'] ?? '') . ' ' . $f['last_name'] . ' ' . ($f['suffix'] ?? ''))); ?>
-                            <option value="<?= (int)$f['employee_id'] ?>" data-employment-type="<?= htmlspecialchars($f['employment_type'] ?? '') ?>" data-position="<?= htmlspecialchars($f['position'] ?? '') ?>"><?= htmlspecialchars($f['employee_code']) ?> - <?= $fullname ?></option>
+                            <option value="<?= (int)$f['employee_id'] ?>" data-employment-type="<?= htmlspecialchars($f['employment_type'] ?? '') ?>" data-position-id="<?= htmlspecialchars($f['position_id'] ?? '') ?>"><?= htmlspecialchars($f['employee_code']) ?> - <?= $fullname ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

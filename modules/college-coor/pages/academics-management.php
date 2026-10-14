@@ -35,6 +35,26 @@ foreach ($sections as $section) {
 }
 $facultyLoads = $facultyManager->getFacultyLoad() ?? [];
 
+$schoolYearOptions = [];
+$semesterOptions = [];
+try {
+    $schoolYearStmt = $conn->query("SELECT id, name, is_active FROM rgr_school_years WHERE is_active = 1 ORDER BY id DESC");
+    if ($schoolYearStmt) {
+        $schoolYearOptions = $schoolYearStmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        error_log('school years query failed: ' . print_r($conn->errorInfo(), true));
+    }
+
+    $semesterStmt = $conn->query("SELECT id, name, school_year_id, is_active FROM rgr_semesters WHERE is_active = 1 ORDER BY id ASC");
+    if ($semesterStmt) {
+        $semesterOptions = $semesterStmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        error_log('semesters query failed: ' . print_r($conn->errorInfo(), true));
+    }
+} catch (Exception $e) {
+    error_log('Add Section options failed: ' . $e->getMessage());
+}
+
 // Sample statistics
 $stats = [
     'programs' => count($programs),
@@ -310,8 +330,9 @@ $stats = [
                         </div>
                     </div>
                     <div class="col-12 col-md-4 d-flex align-items-end filter-col">
-                        <div style="width:100%;">
-                            <button type="button" id="resetSectionFilters" class="btn btn-outline-secondary w-100">Reset Filters</button>
+                        <div style="width:100%; display:flex; gap:10px;">
+                            <button type="button" id="resetSectionFilters" class="btn btn-outline-secondary" style="flex:1;">Reset Filters</button>
+                            <button type="button" id="addSectionBtn" class="btn btn-primary" style="flex:1;" onclick="openAddSectionModal()">Add Section</button>
                         </div>
                     </div>
                 </div>
@@ -585,47 +606,39 @@ $stats = [
     </div>
 </div>
 
-<!-- Add/Edit Section Modal -->
+<!-- Add Section Modal -->
 <div class="modal" id="sectionModal">
     <div class="modal-dialog">
         <div class="modal-header">
             <h5 class="modal-title" id="sectionModalTitle">Add Section</h5>
             <button type="button" class="modal-close" onclick="closeSectionModal()">&times;</button>
         </div>
-        <form id="sectionForm">
+        <form id="sectionForm" data-custom-submit>
             <div class="modal-body">
-                <input type="hidden" id="sectionId">
                 <div class="form-group">
                     <label class="form-label">Section Code <span class="required">*</span></label>
-                    <input type="text" class="form-control" id="sectionCode" required>
+                    <input type="text" class="form-control" id="sectionCode" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Grade Level <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="sectionGradeLevel" min="1" max="4" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Program <span class="required">*</span></label>
                     <select class="form-control" id="sectionProgram" required>
                         <option value="">Select Program</option>
                         <?php foreach ($programs as $prog): ?>
-                            <option value="<?php echo htmlspecialchars($prog['code']); ?>"><?php echo htmlspecialchars($prog['code']); ?> - <?php echo htmlspecialchars($prog['name']); ?></option>
+                            <option value="<?php echo (int)($prog['id'] ?? 0); ?>"><?php echo htmlspecialchars(($prog['code'] ?? '') . ' - ' . ($prog['name'] ?? '')); ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Year Level <span class="required">*</span></label>
-                    <select class="form-control" id="sectionYear" required>
-                        <option value="">Select Year</option>
-                        <option value="1st">1st Year</option>
-                        <option value="2nd">2nd Year</option>
-                        <option value="3rd">3rd Year</option>
-                        <option value="4th">4th Year</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Capacity <span class="required">*</span></label>
-                    <input type="number" class="form-control" id="sectionCapacity" min="1" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">School Year <span class="required">*</span></label>
                     <select class="form-control" id="sectionSchoolYear" required>
                         <option value="">Select School Year</option>
+                        <?php foreach ($schoolYearOptions as $schoolYear): ?>
+                            <option value="<?php echo (int)($schoolYear['id'] ?? 0); ?>"><?php echo htmlspecialchars($schoolYear['name'] ?? ''); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group">
@@ -637,7 +650,7 @@ $stats = [
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeSectionModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Section</button>
+                <button type="submit" class="btn btn-primary" id="saveSectionBtn">Save Section</button>
             </div>
         </form>
     </div>
@@ -1063,6 +1076,10 @@ $stats = [
         </div>
     </div>
 </div>
+
+<script type="application/json" id="sectionSemesterOptionsData">
+<?php echo json_encode($semesterOptions, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>
+</script>
 
 <script type="application/json" id="subjectCatalogDetailsData"><?php echo json_encode($subjectAssignmentsById, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?></script>
 

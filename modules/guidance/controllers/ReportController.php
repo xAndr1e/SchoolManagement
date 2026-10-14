@@ -55,7 +55,9 @@ try {
 
     $reportClass  = new Report();
     $action       = $_REQUEST['action'] ?? '';
-    $isDirectress = ($userInfo['role'] === 'School Directress');
+    $isDirectress = (
+    ($_SESSION['role_name'] ?? $userInfo['role'] ?? '') === 'School Directress'
+    );
 
     // ── Router ─────────────────────────────────────────────────────────────
     switch ($action) {
@@ -71,8 +73,12 @@ try {
                 ? $_GET['status']
                 : null;
 
-            if (!$isDirectress && $departmentId === null) {
-                $departmentId = $_SESSION['department_id'] ?? null;
+            if ($isDirectress) {
+                // School Directress can view approvals across all departments.
+                $departmentId = null;
+            } elseif ($departmentId === null) {
+                // Other users default to their own department.
+                $departmentId = $userInfo['department_id'] ?? null;
             }
 
             $reports = $reportClass->getReports($departmentId, $status);

@@ -51,8 +51,9 @@ try {
 
     $approvalClass = new Approval();
     $action        = $_REQUEST['action'] ?? '';
-    $isDirectress  = ($userInfo['role'] === 'School Directress')
-                     || (($userInfo['department_name'] ?? null) === 'School Directress');
+    $isDirectress = (
+    ($_SESSION['role_name'] ?? $userInfo['role'] ?? '') === 'School Directress'
+    );
 
     // ── Router ─────────────────────────────────────────────────────────────
     switch ($action) {
@@ -68,7 +69,11 @@ try {
                 ? $_GET['status']
                 : null;
 
-            if (!$isDirectress && $departmentId === null) {
+            if ($isDirectress) {
+                // School Directress can view approvals across all departments.
+                $departmentId = null;
+            } elseif ($departmentId === null) {
+                // Other users default to their own department.
                 $departmentId = $userInfo['department_id'] ?? null;
             }
 

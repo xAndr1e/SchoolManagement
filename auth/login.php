@@ -46,45 +46,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ── Authentication ────────────────────────────────────────────────────────
     $stmt = $conn->prepare("
-        SELECT
-            user_account.user_id,
-            user_account.employee_id,
-            user_account.password,
-            em_employees.role_id AS role,
-            em_employees.department_id AS department,
-            em_employees.employment_status,
-            em_roles.role_name,
-            em_departments.department_name
-        FROM user_account
-        INNER JOIN em_employees
-            ON em_employees.employee_id = user_account.employee_id
-        LEFT JOIN em_roles
-            ON em_roles.role_id = em_employees.role_id
-        LEFT JOIN em_departments
-            ON em_departments.department_id = em_employees.department_id
-        WHERE user_account.employee_id = :employeeid
-        LIMIT 1
-    ");
+            SELECT
+                ua.user_id,
+                ua.employee_id,
+                ua.password,
+                e.first_name,
+                e.last_name,
+                e.role_id AS role,
+                e.department_id AS department,
+                e.unit_id,
+                e.employment_status,
+                r.role_name,
+                d.department_name,
+                u.unit_name
+            FROM user_account ua
+            INNER JOIN em_employees e
+                ON e.employee_id = ua.employee_id
+            LEFT JOIN em_roles r
+                ON r.role_id = e.role_id
+            LEFT JOIN em_departments d
+                ON d.department_id = e.department_id
+            LEFT JOIN em_units u
+                ON u.unit_id = e.unit_id
+            WHERE ua.employee_id = :employeeid
+            LIMIT 1
+        ");
 
-    $stmt->execute([
-        ':employeeid' => $employeeid
-    ]);
+        $stmt->execute([
+            ':employeeid' => $employeeid
+        ]);
 
-    $stmt->execute([
-        ':employeeid' => $employeeid
-    ]);
-
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && password_verify($password, $user['password'])) {
         // ── Success: clear attempt tracking & build session ───────────────────
         unset($_SESSION[$key]);
 
+        session_regenerate_id(true);
+
         $_SESSION['employee_id']     = $user['employee_id'];
-        $_SESSION['role']            = $user['role'];
+        $_SESSION['employee_name']   = trim(
+            $user['first_name'] . ' ' . $user['last_name']
+        );
+        $_SESSION['role']            = (int) $user['role'];
         $_SESSION['role_name']       = $user['role_name'];
-        $_SESSION['department_id']   = $user['department'];        
-        $_SESSION['department_name'] = $user['department_name'];  
+        $_SESSION['department_id']   = $user['department'];
+        $_SESSION['department_name'] = $user['department_name'];
+        $_SESSION['unit_id']         = $user['unit_id'];
+        $_SESSION['unit_name']       = $user['unit_name'];
 
         $redirectMap = [
         14 => 'modules/school-directress/index.php',

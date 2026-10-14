@@ -1,9 +1,9 @@
 <?php
+
 include_once __DIR__ . '/../../../auth/session.php';
 include_once __DIR__ . '/../classes/Report.php';
 include_once __DIR__ . '/../classes/Department.php';
 include_once __DIR__ . '/../classes/User.php';
-
 header('Content-Type: application/json');
 
 // ── Guard: only accept XHR / fetch ───────────────────────────────────────────

@@ -33,8 +33,8 @@
                         CONCAT(e.first_name, ' ', e.last_name) AS submitted_by,
                         rt.report_type AS report_type
                     FROM `sd_reports` r
-                    LEFT JOIN `sd_department` d ON r.department_id = d.department_id
-                    LEFT JOIN `sms_employee` e ON r.submitted_by = e.employee_id
+                    LEFT JOIN `em_departments` d ON r.department_id = d.department_id
+                    LEFT JOIN `em_employees` e ON r.submitted_by = e.employee_id
                     LEFT JOIN `sd_report_type` rt ON r.report_type = rt.type_id";
             if (!is_null($department_id)) {
                 $sql .= " WHERE r.department_id = :department_id";
@@ -52,10 +52,10 @@
         public function submitReport($title, $description, $file_path, $report_type) {
             $submitted_by = $_SESSION['employee_id']; // or whatever your session key is
             // Fetch department from employee record directly
-            $stmt = $this->conn->prepare("SELECT department FROM sms_employee WHERE employee_id = :employee_id");
+            $stmt = $this->conn->prepare("SELECT department_id FROM em_employees WHERE employee_id = :employee_id");
             $stmt->execute([':employee_id' => $submitted_by]);
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-            $department_id = $employee['department'] ?? null;
+            $department_id = $employee['department_id'] ?? null;
             $sql = "INSERT INTO `sd_reports` 
                         (`title`, `description`, `file_path`, `report_type`, `department_id`, `submitted_by`)
                     VALUES 
@@ -96,8 +96,8 @@
                         CONCAT(e.first_name, ' ', e.last_name) AS submitted_by,
                         rt.report_type AS report_type
                     FROM `sd_reports` r
-                    LEFT JOIN `sd_department` d ON r.department_id = d.department_id
-                    LEFT JOIN `sms_employee` e ON r.submitted_by = e.employee_id
+                    LEFT JOIN `em_departments` d ON r.department_id = d.department_id
+                    LEFT JOIN `em_employees` e ON r.submitted_by = e.employee_id
                     LEFT JOIN `sd_report_type` rt ON r.report_type = rt.type_id
                     WHERE r.department_id = :department_id
                     ORDER BY r.submitted_at DESC";

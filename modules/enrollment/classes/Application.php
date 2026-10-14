@@ -19,6 +19,7 @@ require_once 'EmailSender.php';
 class Application extends Model {
     protected $table = 'enr_applicants';
     protected $primaryKey = 'applicant_id';
+    
 
     /**
      * ✅ CRITICAL FIX

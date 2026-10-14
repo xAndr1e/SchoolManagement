@@ -10,3 +10,4 @@ import './modules/announcement.js';
 import './modules/report.js';
 import './modules/issue.js';
 import './modules/student-monitoring.js';
+import './modules/dashboard-overview.js';

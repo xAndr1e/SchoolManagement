@@ -116,7 +116,7 @@ try {
 
     $userInfo = (array) $userInfo;
 
-    if (!in_array($userInfo['role_name'] ?? '', RPRT_ALLOWED_ROLES, true)) {
+    if (!in_array($userInfo['role'] ?? '', RPRT_ALLOWED_ROLES, true)) {
         rprt_respond(['success' => false, 'message' => 'You do not have access to Guidance reports.'], 403);
     }
 

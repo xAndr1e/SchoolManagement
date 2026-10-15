@@ -301,7 +301,7 @@ class Students
                 c.closed_at,
                 CONCAT(e.first_name, ' ', e.last_name) AS counselor_name
             FROM gd_cases c
-            JOIN sms_employee e
+            JOIN em_employees e
                 ON e.employee_id = c.counselor_id
             WHERE c.student_number = :student_number
             ORDER BY c.opened_at DESC

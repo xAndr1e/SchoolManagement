@@ -1,15 +1,20 @@
 /* ==========================================================================
    analytics-reports.css
-   Module: Analytics & Reports
-   Naming convention: classes -> rprt-component-name, ids -> rprtComponentName
-   Only root variables are used. Buttons use --color1 (solid, white text).
+   Module: Analytics & Reports (Guidance)
+   Naming: classes -> rprt-component-name, ids -> rprtComponentName
+   Only root variables are used. All buttons: solid var(--color1), white text.
+   .module-header / .module-content are handled globally and not redefined.
    ========================================================================== */
 
-.module-content {
+.rprt-page {
     display: flex;
     flex-direction: column;
     gap: 20px;
     padding: 4px 0 32px 0;
+}
+
+.rprt-page [hidden] {
+    display: none !important;
 }
 
 /* ---------- Breakdown mini-charts ---------- */
@@ -67,7 +72,7 @@
     flex-shrink: 0;
 }
 
-/* ---------- Report generator ---------- */
+/* ---------- Generator / saved reports panels ---------- */
 .rprt-generator {
     background: var(--color3);
     border: 1px solid var(--color9);
@@ -90,7 +95,6 @@
     gap: 10px;
     flex-wrap: wrap;
     padding: 14px 18px;
-    border-bottom: 1px solid var(--color9);
 }
 
 .rprt-filter-select,
@@ -107,6 +111,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 .rprt-filter-sep {
     font-size: 12px;
@@ -128,19 +133,24 @@
     transition: opacity .15s ease;
 }
 .rprt-btn:hover { opacity: .88; }
-.rprt-btn--ghost { background: transparent; color: var(--color5); border: 1px solid var(--color4); }
 .rprt-btn--sm { padding: 7px 14px; font-size: 12px; }
 .rprt-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-.rprt-generator__actions {
-    display: flex;
-    gap: 8px;
-    padding: 12px 18px;
-    border-bottom: 1px solid var(--color9);
+/* ---------- Status message ---------- */
+.rprt-status {
+    margin: 0 18px 14px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--color2);
     background: var(--color9);
+    border-left: 3px solid var(--color1);
+    border-radius: 6px;
+}
+.rprt-status--error {
+    border-left-color: var(--color10);
 }
 
-/* ---------- Results table ---------- */
+/* ---------- Saved reports table ---------- */
 .rprt-results-wrapper {
     padding: 16px 18px;
 }
@@ -175,6 +185,11 @@
 }
 .rprt-table tbody tr:hover { background: var(--color9); }
 
+.rprt-actions-cell {
+    display: flex;
+    gap: 8px;
+}
+
 .rprt-results-count {
     margin-top: 10px;
     font-size: 12px;
@@ -188,14 +203,52 @@
     font-size: 13px;
 }
 
+/* ---------- In-modal PDF viewer ---------- */
+.rprt-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, .55);
+}
+.rprt-modal__dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(1000px, 100%);
+    height: min(92vh, 900px);
+    background: var(--color3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.rprt-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--color9);
+}
+.rprt-modal__header h3 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color2);
+}
+.rprt-modal__frame {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    background: var(--color9);
+}
+
 @media (max-width: 1000px) {
     .rprt-breakdown-grid { grid-template-columns: 1fr; }
 }
 
-/* Print: hide everything except the results table */
-@media print {
-    .module-header, .rprt-breakdown-grid, .rprt-generator__header,
-    .rprt-generator__controls, .rprt-generator__actions {
-        display: none !important;
-    }
+@media (max-width: 600px) {
+    .rprt-generator__controls { flex-direction: column; align-items: stretch; }
+    .rprt-modal { padding: 0; }
+    .rprt-modal__dialog { height: 100vh; border-radius: 0; }
 }

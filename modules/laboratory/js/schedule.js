@@ -83,13 +83,6 @@ document.addEventListener("click", function(e) {
 });
 
 
-   document.getElementById('pdf').addEventListener('click',()=>{
-
-        const section_id = document.getElementById("section").value;
-    
-         getPdf(section_id);
-
-    });
 
 
 function generateGrid() {

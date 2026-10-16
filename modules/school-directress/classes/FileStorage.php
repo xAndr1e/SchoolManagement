@@ -51,14 +51,14 @@ class FileStorage {
     }
 
     public static function base() {
-        if (defined('SMS_STORAGE_PATH','/home/sdm.bcp-sms.com/storage') && SMS_STORAGE_PATH) {
+        if (defined('SMS_STORAGE_PATH') && SMS_STORAGE_PATH) {
             return rtrim(str_replace('\\', '/', SMS_STORAGE_PATH), '/');
         }
         $env = getenv('SMS_STORAGE_PATH');
         if ($env) {
             return rtrim(str_replace('\\', '/', $env), '/');
         }
-        return self::root() . '/storage';
+        return '/home/sdm.bcp-sms.com/storage';
     }
 
     public static function ensureDir($dir) {

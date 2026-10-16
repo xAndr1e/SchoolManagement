@@ -1,25 +1,6 @@
 <?php
 
-$databasePaths = [
-    __DIR__ . '/../../config/Database.php',
-    dirname(__DIR__, 3) . '/config/Database.php',
-    dirname(__DIR__, 4) . '/config/Database.php',
-];
-
-$databaseFound = false;
-
-foreach ($databasePaths as $path) {
-    if (file_exists($path)) {
-        require_once $path;
-        $databaseFound = true;
-        break;
-    }
-}
-
-if (!$databaseFound) {
-    error_log('HomeModel: Database.php was not found in the expected locations.');
-    throw new RuntimeException('Database configuration file not found.');
-}
+require_once dirname(__DIR__) . '/config/Database.php';
 
 class HomeModel
 {

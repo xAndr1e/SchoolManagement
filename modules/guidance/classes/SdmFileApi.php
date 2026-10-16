@@ -70,7 +70,7 @@ final class SdmFileApi
         }
 
         
-        $configPath = '/home/gms.bcp-sms.com/sdm-api-config.php';
+        $configPath = '/home/sdm.bcp-sms.com/api-secrets.php';
 
         if (!is_file($configPath) || !is_readable($configPath)) {
             throw new RuntimeException(

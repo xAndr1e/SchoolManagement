@@ -119,7 +119,7 @@
                 </div>
 
                 <div class="rsm-modal-body">
-                    <form id="report-form" class="rsm-form" data-skip>
+                    <form id="report-form" class="rsm-form" enctype="multipart/form-data" data-skip>
 
                         <div class="rsm-form-group">
                             <label for="report-title">Title</label>
@@ -153,6 +153,19 @@
                             <textarea id="report-recommendations" name="recommendations" rows="4" placeholder="What actions are being recommended"></textarea>
                         </div>
 
+                        <!-- Optional attachment -->
+                        <div class="rsm-form-group">
+                            <span class="rsm-field-label">Attachment <span class="rsm-optional">(optional)</span></span>
+                            <div class="rsm-file-picker">
+                                <input type="file" id="report-attachment" name="attachment" class="rsm-file-input"
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                                <label for="report-attachment" class="rsm-file-btn">Choose file</label>
+                                <span id="rsm-file-name" class="rsm-file-name">No file chosen</span>
+                                <button type="button" id="rsm-file-clear" class="rsm-file-clear" aria-label="Remove selected file" hidden>&times;</button>
+                            </div>
+                            <small class="rsm-file-hint">PDF, Word, Excel, JPG or PNG &middot; up to 10 MB</small>
+                        </div>
+
                         <input type="hidden" id="report-id" name="report_id" value="">
 
                         <div id="report-form-error" class="rsm-file-error" style="display:none;"></div>
@@ -181,7 +194,7 @@
             </div>
         </div>
 
-        <!-- PDF Viewer Modal -->
+        <!-- File Viewer Modal (generated PDF and attachments) -->
         <div class="rsm-modal-overlay" id="rsm-pdf-modal-overlay">
             <div class="rsm-modal rsm-modal-lg" role="dialog" aria-modal="true" aria-labelledby="rsm-pdf-modal-title">
                 <div class="rsm-modal-header">
@@ -189,7 +202,7 @@
                     <button type="button" class="rsm-modal-close" id="rsm-pdf-modal-close" aria-label="Close">&times;</button>
                 </div>
                 <div class="rsm-modal-body rsm-pdf-body">
-                    <iframe id="rsm-pdf-frame" class="rsm-pdf-frame" src="" title="Report PDF"></iframe>
+                    <iframe id="rsm-pdf-frame" class="rsm-pdf-frame" src="" title="Report file"></iframe>
                 </div>
             </div>
         </div>

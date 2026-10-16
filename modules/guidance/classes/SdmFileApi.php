@@ -36,7 +36,7 @@ final class SdmFileApi
         'pdf'  => ['application/pdf'],
         'doc'  => [
             'application/msword',
-            'application/CDFV2',
+            'application/cdfv2',
             'application/x-ole-storage',
             'application/octet-stream',
         ],
@@ -47,7 +47,7 @@ final class SdmFileApi
         ],
         'xls'  => [
             'application/vnd.ms-excel',
-            'application/CDFV2',
+            'application/cdfv2',
             'application/x-ole-storage',
             'application/octet-stream',
         ],

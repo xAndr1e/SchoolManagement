@@ -1,4 +1,5 @@
-const IssuesController = '/sms/modules/school-directress/controllers/IssueController.php';
+const BASE = window.SITE_BASE || '';
+const IssuesController = `${BASE}/modules/clinic/controllers/IssueController.php`;
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initIssuesModule() {
@@ -30,7 +31,7 @@ function initIssuesModule() {
                 const json = await res.json();
 
                 if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-                    setTimeout(() => window.location.href = '/sms/index.php', 1500);
+                    setTimeout(() => window.location.href = `${BASE}/index.php`, 1500);
                     return;
                 }
 
@@ -127,7 +128,7 @@ async function loadIssues() {
                 </td>
                 <td>
                     ${row.file_path
-                        ? `<a style="color:var(--color2);text-decoration:none; border:1px solid var(--color4);padding:4px 8px;border-radius:4px;" href="/sms/${esc(row.file_path)}" target="_blank">View</a>`
+                        ? `<a style="color:var(--color2);text-decoration:none; border:1px solid var(--color4);padding:4px 8px;border-radius:4px;" href="${BASE}/${esc(row.file_path)}" target="_blank">View</a>`
                         : '<span class="muted">—</span>'
                     }
                 </td>
@@ -152,7 +153,7 @@ async function sendStatusUpdate(issueId, status) {
         const json = await res.json();
 
         if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-            setTimeout(() => window.location.href = '/sms/index.php', 1500);
+            setTimeout(() => window.location.href = `${BASE}/index.php`, 1500);
             return;
         }
 

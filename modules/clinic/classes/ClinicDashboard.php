@@ -1,7 +1,7 @@
 <?php
 include_once __DIR__ . '/../../../database/db.php';
 include_once __DIR__ . '/Medication.php';
-include_once __DIR__ . '/student.php';
+include_once __DIR__ . '/Student.php';
 
 class ClinicDashboard {
     private $conn;

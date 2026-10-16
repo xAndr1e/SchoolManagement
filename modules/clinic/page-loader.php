@@ -1,6 +1,7 @@
 <?php
-require_once('../../auth/guard.php');
-require_once 'classes/Page.php';
+require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/../../auth/guard.php';
+require_once __DIR__ . '/classes/Page.php';
 
 $pageController = new Page();
 

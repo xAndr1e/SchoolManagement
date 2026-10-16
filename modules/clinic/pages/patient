@@ -1,6 +1,6 @@
 <?php
 include_once __DIR__ . '/../../../database/db.php';
-include_once __DIR__ . '/../classes/student.php';
+include_once __DIR__ . '/../classes/Student.php';
 
 $studentClass = new Student();
 $allStudents = $studentClass->getAllStudents();

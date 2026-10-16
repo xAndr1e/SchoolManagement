@@ -7,7 +7,7 @@ $employeeClass = new Employee();
 
 <aside class="sidebar">
     <div class="school-logo">
-        <img src="assets/bcp-logo.png" alt="School Logo">
+        <img src="<?= CLINIC_BASE ?>/assets/bcp-logo.png" alt="School Logo">
         <div class="sidebar-icons">
 
             <!-- Bell Icon + Notification Dropdown -->
@@ -51,7 +51,7 @@ $employeeClass = new Employee();
                         </li>
                         <li class="divider"></li>
                         <li>
-                            <a href="/sms/auth/logout.php" class="signout-link">
+                            <a href="<?= SITE_BASE ?>/auth/logout.php" class="signout-link">
                                 <i class="fa-solid fa-right-from-bracket"></i> Sign Out
                             </a>
                         </li>

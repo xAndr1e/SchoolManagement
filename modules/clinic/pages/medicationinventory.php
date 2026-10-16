@@ -167,7 +167,7 @@ $filters = [
         <div class="search-container">
             <input type="text" class="search-input" name="q" id="q"
                    value="<?= htmlspecialchars($search) ?>" placeholder="Name, generic name, or category">
-            <select class="search-select" name="status" style="flex:1;">
+        20    <select class="search-select" name="status" style="flex:1;">
                 <?php foreach ($filters as $value => $label): ?>
                     <option value="<?= $value ?>" <?= $filter === $value ? 'selected' : '' ?>><?= $label ?></option>
                 <?php endforeach; ?>

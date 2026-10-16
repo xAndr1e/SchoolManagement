@@ -1,6 +1,6 @@
 <?php
 include_once __DIR__ . '/../../../database/db.php';
-include_once __DIR__ . '/../classes/student.php';
+include_once __DIR__ . '/../classes/Student.php';
 
 $studentClass = new Student();
 $allStudents  = $studentClass->getAllStudents();
@@ -300,7 +300,7 @@ function loadStudent(studentNumber) {
 
     showMsg('info', 'Loading student data…');
 
-    fetch('../handlers/get_student.php?student_number=' + encodeURIComponent(studentNumber))
+    fetch((window.CLINIC_BASE || '.') + '/../handlers/get_student.php?student_number=' + encodeURIComponent(studentNumber))
         .then(res => {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.json();
@@ -347,7 +347,7 @@ function performSearch(searchTerm, page) {
     document.getElementById('tableBody').innerHTML =
         '<tr><td colspan="11" class="no-data">Searching…</td></tr>';
 
-    fetch('../handlers/search_students.php?search=' + encodeURIComponent(searchTerm) + '&page=' + page)
+    fetch((window.CLINIC_BASE || '.') + '/../handlers/search_students.php?search=' + encodeURIComponent(searchTerm) + '&page=' + page)
         .then(res => {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.json();
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         showMsg('info', 'Updating student record…');
 
-        fetch('../handlers/update_student.php', {
+        fetch((window.CLINIC_BASE || '.') + '/../handlers/update_student.php', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(payload)

@@ -22,7 +22,7 @@
       const container = document.querySelector('.container');
       if (!container) return;
 
-      fetch(`page-loader.php?page=${encodeURIComponent(page)}`, { credentials: 'same-origin' })
+      fetch(`${window.CLINIC_BASE}/page-loader.php?page=${encodeURIComponent(page)}`, { credentials: 'same-origin' })
         .then(function (response) {
           if (!response.ok) throw new Error('Network error');
           const rendered = response.headers.get('X-Rendered-Page') || page;

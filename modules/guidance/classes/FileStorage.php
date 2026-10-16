@@ -41,11 +41,16 @@ class FileStorage
         'png'  => 'image/png',
     ];
 
+    
     private static function remoteEnabled(): bool
     {
         $path = getenv('SDM_API_CONFIG_FILE');
 
-        return is_string($path) && $path !== '' && is_file($path);
+        if (!is_string($path) || $path === '') {
+            $path = '/home/gms.bcp-sms.com/sdm-api-config.php';
+        }
+
+        return is_file($path) && is_readable($path);
     }
 
     private static function api(): SdmFileApi

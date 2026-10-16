@@ -5,13 +5,30 @@ ob_start();
 ini_set('display_errors', '0'); // never leak raw PHP errors into the JSON response
 error_reporting(E_ALL);         // still log real errors — do NOT silently suppress them
 
-header('Content-Type: application/json');
+// NOTE: the JSON Content-Type header is now set inside approval_respond() instead of here,
+// because the "file" action streams a PDF/attachment and must send its own headers.
 
 function approval_respond($payload) {
     if (ob_get_length() !== false) {
         ob_end_clean();
     }
+    if (!headers_sent()) {
+        header('Content-Type: application/json');
+    }
     echo json_encode($payload);
+    exit;
+}
+
+// Used only by the "file" action (the response is opened inside an <iframe>/new tab, not parsed as JSON).
+function approval_file_error($httpCode, $message) {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    if (!headers_sent()) {
+        http_response_code($httpCode);
+        header('Content-Type: text/plain; charset=utf-8');
+    }
+    echo $message;
     exit;
 }
 
@@ -37,6 +54,7 @@ register_shutdown_function(function () {
 
 try {
     include_once __DIR__ . '/../../../auth/session.php';
+    include_once __DIR__ . '/../classes/FileStorage.php';
     include_once __DIR__ . '/../classes/Approval.php';
     include_once __DIR__ . '/../classes/Department.php';
     include_once __DIR__ . '/../classes/User.php';
@@ -45,12 +63,16 @@ try {
     $userClass = new User();
     $userInfo  = $userClass->userSession();
 
+    $action = $_REQUEST['action'] ?? '';
+
     if (!$userInfo) {
+        if ($action === 'file') {
+            approval_file_error(401, 'Session expired. Please log in again.');
+        }
         approval_respond(['success' => false, 'message' => 'Session expired.']);
     }
 
     $approvalClass = new Approval();
-    $action        = $_REQUEST['action'] ?? '';
     $isDirectress = (
     ($_SESSION['role_name'] ?? $userInfo['role'] ?? '') === 'School Directress'
     );
@@ -78,7 +100,7 @@ try {
             }
 
             $approvals = $approvalClass->getApprovals($departmentId, $status);
-            approval_respond(['success' => true, 'data' => $approvals]);
+            approval_respond(['success' => true, 'data' => array_map('approval_public', $approvals)]);
             break;
 
         // ------------------------------------------------------------------
@@ -93,11 +115,56 @@ try {
             if (!$approval) {
                 approval_respond(['success' => false, 'message' => 'Approval request not found.']);
             }
-            approval_respond(['success' => true, 'data' => $approval]);
+            if (!approval_can_access($approval, $userInfo, $isDirectress)) {
+                approval_respond(['success' => false, 'message' => 'You do not have access to this approval request.']);
+            }
+            approval_respond(['success' => true, 'data' => approval_public($approval)]);
             break;
 
         // ------------------------------------------------------------------
-        // POST save as draft
+        // GET stream the generated PDF or the optional attachment.
+        //   ?action=file&approval_id=12&kind=pdf|attachment[&download=1]
+        // Files are never linked directly; every request passes the session
+        // and department/role check here first.
+        // ------------------------------------------------------------------
+        case 'file':
+            $approvalId = (int) ($_GET['approval_id'] ?? 0);
+            $kind       = ($_GET['kind'] ?? 'pdf') === 'attachment' ? 'attachment' : 'pdf';
+            $download   = ($_GET['download'] ?? '') === '1';
+
+            $approval = $approvalId ? $approvalClass->getApprovalById($approvalId) : null;
+            if (!$approval) {
+                approval_file_error(404, 'Approval request not found.');
+            }
+            if (!approval_can_access($approval, $userInfo, $isDirectress)) {
+                approval_file_error(403, 'You do not have access to this file.');
+            }
+
+            if ($kind === 'attachment') {
+                $relative = $approval['file_path'] ?? null;
+                $name     = !empty($approval['file_name']) ? $approval['file_name'] : basename((string) $relative);
+                $mime     = FileStorage::mimeFor($relative);
+            } else {
+                $relative = $approval['pdf_path'] ?? null;
+                $name     = 'approval_' . $approvalId . '.pdf';
+                $mime     = 'application/pdf';
+            }
+
+            if (!$relative) {
+                approval_file_error(404, $kind === 'attachment' ? 'This request has no attachment.' : 'The PDF has not been generated yet.');
+            }
+
+            $absolute = FileStorage::resolve($relative);
+            if (!$absolute) {
+                error_log('[ApprovalController] File missing on disk for approval ' . $approvalId . ' (' . $kind . '): ' . $relative);
+                approval_file_error(404, 'The file is missing on the server.');
+            }
+
+            FileStorage::stream($absolute, $name, $mime, $download); // ends the request
+            break;
+
+        // ------------------------------------------------------------------
+        // POST save as draft (multipart/form-data, optional "attachment" file)
         // ------------------------------------------------------------------
         case 'save_draft':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -108,17 +175,17 @@ try {
                 approval_respond(['success' => false, 'message' => $validated['message']]);
             }
 
-            $fields = $validated['fields'];
-            $fileResult = handleOptionalAttachment();
-            if (!$fileResult['success']) {
-                approval_respond(['success' => false, 'message' => $fileResult['message']]);
-            }
-            if ($fileResult['file_path'] !== null) {
-                $fields['file_path'] = $fileResult['file_path'];
-            }
-
             $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
-            $newId      = $approvalClass->saveDraft($fields, $approvalId);
+            $prep       = approval_prepare_attachment($approvalClass, $approvalId, $userInfo); // responds on error
+            $fields     = array_merge($validated['fields'], $prep['extra']);
+
+            try {
+                $newId = $approvalClass->saveDraft($fields, $approvalId);
+            } catch (\Throwable $e) {
+                FileStorage::delete($prep['newPath']); // don't leave an orphan file behind
+                throw $e;
+            }
+            approval_discard_replaced_file($prep);
 
             approval_respond(['success' => true, 'message' => 'Draft saved.', 'data' => ['approval_id' => $newId]]);
             break;
@@ -136,31 +203,36 @@ try {
                 approval_respond(['success' => false, 'message' => $validated['message']]);
             }
 
-            $fields = $validated['fields'];
-            $fileResult = handleOptionalAttachment();
-            if (!$fileResult['success']) {
-                approval_respond(['success' => false, 'message' => $fileResult['message']]);
-            }
-            if ($fileResult['file_path'] !== null) {
-                $fields['file_path'] = $fileResult['file_path'];
-            }
-
             $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
-            $newId      = $approvalClass->submitApproval($fields, $approvalId);
+            $prep       = approval_prepare_attachment($approvalClass, $approvalId, $userInfo); // responds on error
+            $fields     = array_merge($validated['fields'], $prep['extra']);
 
-            $pdfPath = null;
-            $message = 'Approval request submitted successfully.';
             try {
-                $pdfPath = $approvalClass->generatePdf($newId);
+                $newId = $approvalClass->submitApproval($fields, $approvalId);
+            } catch (\Throwable $e) {
+                FileStorage::delete($prep['newPath']);
+                throw $e;
+            }
+            approval_discard_replaced_file($prep);
+
+            $pdfGenerated = false;
+            $warning      = null;
+            $debug        = null;
+            try {
+                $pdfGenerated = (bool) $approvalClass->generatePdf($newId);
             } catch (\Throwable $e) {
                 error_log('[ApprovalController] PDF generation failed for approval ' . $newId . ': ' . $e->getMessage());
-                $message = 'Request submitted, but the PDF could not be generated. Contact your administrator (PDF library may not be installed).';
+                $warning = 'Request submitted, but the PDF could not be generated. Contact your administrator.';
+                // TEMP debug info — remove once things are stable.
+                $debug = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
             }
 
             approval_respond([
                 'success' => true,
-                'message' => $message,
-                'data'    => ['approval_id' => $newId, 'pdf_path' => $pdfPath],
+                'message' => 'Approval request submitted successfully.',
+                'warning' => $warning,
+                'debug'   => $debug,
+                'data'    => ['approval_id' => $newId, 'has_pdf' => $pdfGenerated],
             ]);
             break;
 
@@ -215,7 +287,15 @@ try {
     }
 } catch (\Throwable $e) {
     error_log('[ApprovalController] Unhandled error: ' . $e->getMessage());
-    approval_respond(['success' => false, 'message' => 'An unexpected server error occurred.']);
+    if (($_REQUEST['action'] ?? '') === 'file') {
+        approval_file_error(500, 'The file could not be served.');
+    }
+    approval_respond([
+        'success' => false,
+        'message' => 'An unexpected server error occurred.',
+        // TEMP debug info — remove the "debug" key once things are stable.
+        'debug'   => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(),
+    ]);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -241,37 +321,94 @@ function validateApprovalInput($post) {
     ];
 }
 
-// Optional supporting attachment — same validation rules as the original upload flow.
-function handleOptionalAttachment() {
-    if (empty($_FILES['attachment']['name'])) {
-        return ['success' => true, 'file_path' => null];
+// Same visibility rule as the "list" action: Directress sees everything; everyone else sees
+// approvals submitted from their own department (and anything they submitted themselves).
+function approval_can_access($approval, $userInfo, $isDirectress) {
+    if ($isDirectress) {
+        return true;
+    }
+    $myDept = (int) ($userInfo['department_id'] ?? $_SESSION['department_id'] ?? 0);
+    $myId   = (int) ($userInfo['employee_id'] ?? $_SESSION['employee_id'] ?? 0);
+
+    if ($myId && (int) ($approval['submit_by'] ?? 0) === $myId) {
+        return true;
+    }
+    $approvalDept = (int) ($approval['submitter_department_id'] ?? $approval['department'] ?? 0);
+    return $myDept && $approvalDept === $myDept;
+}
+
+// Never send server file paths to the browser — only flags and display metadata.
+// Files are fetched through ?action=file.
+function approval_public($approval) {
+    $approval['has_pdf']        = !empty($approval['pdf_path']);
+    $approval['has_attachment'] = !empty($approval['file_path']);
+
+    if ($approval['has_attachment']) {
+        $approval['attachment_name'] = !empty($approval['file_name']) ? $approval['file_name'] : basename($approval['file_path']);
+        $approval['attachment_mime'] = FileStorage::mimeFor($approval['file_path']);
+        $approval['attachment_size'] = $approval['file_size'] ?? null;
     }
 
-    $allowedTypes = [
-        'application/pdf', 'image/jpeg', 'image/png',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    unset($approval['pdf_path'], $approval['file_path']);
+    return $approval;
+}
+
+// Validates the optional upload and moves it into storage BEFORE the database write.
+// Also refuses to edit anything that is not the current user's own draft, so a rejected
+// edit can never replace (or delete) another request's attachment.
+// Responds with JSON and exits on any validation problem.
+// Returns ['extra' => fields to merge, 'newPath' => ?string, 'oldPath' => ?string]
+function approval_prepare_attachment($approvalClass, $approvalId, $userInfo) {
+    $result = ['extra' => [], 'newPath' => null, 'oldPath' => null];
+
+    // If the file is bigger than PHP's post_max_size, PHP drops $_POST and $_FILES entirely.
+    if (empty($_POST) && empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        approval_respond(['success' => false, 'message' => 'The upload is larger than the server allows. Please choose a smaller file (max 10 MB).']);
+    }
+
+    if ($approvalId) {
+        $existing = $approvalClass->getApprovalById($approvalId);
+        $myId     = (int) ($userInfo['employee_id'] ?? $_SESSION['employee_id'] ?? 0);
+        if (!$existing || (int) $existing['submit_by'] !== $myId || $existing['status'] !== 'draft') {
+            approval_respond(['success' => false, 'message' => 'Only your own drafts can be edited.']);
+        }
+        $result['oldPath'] = $existing['file_path'] ?? null;
+    }
+
+    $file = $_FILES['attachment'] ?? null;
+    if (!FileStorage::hasUpload($file)) {
+        return $result; // attachment is optional
+    }
+
+    $error = FileStorage::validateUpload($file);
+    if ($error) {
+        approval_respond(['success' => false, 'message' => $error]);
+    }
+
+    try {
+        $relative = FileStorage::store($file, 'approvals/attachments', 'approval');
+    } catch (\Throwable $e) {
+        error_log('[ApprovalController] Attachment store failed: ' . $e->getMessage());
+        approval_respond([
+            'success' => false,
+            'message' => 'The attachment could not be saved on the server.',
+            // TEMP debug info — remove once things are stable.
+            'debug'   => $e->getMessage(),
+        ]);
+    }
+
+    $result['newPath'] = $relative;
+    $result['extra']   = [
+        'file_path' => $relative,
+        'file_name' => FileStorage::cleanName($file['name']),
+        'file_size' => (int) $file['size'],
     ];
-    $fileType = mime_content_type($_FILES['attachment']['tmp_name']);
+    return $result;
+}
 
-    if (!in_array($fileType, $allowedTypes, true)) {
-        return ['success' => false, 'message' => 'Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX.'];
+// After a successful save, remove the previous attachment if a new one replaced it.
+function approval_discard_replaced_file($prep) {
+    if ($prep['newPath'] && $prep['oldPath'] && $prep['oldPath'] !== $prep['newPath']) {
+        FileStorage::delete($prep['oldPath']);
     }
-    if ($_FILES['attachment']['size'] > 5 * 1024 * 1024) {
-        return ['success' => false, 'message' => 'File exceeds the 5 MB limit.'];
-    }
-
-    $uploadDir = __DIR__ . '/../../../uploads/approvals/';
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-
-    $ext      = pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION);
-    $fileName = uniqid('approval_', true) . '.' . $ext;
-
-    if (!move_uploaded_file($_FILES['attachment']['tmp_name'], $uploadDir . $fileName)) {
-        return ['success' => false, 'message' => 'Failed to upload the attachment.'];
-    }
-
-    return ['success' => true, 'file_path' => 'uploads/approvals/' . $fileName];
 }

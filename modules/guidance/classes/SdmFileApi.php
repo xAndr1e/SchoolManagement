@@ -69,15 +69,17 @@ final class SdmFileApi
             );
         }
 
-        $configPath = $configPath
-            ?? getenv('SDM_API_CONFIG_FILE')
-            ?: '';
+        
+        $configPath = '/home/gms.bcp-sms.com/sdm-api-config.php';
 
-        if ($configPath === '' || !is_file($configPath)) {
+        if (!is_file($configPath) || !is_readable($configPath)) {
             throw new RuntimeException(
-                'SDM API configuration was not found. Configure SDM_API_CONFIG_FILE.'
+                'SDM API configuration file is missing or unreadable.'
             );
         }
+
+        $config = require $configPath;
+
 
         $config = require $configPath;
 

@@ -159,12 +159,7 @@ try {
                 FileStorage::streamStored($relative, $name, $mime, $download);
             } catch (Throwable $e) {
                 error_log(
-                    '[SDM FILE RETRIEVAL] '
-                    . $e->getMessage()
-                    . ' in '
-                    . $e->getFile()
-                    . ':'
-                    . $e->getLine()
+                    '[SDM FILE RETRIEVAL] ' . $e->getMessage()
                 );
 
                 http_response_code(500);

@@ -12,17 +12,21 @@ class Issues extends DatabaseTwo
     }
 
     public function all(): array
-    {
-        $stmt = $this->conn->prepare("
-            SELECT i.*, d.department_name, CONCAT(e.first_name, ' ', e.last_name) AS submitted_by_name
-            FROM sd_issues i
-            LEFT JOIN sd_department d ON i.department = d.department_id
-            LEFT JOIN sms_employee e ON i.submitted_by = e.employee_id
-            ORDER BY i.submitted_on DESC
-        ");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+{
+    $stmt = $this->conn->prepare("
+        SELECT
+            i.*,
+            CONCAT(e.first_name, ' ', e.last_name) AS submitted_by_name
+        FROM sd_issues i
+        LEFT JOIN sms_employee e
+            ON i.submitted_by = e.employee_id
+        ORDER BY i.submitted_on DESC
+    ");
+
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
     public function create(array $data): bool
     {

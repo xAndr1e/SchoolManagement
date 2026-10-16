@@ -319,7 +319,7 @@
           section_ids: selectedSections
         };
 
-        fetch('/sms/modules/college-coor/api/add_section_faculty.php', {
+        fetch('/modules/college-coor/api/add_section_faculty.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

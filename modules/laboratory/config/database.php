@@ -7,8 +7,8 @@ class Database {
         if (!self::$instance) {
             self::$instance = new PDO(
                 "mysql:host=localhost;dbname=labo_payr_bcp;charset=utf8",
-                "root",
-                ""
+                "labo_db",
+                "1234"
             );
 
             self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

@@ -157,13 +157,18 @@ try {
             
             try {
                 FileStorage::streamStored($relative, $name, $mime, $download);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 error_log(
-                    '[ApprovalController] File retrieval failed for approval '
-                    . $approvalId . ' (' . $kind . '): ' . $e->getMessage()
+                    '[SDM FILE RETRIEVAL] '
+                    . $e->getMessage()
+                    . ' in '
+                    . $e->getFile()
+                    . ':'
+                    . $e->getLine()
                 );
 
-                approval_file_error(500, 'The file could not be retrieved from storage.');
+                http_response_code(500);
+                exit('File retrieval failed. Check the PHP error log.');
             }
 
             break;

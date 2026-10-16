@@ -606,7 +606,7 @@ $alertSignature = "e{$cExpired}-o{$cOut}-l{$cLow}-x{$cExpiring}";
         const body = document.getElementById('recentVisits');
         try {
             const params = new URLSearchParams({ page: 1, search: '', limit: 50 });
-            const res = await fetch((window.CLINIC_BASE || '.') + '/../handlers/get_consultations.php?' + params);
+            const res = await fetch((window.CLINIC_BASE || '.') + '/handlers/get_consultations.php?' + params);
             const json = await res.json();
             if (!res.ok || !json.success) throw new Error(json.message || 'Failed');
 

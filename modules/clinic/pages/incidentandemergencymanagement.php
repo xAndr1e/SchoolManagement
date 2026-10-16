@@ -214,7 +214,7 @@ if (!$allStudents) $allStudents = [];
         num = (num || '').trim();
         if (!num) { showMsg('error', 'Enter or select a student number.'); return; }
 
-        fetch((window.CLINIC_BASE || '.') + '/../handlers/get_student.php?student_number=' + encodeURIComponent(num))
+        fetch((window.CLINIC_BASE || '.') + '/handlers/get_student.php?student_number=' + encodeURIComponent(num))
             .then(function (res) {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();

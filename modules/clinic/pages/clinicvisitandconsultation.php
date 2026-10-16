@@ -778,7 +778,7 @@ document.getElementById('clinicForm').addEventListener('submit', async function 
     };
 
     try {
-        const response = await fetch((window.CLINIC_BASE || '.') + '/../handlers/save_consultation.php', {
+        const response = await fetch((window.CLINIC_BASE || '.') + '/handlers/save_consultation.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -831,7 +831,7 @@ async function loadAuditLog(page = 1, search = '') {
             limit: 10
         });
         
-        const response = await fetch(`${window.CLINIC_BASE || '.'}/../handlers/get_consultations.php?${params}`);
+        const response = await fetch(`${window.CLINIC_BASE || '.'}/handlers/get_consultations.php?${params}`);
         const data = await response.json();
         
         if (!response.ok || !data.success) {
@@ -941,7 +941,7 @@ async function deleteRecord(id, name) {
     if (!confirm(`Delete consultation record for "${name}"?\nThis cannot be undone.`)) return;
 
     try {
-        const response = await fetch((window.CLINIC_BASE || '.') + '/../handlers/delete_consultation.php', {
+        const response = await fetch((window.CLINIC_BASE || '.') + '/handlers/delete_consultation.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -970,7 +970,7 @@ async function openModal(id) {
     document.getElementById('modalBody').innerHTML = 'Loading…';
 
     try {
-        const response = await fetch(`${window.CLINIC_BASE || '.'}/../handlers/get_consultations.php?action=single&id=${id}`);
+        const response = await fetch(`${window.CLINIC_BASE || '.'}/handlers/get_consultations.php?action=single&id=${id}`);
         const data = await response.json();
         
         if (!response.ok || !data.success) {

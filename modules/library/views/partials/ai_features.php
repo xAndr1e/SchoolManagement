@@ -1,5 +1,4 @@
 <?php
-// views/partials/ai_features.php
 ?>
 
 <div class="tab-content" id="tab-ai">

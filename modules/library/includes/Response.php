@@ -1,8 +1,4 @@
 <?php
-/**
- * Response
- * Static helpers for sending JSON API responses.
- */
 class Response
 {
     public static function json(mixed $data, int $statusCode = 200): never

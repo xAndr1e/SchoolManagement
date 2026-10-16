@@ -1,8 +1,4 @@
 <?php
-/**
- * Database
- * Provides a singleton PDO connection.
- */
 class Database
 {
     private static ?PDO $instance = null;
@@ -21,16 +17,16 @@ class Database
                     PDO::ATTR_EMULATE_PREPARES   => false,
                 ]);
             } catch (PDOException $e) {
+                error_log('[Database] ' . $e->getMessage());
                 http_response_code(500);
                 header('Content-Type: application/json');
-                echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
+                echo json_encode(['error' => 'Database connection failed. Check config.php.']);
                 exit;
             }
         }
         return self::$instance;
     }
 
-    /** Prevent instantiation */
     private function __construct() {}
     private function __clone() {}
 }

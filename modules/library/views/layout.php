@@ -1,9 +1,5 @@
 <?php
-/**
- * views/layout.php
- * Master layout — BCP design + Library Management System
- */
-$userInitial = strtoupper(substr($employeeName, 0, 1));
+$userInitial = strtoupper(substr($userName ?? 'L', 0, 1));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,6 +7,7 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= htmlspecialchars($libraryName) ?> | BCP</title>
+    <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken ?? '') ?>">
     <link rel="icon" type="image/png" href="assets/images/bcp-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -20,8 +17,6 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     <link rel="stylesheet" href="assets/css/dropdown.css">
 </head>
 <body>
-
-<!-- ====== PAGE LOADER ====== -->
 <div class="page-loader" id="pageLoader">
     <div class="loader-logo">
         <img src="assets/images/bcp-logo.png" alt="BCP Logo">
@@ -30,77 +25,30 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     <div class="loader-text">Loading...</div>
 </div>
 
-<!-- Sidebar overlay for mobile -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <div class="app-container">
 
-<!-- ====== SIDEBAR (BCP Style) ====== -->
 <aside class="sidebar" id="sidebar">
 
-    <!-- Logo row + icons -->
     <div class="school-logo">
         <img src="assets/images/bcp-logo.png" alt="BCP Logo">
         <div class="sidebar-icons">
-            <!-- Bell Icon + Notification Dropdown -->
             <div class="icon-wrapper" id="bellWrapper">
                 <i class="fa-regular fa-bell" id="bellBtn"></i>
-                <div class="icon-dropdown" id="bellDropdown">
-                    <div class="dropdown-header">
-                        <span>Notifications</span>
-                        <button class="mark-all-read">Mark all as read</button>
-                    </div>
-                    <ul class="notif-list">
-                        <li class="notif-item">
-                            <div class="notif-icon"><i class="fas fa-book"></i></div>
-                            <div class="notif-content">
-                                <p>Library system ready</p>
-                                <span>Just now</span>
-                            </div>
-                        </li>
-                    </ul>
-                    <div class="dropdown-footer">
-                        <a href="#">View all notifications</a>
-                    </div>
-                </div>
             </div>
-
-            <!-- User Icon + Profile Dropdown -->
             <div class="icon-wrapper" id="userWrapper">
                 <i class="fa-regular fa-circle-user" id="userBtn"></i>
-                <div class="icon-dropdown" id="userDropdown">
-                    <div class="dropdown-header">
-                        <div class="dropdown-user-info">
-                            <div class="dropdown-avatar"><?= $userInitial ?></div>
-                            <div>
-                                <strong><?= htmlspecialchars($employeeName ?? 'Librarian') ?></strong>
-                                <span><?= htmlspecialchars($userRole ?? 'Staff') ?></span>
-                            </div>
-                        </div>
-                    </div>
-                    <ul class="user-menu">
-                        <li><a href="#"><i class="fa-regular fa-user"></i> Profile Settings</a></li>
-                        <li><a href="#"><i class="fa-solid fa-lock"></i> Change Password</a></li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="auth/logout.php" class="signout-link">
-                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- User info -->
     <div class="sidebar-header">
         <div class="user_avatar"><?= $userInitial ?></div>
-        <h1 class="employee_name"><?= htmlspecialchars($employeeName ?? 'Librarian') ?></h1>
+        <h1 class="employee_name"><?= htmlspecialchars($userName ?? 'Librarian') ?></h1>
         <p class="employee_position"><?= htmlspecialchars($userPosition ?? $userRole ?? 'Staff') ?></p>
     </div>
 
-    <!-- Navigation -->
     <nav class="sidebar-nav">
         <p class="sidebar-nav-section-title">Library</p>
         <ul>
@@ -114,6 +62,7 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
             <li><button class="tab" onclick="app.ui.switchTab('borrowers')"><i class="fas fa-users"></i> Members</button></li>
             <li><button class="tab" onclick="app.ui.switchTab('borrow')"><i class="fas fa-handshake"></i> Borrow Book</button></li>
             <li><button class="tab" onclick="app.ui.switchTab('return')"><i class="fas fa-undo"></i> Return Book</button></li>
+            <li><button class="tab" onclick="app.ui.switchTab('lost')"><i class="fas fa-exclamation-triangle"></i> Lost Books</button></li>
             <li><button class="tab" onclick="app.ui.switchTab('transactions')"><i class="fas fa-list-alt"></i> Transactions</button></li>
         </ul>
         <div class="separator"></div>
@@ -130,7 +79,6 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     </div>
 </aside>
 
-<!-- ====== HEADER (BCP Style) ====== -->
 <header id="mainHeader">
     <div class="hamburger" id="hamburger">
         <span></span><span></span><span></span>
@@ -144,17 +92,14 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     </div>
 </header>
 
-<!-- ====== MAIN CONTENT ====== -->
 <main class="main-content" id="mainContent">
 
-    <!-- Notification Bar -->
     <div class="notification" id="notification">
         <i class="fas fa-info-circle" id="notifIcon"></i>
         <span id="notifText"></span>
         <button class="notification-close" onclick="app.ui.hideNotification()"><i class="fas fa-times"></i></button>
     </div>
 
-    <!-- Page Banner -->
     <div class="page-banner">
         <img src="assets/images/bcp-logo.png" alt="BCP">
         <div>
@@ -163,27 +108,24 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
         </div>
     </div>
 
-    <!-- Tab Views -->
     <?php require __DIR__ . '/partials/dashboard.php'; ?>
     <?php require __DIR__ . '/partials/books.php';        ?>
     <?php require __DIR__ . '/partials/gallery.php';      ?>
     <?php require __DIR__ . '/partials/members.php';      ?>
     <?php require __DIR__ . '/partials/borrow.php';       ?>
     <?php require __DIR__ . '/partials/transactions.php'; ?>
+    <?php require __DIR__ . '/partials/lost_books.php';   ?>
     <?php require __DIR__ . '/partials/reports.php';      ?>
     <?php require __DIR__ . '/partials/settings.php';     ?>
     <?php require __DIR__ . '/partials/ai_features.php';  ?>
 
 </main>
 
-<!-- ====== FOOTER ====== -->
 <footer id="mainFooter">
     <p>&copy; <?= date('Y') ?> <?= htmlspecialchars($libraryName) ?> — Bestlink College of the Philippines. All rights reserved.</p>
 </footer>
+</div>
 
-</div><!-- /.app-container -->
-
-<!-- ====== DETAIL MODAL ====== -->
 <div class="modal" id="detailModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -194,7 +136,6 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     </div>
 </div>
 
-<!-- ====== RETURN MODAL ====== -->
 <div class="modal" id="returnModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -205,7 +146,49 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
     </div>
 </div>
 
-<!-- ====== SCRIPTS ====== -->
+<!-- Dropdowns attached to body -->
+
+<div class="icon-dropdown" id="bellDropdown">
+    <div class="dropdown-header">
+        <span>Notifications</span>
+        <button class="mark-all-read">Mark all as read</button>
+    </div>
+    <ul class="notif-list">
+        <li class="notif-item">
+            <div class="notif-icon"><i class="fas fa-book"></i></div>
+            <div class="notif-content">
+                <p>Library system ready</p>
+                <span>Just now</span>
+            </div>
+        </li>
+    </ul>
+    <div class="dropdown-footer">
+        <a href="#">View all notifications</a>
+    </div>
+</div>
+
+<div class="icon-dropdown" id="userDropdown">
+    <div class="dropdown-header">
+        <div class="dropdown-user-info">
+            <div class="dropdown-avatar"><?= $userInitial ?></div>
+            <div>
+                <strong><?= htmlspecialchars($userName ?? 'Librarian') ?></strong>
+                <span><?= htmlspecialchars($userRole ?? 'Staff') ?></span>
+            </div>
+        </div>
+    </div>
+    <ul class="user-menu">
+        <li><a href="#"><i class="fa-regular fa-user"></i> Profile Settings</a></li>
+        <li><a href="#"><i class="fa-solid fa-lock"></i> Change Password</a></li>
+        <li class="divider"></li>
+        <li>
+            <a href="auth/logout.php" class="signout-link">
+                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+            </a>
+        </li>
+    </ul>
+</div>
+
 <script src="assets/js/ApiService.js"></script>
 <script src="assets/js/UIService.js"></script>
 <script src="assets/js/DashboardController.js"></script>
@@ -218,14 +201,19 @@ $userInitial = strtoupper(substr($employeeName, 0, 1));
 <script src="assets/js/AIController.js"></script>
 
 <script>
-// ── Page Loader ────────────────────────────────────────────
+// Hide loader as soon as possible — 500ms max
+setTimeout(() => {
+    const loader = document.getElementById('pageLoader');
+    if (loader) loader.classList.add('hidden');
+}, 500);
+
 window.addEventListener('load', () => {
     setTimeout(() => {
-        document.getElementById('pageLoader').classList.add('hidden');
-    }, 800);
+        const loader = document.getElementById('pageLoader');
+        if (loader) loader.classList.add('hidden');
+    }, 500);
 });
 
-// ── Realtime Clock ─────────────────────────────────────────
 (() => {
     const el = document.getElementById('realtimeClock');
     if (!el) return;
@@ -236,7 +224,6 @@ window.addEventListener('load', () => {
     setInterval(update, 1000);
 })();
 
-// ── Hamburger ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     const hamburger   = document.getElementById('hamburger');
     const sidebar     = document.getElementById('sidebar');
@@ -278,7 +265,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// ── Dropdowns ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     const bellBtn      = document.getElementById('bellBtn');
     const bellDropdown = document.getElementById('bellDropdown');
@@ -293,11 +279,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function openDropdown(dropdown, triggerEl) {
-        const sidebar     = document.querySelector('.sidebar');
-        const rect        = triggerEl.getBoundingClientRect();
-        const sidebarRect = sidebar.getBoundingClientRect();
-        dropdown.style.top  = rect.top + 'px';
-        dropdown.style.left = (sidebarRect.right + 8) + 'px';
+        const rect     = triggerEl.getBoundingClientRect();
+        const sidebar  = document.querySelector('.sidebar');
+        const sidebarW = sidebar ? sidebar.getBoundingClientRect().width : 252;
+
+        dropdown.style.top    = (rect.top - 10) + 'px';
+        dropdown.style.left   = (sidebarW + 12) + 'px';
+        dropdown.style.zIndex = '999999';
         dropdown.classList.add('open');
     }
 
@@ -316,7 +304,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.addEventListener('click', e => {
-        if (!bellWrapper.contains(e.target) && !userWrapper.contains(e.target)) closeAll();
+        if (!bellWrapper.contains(e.target) && !bellDropdown.contains(e.target) &&
+            !userWrapper.contains(e.target) && !userDropdown.contains(e.target)) {
+            closeAll();
+        }
     });
 
     const markAllRead = document.querySelector('.mark-all-read');
@@ -327,13 +318,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// ── AI Tab Init ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     setTimeout(function () {
         if (typeof AI !== 'undefined') AI.init();
     }, 1500);
 
-    // Override switchTab to init AI when switching to AI tab
     const checkApp = setInterval(() => {
         if (window.app && window.app.ui && window.app.ui.switchTab) {
             clearInterval(checkApp);

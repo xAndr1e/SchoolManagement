@@ -1,8 +1,4 @@
 <?php
-/**
- * BorrowersApiController
- * Handles all borrower-related API actions including rgr_students integration.
- */
 class BorrowersApiController
 {
     private Borrower    $borrower;
@@ -107,7 +103,6 @@ class BorrowersApiController
         Response::success('Member deleted successfully!');
     }
 
-    // ── Search rgr_students ───────────────────────────────────────────
     private function searchStudents(): never
     {
         $search = trim($_GET['search'] ?? '');
@@ -121,7 +116,6 @@ class BorrowersApiController
         Response::json(['students' => $students, 'total' => count($students)]);
     }
 
-    // ── Import single student from rgr_students ───────────────────────
     private function importStudent(array $input): never
     {
         $studentNumber = (int)($input['student_number'] ?? 0);

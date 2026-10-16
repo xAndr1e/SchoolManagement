@@ -47,7 +47,7 @@ class FileStorage
         $path = getenv('SDM_API_CONFIG_FILE');
 
         if (!is_string($path) || $path === '') {
-            $path = '/home/gms.bcp-sms.com/sdm-api-config.php';
+            $path = '/home/sdm.bcp-sms.com/api-secrets.php';
         }
 
         return is_file($path) && is_readable($path);

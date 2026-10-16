@@ -1,19 +1,28 @@
+
 <?php
 
-class Database {
-    private static $instance = null;
+class Database
+{
+    public static function connect()
+    {
+        $host = 'localhost';
+        $dbname = 'labo_payr_bcp';
+        $username = 'YOUR_CPANEL_MYSQL_USERNAME';
+        $password = 'YOUR_CPANEL_MYSQL_PASSWORD';
 
-    public static function connect() {
-        if (!self::$instance) {
-            self::$instance = new PDO(
-                "mysql:host=localhost;dbname=labo_payr_bcp;charset=utf8",
-                "labo_db",
-                "1234"
+        try {
+            return new PDO(
+                "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+                $username,
+                $password,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]
             );
-
-            self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            error_log('Database connection failed: ' . $e->getMessage());
+            throw new RuntimeException('Database connection failed.');
         }
-
-        return self::$instance;
     }
 }

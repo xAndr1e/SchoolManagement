@@ -69,7 +69,6 @@ final class SdmFileApi
             );
         }
 
-        
         $configPath = '/home/gms.bcp-sms.com/sdm-api-config.php';
 
         if (!is_file($configPath) || !is_readable($configPath)) {
@@ -77,9 +76,6 @@ final class SdmFileApi
                 'SDM API configuration file is missing or unreadable.'
             );
         }
-
-        $config = require $configPath;
-
 
         $config = require $configPath;
 

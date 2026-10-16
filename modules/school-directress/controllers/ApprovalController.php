@@ -154,13 +154,18 @@ try {
                 approval_file_error(404, $kind === 'attachment' ? 'This request has no attachment.' : 'The PDF has not been generated yet.');
             }
 
-            $absolute = FileStorage::resolve($relative);
-            if (!$absolute) {
-                error_log('[ApprovalController] File missing on disk for approval ' . $approvalId . ' (' . $kind . '): ' . $relative);
-                approval_file_error(404, 'The file is missing on the server.');
+            
+            try {
+                FileStorage::streamStored($relative, $name, $mime, $download);
+            } catch (\Throwable $e) {
+                error_log(
+                    '[ApprovalController] File retrieval failed for approval '
+                    . $approvalId . ' (' . $kind . '): ' . $e->getMessage()
+                );
+
+                approval_file_error(500, 'The file could not be retrieved from storage.');
             }
 
-            FileStorage::stream($absolute, $name, $mime, $download); // ends the request
             break;
 
         // ------------------------------------------------------------------

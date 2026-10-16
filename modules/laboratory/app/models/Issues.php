@@ -13,18 +13,14 @@ class Issues extends DatabaseTwo
     }
 
     /**
-     * Get all issues with the employee who submitted them.
+     * Get all issues.
      */
     public function all(): array
     {
         $stmt = $this->conn->prepare("
-            SELECT
-                i.*,
-                CONCAT(e.first_name, ' ', e.last_name) AS submitted_by_name
-            FROM sd_issues i
-            LEFT JOIN sms_employee e
-                ON i.submitted_by = e.employee_id
-            ORDER BY i.submitted_on DESC
+            SELECT *
+            FROM sd_issues
+            ORDER BY submitted_on DESC
         ");
 
         $stmt->execute();
@@ -60,12 +56,12 @@ class Issues extends DatabaseTwo
         ");
 
         return $stmt->execute([
-            ':title'              => $data['title'],
-            ':details'            => $data['details'] ?? $data['description'] ?? '',
+            ':title' => $data['title'],
+            ':details' => $data['details'] ?? $data['description'] ?? '',
             ':desired_resolution' => $data['desired_resolution'] ?? null,
-            ':department'         => $data['department'],
-            ':submitted_by'       => $data['submitted_by'],
-            ':file_path'          => $data['file_path'] ?? null,
+            ':department' => $data['department'],
+            ':submitted_by' => $data['submitted_by'],
+            ':file_path' => $data['file_path'] ?? null,
         ]);
     }
 
@@ -93,25 +89,21 @@ class Issues extends DatabaseTwo
         ");
 
         return $stmt->execute([
-            ':status'   => $status,
+            ':status' => $status,
             ':issue_id' => $issueId,
         ]);
     }
 
     /**
-     * Get issues filtered by status.
+     * Get issues by status.
      */
     public function getByStatus(string $status): array
     {
         $stmt = $this->conn->prepare("
-            SELECT
-                i.*,
-                CONCAT(e.first_name, ' ', e.last_name) AS submitted_by_name
-            FROM sd_issues i
-            LEFT JOIN sms_employee e
-                ON i.submitted_by = e.employee_id
-            WHERE i.status = :status
-            ORDER BY i.submitted_on DESC
+            SELECT *
+            FROM sd_issues
+            WHERE status = :status
+            ORDER BY submitted_on DESC
         ");
 
         $stmt->execute([

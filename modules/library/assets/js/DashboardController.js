@@ -1,7 +1,4 @@
 'use strict';
-// ============================================================
-// DashboardController — Enhanced with borrow tracking & inventory
-// ============================================================
 class DashboardController {
     #api; #ui;
 
@@ -9,8 +6,6 @@ class DashboardController {
 
     async load() {
         const data = await this.#api.get({ action: 'get_stats' });
-
-        // ── Stat cards ──────────────────────────────────────
         document.getElementById('statTotalBooks').textContent    = data.total_books    ?? '—';
         document.getElementById('statTotalMembers').textContent  = data.total_members  ?? '—';
         document.getElementById('statBorrowedBooks').textContent = data.borrowed_books ?? '—';
@@ -18,30 +13,19 @@ class DashboardController {
         document.getElementById('statFineText').innerHTML =
             `<i class="fas fa-peso-sign"></i> ₱${data.total_fines ?? '0.00'} fines pending`;
 
-        // ── Alert badges ────────────────────────────────────
         const dueTodayEl = document.getElementById('statDueToday');
         const dueSoonEl  = document.getElementById('statDueSoon');
         if (dueTodayEl) dueTodayEl.textContent = data.due_today ?? 0;
         if (dueSoonEl)  dueSoonEl.textContent  = data.due_soon  ?? 0;
 
-        // ── Availability bar ────────────────────────────────
         this.#renderAvailabilityBar(data);
-
-        // ── Active borrowings tracking panel ────────────────
         this.#renderBorrowTracker(data.active_borrowings ?? []);
-
-        // ── Inventory health ────────────────────────────────
         this.#renderInventoryHealth(data.inventory_health ?? []);
-
-        // ── Genre inventory ─────────────────────────────────
         this.#renderGenreInventory(data.genre_inventory ?? [], data.total_books ?? 0);
-
-        // ── Recent books & activity ─────────────────────────
         this.#renderRecentBooks(data.recent_books  ?? []);
         this.#renderActivity(data.recent_activity ?? []);
     }
 
-    // ── Availability bar ────────────────────────────────────
     #renderAvailabilityBar(data) {
         const el = document.getElementById('availabilityBar');
         if (!el) return;
@@ -66,7 +50,6 @@ class DashboardController {
             </div>`;
     }
 
-    // ── Borrow tracker ──────────────────────────────────────
     #renderBorrowTracker(borrowings) {
         const el = document.getElementById('borrowTracker');
         if (!el) return;
@@ -130,7 +113,6 @@ class DashboardController {
         }).join('');
     }
 
-    // ── Inventory health by condition ───────────────────────
     #renderInventoryHealth(health) {
         const el = document.getElementById('inventoryHealth');
         if (!el) return;
@@ -153,7 +135,6 @@ class DashboardController {
         }).join('') || '<p class="text-muted small">No condition data yet.</p>';
     }
 
-    // ── Genre inventory breakdown ───────────────────────────
     #renderGenreInventory(genres, totalBooks) {
         const el = document.getElementById('genreInventory');
         if (!el) return;
@@ -179,7 +160,6 @@ class DashboardController {
         }).join('');
     }
 
-    // ── Recent books ────────────────────────────────────────
     #renderRecentBooks(books) {
         const el = document.getElementById('dashRecentBooks');
         if (!books.length) {
@@ -197,7 +177,6 @@ class DashboardController {
             </div>`).join('');
     }
 
-    // ── Activity ────────────────────────────────────────────
     #renderActivity(activity) {
         const el = document.getElementById('dashActivity');
         if (!activity.length) {

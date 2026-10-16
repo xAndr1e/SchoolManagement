@@ -1,11 +1,10 @@
-<!-- ====== GALLERY ====== -->
 <div class="tab-content" id="tab-gallery">
     <div class="card">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-th-large"></i> Book Gallery</h3>
             <div class="d-flex gap-1 align-center">
                 <select id="galleryGenreFilter" onchange="app.gallery.load()" style="width:auto;padding:.625rem .875rem;font-size:.875rem">
-                    <option value="">All Genres</option>
+                    <option value="">All Category</option>
                 </select>
                 <select id="galleryStatusFilter" onchange="app.gallery.load()" style="width:auto;padding:.625rem .875rem;font-size:.875rem">
                     <option value="">All Status</option>

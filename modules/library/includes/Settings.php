@@ -1,8 +1,4 @@
 <?php
-/**
- * Settings
- * Reads and writes the lbr_settings table.
- */
 class Settings
 {
     private PDO $db;
@@ -11,8 +7,13 @@ class Settings
         'library_name',
         'max_borrow_days',
         'max_books_per_member',
-        'daily_fine_rate',
         'auto_save',
+        'ai_reminder_enabled',
+        'ai_reminder_threshold',
+        'ai_sms_enabled',
+        'ai_email_enabled',
+        'ai_recommendations_count',
+        'ai_rec_min_similarity',
     ];
 
     public function __construct()
@@ -20,7 +21,6 @@ class Settings
         $this->db = Database::getInstance();
     }
 
-    /** Return all settings as key => value. */
     public function all(): array
     {
         try {
@@ -35,13 +35,11 @@ class Settings
         }
     }
 
-    /** Fetch a single setting value. */
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->all()[$key] ?? $default;
     }
 
-    /** Persist an associative array of settings. */
     public function save(array $input): void
     {
         $stmt = $this->db->prepare(
@@ -50,27 +48,64 @@ class Settings
         );
         foreach (self::$allowed as $key) {
             if (isset($input[$key])) {
-                $val = trim($input[$key]);
+                $val = trim((string)$input[$key]);
                 $stmt->execute([$key, $val, $val]);
             }
         }
     }
 
-    /** Mark transactions overdue and recalculate fines. Non-fatal. */
     public function updateOverdueStatus(): void
     {
         try {
-            $fineRate = (float)($this->get('daily_fine_rate') ?? 0.50);
-            $this->db->prepare("
+            // 1. Mark overdue transactions (no fine calculation)
+            $this->db->query("
                 UPDATE lbr_transactions
-                SET
-                    status = 'overdue',
-                    fine   = DATEDIFF(CURDATE(), due_date) * :rate
-                WHERE
-                    status      != 'returned'
-                    AND return_date IS NULL
-                    AND due_date  <  CURDATE()
-            ")->execute([':rate' => $fineRate]);
+                SET status = 'overdue'
+                WHERE status != 'returned'
+                  AND status != 'lost'
+                  AND return_date IS NULL
+                  AND due_date < CURDATE()
+            ");
+
+            // 2. Fix book status: 'borrowed' → 'available' when no active loans
+            $this->db->query("
+                UPDATE lbr_books b
+                SET b.status = 'available'
+                WHERE b.status = 'borrowed'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM lbr_transactions t
+                      WHERE t.book_id = b.id
+                        AND t.status IN ('active', 'overdue')
+                        AND t.return_date IS NULL
+                  )
+            ");
+
+            // 3. Fix book status: 'available' → 'borrowed' when active loans exist
+            $this->db->query("
+                UPDATE lbr_books b
+                SET b.status = 'borrowed'
+                WHERE b.status = 'available'
+                  AND EXISTS (
+                      SELECT 1 FROM lbr_transactions t
+                      WHERE t.book_id = b.id
+                        AND t.status IN ('active', 'overdue')
+                        AND t.return_date IS NULL
+                  )
+            ");
+
+            // 4. Fix stuck 'lost' books
+            $this->db->query("
+                UPDATE lbr_books b
+                SET b.status = 'available'
+                WHERE b.status = 'lost'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM lbr_transactions t
+                      WHERE t.book_id = b.id
+                        AND t.status = 'lost'
+                  )
+                  AND b.available_stock > 0
+            ");
+
         } catch (PDOException) {
             // Non-fatal
         }

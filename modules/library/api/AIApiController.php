@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// api/AIApiController.php
-// ============================================================
-
 class AIApiController
 {
     public function handle(string $action, array $input): void

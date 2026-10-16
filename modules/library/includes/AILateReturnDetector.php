@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// includes/AILateReturnDetector.php
-// ============================================================
-
 class AILateReturnDetector
 {
     private PDO $db;

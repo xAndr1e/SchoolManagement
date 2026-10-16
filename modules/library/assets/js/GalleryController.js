@@ -1,7 +1,4 @@
 'use strict';
-// ============================================================
-// GalleryController
-// ============================================================
 class GalleryController {
     #api; #ui;
     #pager      = new Paginator(12);
@@ -38,6 +35,16 @@ class GalleryController {
     #renderCard(b) {
         const src   = this.#ui.coverSrc(b);
         const color = GalleryController.#COLORS[b.id % GalleryController.#COLORS.length];
+
+        // Borrow icon only shows when:
+        // - status is 'available'
+        // - available_stock > 0
+        // - NOT marked as lost
+        const canBorrow = b.status === 'available'
+            && parseInt(b.available_stock) > 0
+            && b.status !== 'lost'
+            && b.status !== 'damaged';
+
         return `
         <div class="book-card">
             <div class="book-cover-wrap">
@@ -47,9 +54,14 @@ class GalleryController {
                 </div>
             </div>
             <div class="book-card-actions">
-                <button class="btn-view" onclick="app.books.view(${b.id})" title="View"><i class="fas fa-eye"></i></button>
-                <button class="btn-edit" onclick="app.ui.switchTab('books');app.books.edit(${b.id})" title="Edit"><i class="fas fa-edit"></i></button>
-                <button class="btn-del"  onclick="app.books.delete(${b.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                ${canBorrow ? `
+                    <button class="btn-borrow" onclick="event.stopPropagation();app.gallery.borrow(${b.id})" title="Borrow this book">
+                        <i class="fas fa-handshake"></i>
+                    </button>
+                ` : ''}
+                <button class="btn-view" onclick="event.stopPropagation();app.books.view(${b.id})" title="View"><i class="fas fa-eye"></i></button>
+                <button class="btn-edit" onclick="event.stopPropagation();app.ui.switchTab('books');app.books.edit(${b.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                <button class="btn-del"  onclick="event.stopPropagation();app.books.delete(${b.id})" title="Delete"><i class="fas fa-trash"></i></button>
             </div>
             <div class="book-info">
                 <div class="book-title-card">${this.#ui.escH(b.title)}</div>
@@ -65,7 +77,65 @@ class GalleryController {
         const data = await this.#api.get({ action: 'get_genres' });
         const sel  = document.getElementById('galleryGenreFilter');
         const cur  = sel.value;
-        sel.innerHTML = '<option value="">All Genres</option>'
+        sel.innerHTML = '<option value="">All Category</option>'
             + (data.genres || []).map(g => `<option value="${this.#ui.escH(g)}" ${g === cur ? 'selected' : ''}>${this.#ui.escH(g)}</option>`).join('');
+    }
+
+    borrow(bookId) {
+        app.ui.switchTab('borrow');
+
+        let attempts = 0;
+        const maxAttempts = 30;
+
+        const tryFill = async () => {
+            attempts++;
+
+            const bookIdEl = document.getElementById('borrowBookId');
+            const bookSrch = document.getElementById('borrowBookSearch');
+            const bookChip = document.getElementById('borrowBookChip');
+
+            if (!bookIdEl || !bookSrch) {
+                if (attempts < maxAttempts) return setTimeout(tryFill, 100);
+                this.#ui.showNotif('Borrow form not ready. Please try again.', 'error');
+                return;
+            }
+
+            try {
+                const book = await this.#api.get({ action: 'get_book', id: bookId });
+                if (book.error) {
+                    this.#ui.showNotif(book.error, 'error');
+                    return;
+                }
+
+                if (book.status !== 'available' || parseInt(book.available_stock) <= 0) {
+                    this.#ui.showNotif('This book is not available for borrowing.', 'error');
+                    return;
+                }
+
+                bookIdEl.value = book.id;
+                bookSrch.value = book.title + ' — ' + book.author;
+
+                if (bookChip) {
+                    bookChip.innerHTML = `
+                        <div class="selected-chip">
+                            <i class="fas fa-book"></i> ${this.#ui.escH(book.title)}
+                            <button type="button" onclick="this.closest('.selected-chip').remove();document.getElementById('borrowBookId').value='';document.getElementById('borrowBookSearch').value=''">×</button>
+                        </div>`;
+                }
+
+                try { if (window.BS?.pickBookExternal) BS.pickBookExternal(book); } catch(_) {}
+
+                setTimeout(() => {
+                    document.getElementById('borrowMemberSearch')?.focus();
+                }, 100);
+
+                this.#ui.showNotif(`Ready to borrow "${book.title}" — select a member.`, 'success');
+            } catch (e) {
+                console.error('Borrow pre-fill error:', e);
+                this.#ui.showNotif('Could not pre-fill borrow form.', 'error');
+            }
+        };
+
+        tryFill();
     }
 }

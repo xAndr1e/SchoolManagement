@@ -1,8 +1,4 @@
 <?php
-/**
- * Transaction
- * Encapsulates all database operations for the lbr_transactions table.
- */
 class Transaction
 {
     private PDO $db;
@@ -40,7 +36,10 @@ class Transaction
         $whereStr = implode(' AND ', $where);
         $offset   = ($page - 1) * $limit;
 
-        $countStmt = $this->db->prepare("SELECT COUNT(*) FROM lbr_transactions t WHERE {$whereStr}");
+        $countStmt = $this->db->prepare("SELECT COUNT(*) FROM lbr_transactions t
+            JOIN lbr_books     b  ON b.id  = t.book_id
+            JOIN lbr_borrowers br ON br.id = t.borrower_id
+            WHERE {$whereStr}");
         $countStmt->execute($params);
         $total = (int)$countStmt->fetchColumn();
 
@@ -50,9 +49,9 @@ class Transaction
                    b.author     AS book_author,
                    b.cover_url,
                    b.cover_local,
-                   br.name      AS borrower_name,
+                   br.name        AS borrower_name,
                    br.borrower_id AS member_id,
-                   br.type      AS member_type
+                   br.type        AS member_type
             FROM lbr_transactions t
             JOIN lbr_books       b  ON b.id  = t.book_id
             JOIN lbr_borrowers   br ON br.id = t.borrower_id
@@ -70,7 +69,60 @@ class Transaction
         ];
     }
 
-    /** Find a single transaction (with book title) by PK. */
+    /**
+     * Returns ALL active + overdue transactions — used by the Return Book tab.
+     * No pagination, no limit. Always returns every book that can be returned.
+     */
+    public function listReturnable(): array
+    {
+        $stmt = $this->db->query("
+            SELECT t.*,
+                   b.title        AS book_title,
+                   b.author       AS book_author,
+                   b.cover_url,
+                   b.cover_local,
+                   br.name        AS borrower_name,
+                   br.borrower_id AS member_id,
+                   br.type        AS member_type
+            FROM lbr_transactions t
+            JOIN lbr_books       b  ON b.id  = t.book_id
+            JOIN lbr_borrowers   br ON br.id = t.borrower_id
+            WHERE t.status IN ('active', 'overdue')
+              AND t.return_date IS NULL
+            ORDER BY t.due_date ASC
+        ");
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Returns all LOST transactions — used by the Lost Books tab.
+     */
+    public function listLost(): array
+    {
+        $stmt = $this->db->query("
+            SELECT t.id, t.book_id, t.borrower_id, t.borrow_date, t.due_date,
+                   t.lost_date, t.lost_notes, t.fine,
+                   b.title   AS book_title,
+                   b.author  AS book_author,
+                   b.genre,
+                   b.isbn,
+                   b.cover_url,
+                   b.cover_local,
+                   br.name        AS borrower_name,
+                   br.borrower_id AS student_number,
+                   br.type        AS borrower_type,
+                   br.grade       AS borrower_grade,
+                   br.email       AS borrower_email,
+                   br.phone       AS borrower_phone
+            FROM lbr_transactions t
+            JOIN lbr_books     b  ON b.id  = t.book_id
+            JOIN lbr_borrowers br ON br.id = t.borrower_id
+            WHERE t.status = 'lost'
+            ORDER BY t.lost_date DESC, t.id DESC
+        ");
+        return $stmt->fetchAll();
+    }
+
     public function find(int $id): array|false
     {
         $stmt = $this->db->prepare("
@@ -83,7 +135,6 @@ class Transaction
         return $stmt->fetch();
     }
 
-    /** Count active/overdue loans for a borrower. */
     public function activeLoanCount(int $borrowerId): int
     {
         $stmt = $this->db->prepare(
@@ -94,7 +145,6 @@ class Transaction
         return (int)$stmt->fetchColumn();
     }
 
-    /** Get borrowing history for a book. */
     public function historyForBook(int $bookId, int $limit = 10): array
     {
         $stmt = $this->db->prepare("
@@ -109,7 +159,6 @@ class Transaction
         return $stmt->fetchAll();
     }
 
-    /** Get borrowing history for a borrower. */
     public function historyForBorrower(int $borrowerId): array
     {
         $stmt = $this->db->prepare("
@@ -123,11 +172,6 @@ class Transaction
         return $stmt->fetchAll();
     }
 
-    // ------------------------------------------------------------------
-    // Mutations
-    // ------------------------------------------------------------------
-
-    /** Open a new borrow transaction. Returns the new PK. */
     public function create(
         int    $bookId,
         int    $borrowerId,
@@ -143,13 +187,45 @@ class Transaction
         return (int)$this->db->lastInsertId();
     }
 
-    /** Mark a transaction as returned. */
     public function markReturned(int $id, string $returnDate, string $condition, float $fine): void
     {
+        // 1. Mark transaction as returned
         $this->db->prepare(
             "UPDATE lbr_transactions
              SET status='returned', return_date=?, `condition`=?, fine=?
              WHERE id=?"
         )->execute([$returnDate, $condition, $fine, $id]);
+
+        // 2. Sync to lbr_borrow_history so AI features stay accurate
+        $trans = $this->db->prepare(
+            "SELECT t.borrower_id, t.book_id, t.borrow_date, t.due_date, b.genre
+             FROM lbr_transactions t
+             JOIN lbr_books b ON b.id = t.book_id
+             WHERE t.id = ?"
+        );
+        $trans->execute([$id]);
+        $row = $trans->fetch();
+
+        if ($row) {
+            $daysLate = max(0, (int)((strtotime($returnDate) - strtotime($row['due_date'])) / 86400));
+            $wasLate  = $daysLate > 0 ? 1 : 0;
+
+            // Insert history record (no unique key, so plain INSERT)
+            $this->db->prepare("
+                INSERT INTO lbr_borrow_history
+                    (borrower_id, book_id, genre, borrow_date, due_date, return_date, days_late, was_late, fine_charged)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ")->execute([
+                $row['borrower_id'],
+                $row['book_id'],
+                $row['genre'],
+                $row['borrow_date'],
+                $row['due_date'],
+                $returnDate,
+                $daysLate,
+                $wasLate,
+                $fine,
+            ]);
+        }
     }
 }

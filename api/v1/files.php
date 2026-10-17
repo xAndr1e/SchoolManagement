@@ -191,18 +191,30 @@ $filePath = $filesDir . '/' . $fileId . '.pdf';
 $metadataPath = $metadataDir . '/' . $fileId . '.json';
 
 if ($action === 'download') {
-    if (!is_file($filePath) || !is_file($metadataPath)) {
-    error_log('SDM FILE DEBUG: ' . json_encode([
+   
+if (!is_file($filePath) || !is_file($metadataPath)) {
+    $debug = [
         'file_id' => $fileId,
+        'storage_root' => $storageRoot,
         'files_dir' => $filesDir,
         'metadata_dir' => $metadataDir,
         'file_path' => $filePath,
         'metadata_path' => $metadataPath,
         'pdf_exists' => is_file($filePath),
         'metadata_exists' => is_file($metadataPath),
-    ]));
-    respond(404, ['error' => 'File not found.']);
+    ];
+
+        @file_put_contents(
+            '/home/sdm.bcp-sms.com/storage/file-debug.log',
+            '[' . date('Y-m-d H:i:s') . '] SDM API DEBUG: '
+                . json_encode($debug, JSON_UNESCAPED_SLASHES)
+                . PHP_EOL,
+            FILE_APPEND | LOCK_EX
+        );
+
+        respond(404, ['error' => 'File not found.']);
     }
+
 
     $metadata = json_decode(
         (string) file_get_contents($metadataPath),

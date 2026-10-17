@@ -51,15 +51,14 @@ class FacultyProfileManager {
                     e.email,
                     d.department_name AS department,
                     e.position_id,
-                    p.position_name AS position_name,
+                    p.position_name,
                     e.employment_type,
                     e.employment_status,
                     e.created_at
                 FROM cc_faculty cf
                 INNER JOIN em_employees e ON e.employee_id = cf.employee_id
                 LEFT JOIN em_departments d ON d.department_id = e.department_id
-                LEFT JOIN em_positions p
-    ON p.position_id = e.position_id
+                LEFT JOIN em_positions p ON p.position_id = e.position_id
                 WHERE e.is_archived = 0
                 ORDER BY e.last_name ASC, e.first_name ASC";
 
@@ -69,38 +68,33 @@ class FacultyProfileManager {
     }
 
     public function getFacultyById($id) {
-    $sql = "SELECT
-                cf.id AS faculty_id,
-                e.employee_id,
-                e.employee_code,
-                e.first_name,
-                e.middle_name,
-                e.last_name,
-                e.suffix,
-                e.email,
-                d.department_name AS department,
-                e.position_id,
-                p.position_name AS position_name,
-                e.employment_type,
-                e.employment_status,
-                e.created_at
-            FROM cc_faculty cf
-            INNER JOIN em_employees e
-                ON e.employee_id = cf.employee_id
-            LEFT JOIN em_departments d
-                ON d.department_id = e.department_id
-            LEFT JOIN em_positions p
-                ON p.position_id = e.position_id
-            WHERE cf.id = :id
-              AND e.is_archived = 0
-            LIMIT 1";
+        $sql = "SELECT 
+                    cf.id AS faculty_id,
+                    e.employee_id,
+                    e.employee_code,
+                    e.first_name,
+                    e.middle_name,
+                    e.last_name,
+                    e.suffix,
+                    e.email,
+                    d.department_name AS department,
+                    e.position_id,
+                    p.position_name,
+                    e.employment_type,
+                    e.employment_status,
+                    e.created_at
+                FROM cc_faculty cf
+                INNER JOIN em_employees e ON e.employee_id = cf.employee_id
+                LEFT JOIN em_departments d ON d.department_id = e.department_id
+                LEFT JOIN em_positions p ON p.position_id = e.position_id
+                WHERE cf.id = :id AND e.is_archived = 0
+                LIMIT 1";
 
-    $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-    $stmt->execute();
-
-    return $stmt->fetch(PDO::FETCH_ASSOC);
-}
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
     public function getFacultyEducationSummary() {
         $sql = "SELECT 

@@ -192,7 +192,16 @@ $metadataPath = $metadataDir . '/' . $fileId . '.json';
 
 if ($action === 'download') {
     if (!is_file($filePath) || !is_file($metadataPath)) {
-        respond(404, ['error' => 'File not found.']);
+    error_log('SDM FILE DEBUG: ' . json_encode([
+        'file_id' => $fileId,
+        'files_dir' => $filesDir,
+        'metadata_dir' => $metadataDir,
+        'file_path' => $filePath,
+        'metadata_path' => $metadataPath,
+        'pdf_exists' => is_file($filePath),
+        'metadata_exists' => is_file($metadataPath),
+    ]));
+    respond(404, ['error' => 'File not found.']);
     }
 
     $metadata = json_decode(

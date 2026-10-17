@@ -1,1130 +1,1086 @@
 <?php
-ob_start();
-require_once(__DIR__ . '/../classes/FacultyProfileManager.php');
+require_once(__DIR__ . '/../classes/ProgramManager.php');
+require_once(__DIR__ . '/../classes/SubjectManager.php');
+require_once(__DIR__ . '/../classes/SectionManager.php');
+require_once(__DIR__ . '/../classes/FacultyManager.php');
 require_once(__DIR__ . '/../../../database/db.php');
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 $database = new Database();
 $conn = $database->getConnection();
-$facultyManager = new FacultyProfileManager($conn);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+$programManager = new ProgramManager($conn);
+$subjectManager = new SubjectManager($conn);
+$sectionManager = new SectionManager($conn);
+$facultyManager = new FacultyManager($conn);
 
-    if (!$input && !empty($_POST)) {
-        $input = $_POST;
+// Fetch data
+$programs = $programManager->getAllPrograms() ?? [];
+$subjects = $subjectManager->getAllSubjects() ?? [];
+$subjectCatalog = $subjectManager->getAllSubjectAssignments() ?? [];
+$subjectAssignmentsById = [];
+foreach ($subjectCatalog as $subjectRow) {
+    $subjectId = $subjectRow['id'];
+    if (!isset($subjectAssignmentsById[$subjectId])) {
+        $subjectAssignmentsById[$subjectId] = [];
     }
-
-    if ($input && isset($input['action']) && $input['action'] === 'get_faculty_profile' && isset($input['faculty_id'])) {
-        $facultyId = (int)$input['faculty_id'];
-        $profile = $facultyManager->getFacultyProfileWithDocuments($facultyId);
-
-        if ($profile) {
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'profile' => $profile
-            ]);
-            exit;
-        } else {
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => false,
-                'message' => 'Faculty not found'
-            ]);
-            exit;
-        }
-    }
-
-    if (isset($input['action']) && $input['action'] === 'get_faculty_shift_schedule' && isset($input['employee_id'])) {
-        $employeeId = (int)$input['employee_id'];
-        $schedule = $facultyManager->getFacultyShiftScheduleByEmployeeId($employeeId);
-
-        if ($schedule) {
-            while (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => true,
-                'schedule' => $schedule
-            ]);
-            exit;
-        }
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'message' => 'No active shift schedule found.'
-        ]);
-        exit;
-    }
-
-    if (isset($input['action'])) {
-        $action = $input['action'];
-        $response = ['success' => false, 'message' => 'Invalid action'];
-
-        if ($action === 'get_employee_engagement_type' && isset($input['employee_id'])) {
-            $employeeId = (int)$input['employee_id'];
-            $employee = $facultyManager->getEmployeeById($employeeId);
-
-            if (!$employee) {
-                $response = ['success' => false, 'message' => 'Employee not found.'];
-            } elseif ((int)($employee['is_archived'] ?? 1) !== 0 || ($employee['employment_status'] ?? '') !== 'Active') {
-                $response = ['success' => false, 'message' => 'Employee is not active.'];
-            } elseif (!in_array(($employee['employment_type'] ?? ''), ['Part-time', 'OJT/Training'], true)) {
-                $response = ['success' => false, 'message' => 'Employee is not eligible for engagement.'];
-            } else {
-                $response = ['success' => true, 'employment_type' => $employee['employment_type']];
-            }
-        }
-
-        if ($action === 'add_engagement') {
-            error_log('add_engagement handler: received POST request');
-            error_log('add_engagement input: ' . json_encode($input));
-
-            $employeeId = isset($input['employee_id']) ? (int)$input['employee_id'] : 0;
-            $title = isset($input['title']) ? trim((string)$input['title']) : '';
-            $organization = isset($input['organization']) ? trim((string)$input['organization']) : '';
-            $startDate = isset($input['start_date']) ? trim((string)$input['start_date']) : null;
-            $endDate = isset($input['end_date']) ? trim((string)$input['end_date']) : null;
-
-            error_log('add_engagement parsed: ID=' . $employeeId . ', title=' . $title . ', org=' . $organization . ', start=' . $startDate . ', end=' . $endDate);
-
-            if ($employeeId <= 0 || $title === '' || $organization === '' || !$startDate || !$endDate) {
-                error_log('add_engagement: Validation failed - missing fields');
-                $response = ['success' => false, 'message' => 'Missing required fields.'];
-            } else {
-                $selectedEmployee = $facultyManager->getEmployeeById($employeeId);
-                error_log('add_engagement: Employee lookup - found: ' . ($selectedEmployee ? 'yes' : 'no'));
-
-                if (!$selectedEmployee) {
-                    error_log('add_engagement: Employee not found');
-                    $response = ['success' => false, 'message' => 'Selected employee could not be found.'];
-                } elseif ((int)($selectedEmployee['is_archived'] ?? 1) !== 0 || ($selectedEmployee['employment_status'] ?? '') !== 'Active') {
-                    error_log('add_engagement: Employee not active - is_archived=' . ($selectedEmployee['is_archived'] ?? 1) . ', status=' . ($selectedEmployee['employment_status'] ?? ''));
-                    $response = ['success' => false, 'message' => 'Selected employee is not active and cannot be assigned an engagement.'];
-                } elseif (!in_array(($selectedEmployee['employment_type'] ?? ''), ['Part-time', 'OJT/Training'], true)) {
-                    error_log('add_engagement: Employee not eligible - employment_type=' . ($selectedEmployee['employment_type'] ?? ''));
-                    $response = ['success' => false, 'message' => 'Selected employee is not eligible for an engagement.'];
-                } elseif ($facultyManager->hasActiveEngagementForEmployee($employeeId)) {
-                    error_log('add_engagement: Employee already has active engagement');
-                    $response = ['success' => false, 'message' => 'This employee already has an active engagement record. Duplicate active engagements are not allowed.'];
-                } else {
-                    error_log('add_engagement: All validations passed, calling addEngagement()');
-                    $engagementType = $selectedEmployee['employment_type'];
-                    $data = [
-                        'employee_id' => $employeeId,
-                        'engagement_type' => $engagementType,
-                        'title' => $title,
-                        'organization' => $organization,
-                        'start_date' => $startDate,
-                        'end_date' => $endDate,
-                        'status' => 'Pending',
-                        'outcome' => 'Not Applicable',
-                    ];
-
-                    $insertId = $facultyManager->addEngagement($data);
-                    if ($insertId) {
-                        error_log('add_engagement: SUCCESS - inserted with ID: ' . $insertId);
-                        $response = ['success' => true, 'message' => 'Engagement created successfully.', 'engagement_id' => $insertId];
-                    } else {
-                        error_log('add_engagement: addEngagement() returned false');
-                        $response = ['success' => false, 'message' => 'Unable to create engagement.'];
-                    }
-                }
-            }
-        }
-
-        if ($action === 'approve_engagement' && isset($input['engagement_id'])) {
-            $engagementId = (int)$input['engagement_id'];
-            $approvedBy = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : (isset($input['approved_by']) ? (int)$input['approved_by'] : 0);
-            $response = $facultyManager->approveEngagement($engagementId, $approvedBy)
-                ? ['success' => true, 'message' => 'Engagement approved successfully.']
-                : ['success' => false, 'message' => 'Unable to approve engagement.'];
-        }
-
-        if ($action === 'mark_completed_engagement' && isset($input['engagement_id'])) {
-            $engagementId = (int)$input['engagement_id'];
-            $outcome = isset($input['outcome']) ? trim((string)$input['outcome']) : 'Not Applicable';
-            $allowedOutcomes = ['Continue', 'Regularize', 'End Engagement', 'Not Applicable'];
-            if (!in_array($outcome, $allowedOutcomes, true)) {
-                $outcome = 'Not Applicable';
-            }
-
-            $response = $facultyManager->markEngagementCompleted($engagementId, $outcome)
-                ? ['success' => true, 'message' => 'Engagement marked completed successfully.']
-                : ['success' => false, 'message' => 'Unable to mark engagement as completed.'];
-        }
-
-        if ($action === 'archive_engagement' && isset($input['engagement_id'])) {
-            $engagementId = (int)$input['engagement_id'];
-            $response = $facultyManager->archiveEngagement($engagementId)
-                ? ['success' => true, 'message' => 'Engagement archived successfully.']
-                : ['success' => false, 'message' => 'Unable to archive engagement.'];
-        }
-
-        if ($action === 'restore_engagement' && isset($input['engagement_id'])) {
-            $engagementId = (int)$input['engagement_id'];
-            $response = $facultyManager->restoreEngagement($engagementId)
-                ? ['success' => true, 'message' => 'Engagement restored successfully.']
-                : ['success' => false, 'message' => 'Unable to restore engagement.'];
-        }
-
-        if ($action === 'get_engagement' && isset($input['engagement_id'])) {
-            $engagementId = (int)$input['engagement_id'];
-            $engagement = $facultyManager->getEngagementById($engagementId);
-
-            if ($engagement) {
-                $employeeId = (int)($engagement['employee_id'] ?? 0);
-                $employee = $employeeId > 0 ? $facultyManager->getEmployeeById($employeeId) : null;
-
-                $response = [
-                    'success' => true,
-                    'engagement' => $engagement,
-                    'employee' => $employee
-                ];
-            } else {
-                $response = ['success' => false, 'message' => 'Engagement not found.'];
-            }
-        }
-
-        if ($action === 'get_faculty_education' && isset($input['employee_id'])) {
-            $employeeId = trim((string)$input['employee_id']);
-            $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
-            $matchedEducation = null;
-
-            foreach ($educationSummary as $education) {
-                $comparisonKey = $education['employee_code'] ?? null;
-                if ((string)$comparisonKey === $employeeId) {
-                    $matchedEducation = $education;
-                    break;
-                }
-
-                $comparisonId = $education['employee_id'] ?? null;
-                if ((string)$comparisonId === $employeeId) {
-                    $matchedEducation = $education;
-                    break;
-                }
-            }
-
-            $facultyRequirements = [];
-            $parsedEmployeeId = (int)$employeeId;
-            if ($parsedEmployeeId > 0) {
-                $facultyRequirements = $facultyManager->getFacultyRequirements($parsedEmployeeId) ?? [];
-            }
-
-            if ($matchedEducation) {
-                $response = [
-                    'success' => true,
-                    'records' => $matchedEducation['records'] ?? [],
-                    'requirements' => $facultyRequirements,
-                ];
-            } else {
-                $response = [
-                    'success' => true,
-                    'records' => [],
-                    'requirements' => $facultyRequirements,
-                    'message' => 'No records found.'
-                ];
-            }
-        }
-
-        if ($action === 'get_faculty_training' && isset($input['employee_id'])) {
-            $employeeId = trim((string)$input['employee_id']);
-            $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
-            $matchedTraining = null;
-
-            foreach ($trainingSummary as $training) {
-                $comparisonKey = $training['employee_code'] ?? null;
-                if ((string)$comparisonKey === $employeeId) {
-                    $matchedTraining = $training;
-                    break;
-                }
-
-                $comparisonId = $training['employee_id'] ?? null;
-                if ((string)$comparisonId === $employeeId) {
-                    $matchedTraining = $training;
-                    break;
-                }
-            }
-
-            if ($matchedTraining) {
-                $response = ['success' => true, 'records' => $matchedTraining['records'] ?? []];
-            } else {
-                $response = ['success' => false, 'message' => 'No records found.'];
-            }
-        }
-
-        if ($action === 'get_panel_content' && isset($input['tab'])) {
-            $tab = strtolower(trim((string)$input['tab']));
-            $facultyList = $facultyManager->getAllFacultyCredentials() ?? [];
-            $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
-            $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
-            $eligibleEmployees = $facultyManager->getEligibleEngagementEmployees() ?? [];
-
-            if ($tab === 'credentials') {
-                $response = ['success' => true, 'html' => renderCredentialsPanel($facultyList)];
-            } elseif ($tab === 'attainment') {
-                $response = ['success' => true, 'html' => renderAttainmentPanel($educationSummary)];
-            } elseif ($tab === 'trainings') {
-                $response = ['success' => true, 'html' => renderTrainingsPanel($trainingSummary, $eligibleEmployees)];
-            } else {
-                $response = ['success' => false, 'message' => 'Invalid tab.'];
-            }
-        }
-
-        if ($action === 'search_records' && isset($input['table'])) {
-            $tableName = (string)($input['table'] ?? '');
-            $term = isset($input['term']) ? strtolower(trim((string)$input['term'])) : '';
-            $filter = isset($input['filter']) ? strtolower(trim((string)$input['filter'])) : 'all';
-            $facultyList = $facultyManager->getAllFacultyCredentials() ?? [];
-            $educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
-            $trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
-            $html = '';
-
-            if ($tableName === 'credentialsTable') {
-                $html = renderCredentialsTableRows($facultyList, $term);
-            } elseif ($tableName === 'attainmentTable') {
-                $html = renderAttainmentTableRows($educationSummary, $term);
-            } elseif ($tableName === 'trainingsTable') {
-                $html = renderTrainingTableRows($trainingSummary, $term, $filter);
-            }
-
-            $response = ['success' => true, 'html' => $html];
-        }
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
+    $subjectAssignmentsById[$subjectId][] = $subjectRow;
+}
+$sectionsStmt = $sectionManager->getAll();
+$sections = $sectionsStmt ? $sectionsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+$sectionSchoolYears = [];
+foreach ($sections as $section) {
+    if (!empty($section['school_year'])) {
+        $sectionSchoolYears[$section['school_year']] = true;
     }
 }
+$facultyLoads = $facultyManager->getFacultyLoad() ?? [];
 
-$facultyList = $facultyManager->getAllFacultyCredentials() ?? [];
-$educationSummary = $facultyManager->getFacultyEducationSummary() ?? [];
-$trainingSummary = $facultyManager->getFacultyTrainingSummary() ?? [];
-$eligibleEmployees = $facultyManager->getEligibleEngagementEmployees() ?? [];
-$requirementStatusSummary = $facultyManager->getFacultyRequirementStatusSummary() ?? [];
+$schoolYearOptions = [];
+$semesterOptions = [];
+try {
+    $schoolYearStmt = $conn->query("SELECT id, name, is_active FROM rgr_school_years WHERE is_active = 1 ORDER BY id DESC");
+    if ($schoolYearStmt) {
+        $schoolYearOptions = $schoolYearStmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        error_log('school years query failed: ' . print_r($conn->errorInfo(), true));
+    }
 
-$employmentTypeStats = [
-    'Full-time' => 0,
-    'Part-time' => 0,
-    'OJT / Training' => 0,
+    $semesterStmt = $conn->query("SELECT id, name, school_year_id, is_active FROM rgr_semesters WHERE is_active = 1 ORDER BY id ASC");
+    if ($semesterStmt) {
+        $semesterOptions = $semesterStmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        error_log('semesters query failed: ' . print_r($conn->errorInfo(), true));
+    }
+} catch (Exception $e) {
+    error_log('Add Section options failed: ' . $e->getMessage());
+}
+
+// Sample statistics
+$stats = [
+    'programs' => count($programs),
+    'subjects' => count($subjects),
+    'sections' => count($sections),
+    'faculty' => count($facultyLoads)
 ];
-
-foreach ($facultyList as $faculty) {
-    $employmentType = trim((string)($faculty['employment_type'] ?? ''));
-
-    if ($employmentType === 'Full-time') {
-        $employmentTypeStats['Full-time']++;
-    } elseif ($employmentType === 'Part-time') {
-        $employmentTypeStats['Part-time']++;
-    } elseif ($employmentType === 'OJT/Training') {
-        $employmentTypeStats['OJT / Training']++;
-    }
-}
-
-$documentStatusStats = [];
-if (!empty($requirementStatusSummary)) {
-    $statusLabels = [
-        'Complete' => 'Complete',
-        'Pending' => 'Pending',
-        'Incomplete / Missing' => 'Incomplete / Missing',
-    ];
-
-    foreach ($statusLabels as $statusKey => $label) {
-        $count = (int)($requirementStatusSummary[$statusKey] ?? 0);
-        if ($count > 0) {
-            $documentStatusStats[] = [
-                'label' => $label,
-                'count' => $count,
-            ];
-        }
-    }
-}
-
-function normalizeFacultySearchText($value) {
-    return strtolower(trim(strip_tags((string)$value)));
-}
-
-function renderCredentialsRow($faculty) {
-    $middle = '';
-    if (!empty($faculty['middle_name'])) {
-        $middle = ' ' . strtoupper(substr(trim($faculty['middle_name']), 0, 1)) . '.';
-    }
-    $suffix = !empty($faculty['suffix']) ? ' ' . htmlspecialchars($faculty['suffix']) : '';
-    $fullName = htmlspecialchars(trim($faculty['first_name'] . $middle . ' ' . $faculty['last_name'] . $suffix));
-
-    ob_start();
-    ?>
-    <tr data-faculty-id="<?= (int)$faculty['faculty_id'] ?>"
-        data-employee-id="<?= (int)($faculty['employee_id'] ?? 0) ?>"
-        data-employee-code="<?= htmlspecialchars($faculty['employee_code']) ?>"
-        data-faculty-name="<?= $fullName ?>"
-        data-department="<?= htmlspecialchars($faculty['department']) ?>"
-        data-email="<?= htmlspecialchars($faculty['email']) ?>"
-        data-created-at="<?= htmlspecialchars($faculty['created_at']) ?>"
-        data-position="<?= htmlspecialchars($faculty['position_name'] ?? 'N/A') ?>"
-        
-        data-employment-type="<?= htmlspecialchars($faculty['employment_type']) ?>"
-        data-employment-status="<?= htmlspecialchars($faculty['employment_status']) ?>">
-        <td><?= htmlspecialchars($faculty['employee_code']) ?></td>
-        <td><?= $fullName ?></td>
-        <td><?= htmlspecialchars($faculty['department']) ?></td>
-       
-        <td><?= htmlspecialchars($faculty['position_name'] ?? 'N/A') ?></td>
-        <td><?= htmlspecialchars($faculty['employment_type']) ?></td>
-        <td><?= htmlspecialchars($faculty['employment_status']) ?></td>
-        <td class="actions">
-            <button type="button" class="btn btn-sm btn-info view-profile-btn">View</button>
-            <button type="button" class="btn btn-sm btn-secondary shift-schedule-btn" data-employee-id="<?= (int)($faculty['employee_id'] ?? 0) ?>">Shift Schedule</button>
-        </td>
-    </tr>
-    <?php
-    return ob_get_clean();
-}
-
-function renderAttainmentRow($education) {
-    $recordsJson = json_encode($education['records'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-
-    ob_start();
-    ?>
-    <tr data-record-type="education" data-employee-code="<?= htmlspecialchars($education['employee_code']) ?>" data-employee-id="<?= (int)($education['employee_id'] ?? 0) ?>" data-faculty-name="<?= htmlspecialchars($education['faculty_name']) ?>" data-department="<?= htmlspecialchars($education['department'] ?? 'Not provided') ?>" data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
-        <td><?= htmlspecialchars($education['employee_code']) ?></td>
-        <td><?= htmlspecialchars($education['faculty_name']) ?></td>
-        <td><?= htmlspecialchars($education['highest_degree']) ?></td>
-        <td><?= htmlspecialchars($education['school_name']) ?></td>
-        <td><?= htmlspecialchars($education['year_graduated']) ?></td>
-        <td class="actions"><button type="button" class="btn btn-sm btn-info view-attainment-btn">View</button></td>
-    </tr>
-    <?php
-    return ob_get_clean();
-}
-
-function renderTrainingRow($training) {
-    $recordsJson = json_encode($training['records'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-
-    ob_start();
-    ?>
-    <tr data-record-type="<?= htmlspecialchars($training['record_type'] ?? 'empty') ?>"
-        data-record-source="<?= htmlspecialchars($training['record_source'] ?? '') ?>"
-        data-record-id="<?= htmlspecialchars((string)($training['record_id'] ?? '')) ?>"
-        data-record-status="<?= htmlspecialchars($training['status'] ?? '') ?>"
-        data-record-outcome="<?= htmlspecialchars($training['outcome'] ?? '') ?>"
-        data-employee-code="<?= htmlspecialchars($training['employee_code'] ?? '') ?>"
-        data-faculty-name="<?= htmlspecialchars($training['faculty_name'] ?? '') ?>"
-        data-employment-type="<?= htmlspecialchars($training['employment_type'] ?? 'N/A') ?>"
-        data-employment-status="<?= htmlspecialchars($training['employment_status'] ?? 'N/A') ?>"
-        data-records='<?= htmlspecialchars($recordsJson, ENT_QUOTES, 'UTF-8') ?>'>
-        <td><?= htmlspecialchars($training['employee_code'] ?? 'N/A') ?></td>
-        <td><?= htmlspecialchars($training['faculty_name'] ?? 'N/A') ?></td>
-        <td><?= htmlspecialchars($training['type'] ?? 'No record yet') ?></td>
-        <td><?= htmlspecialchars($training['title'] ?? 'No record yet') ?></td>
-        <td><?= htmlspecialchars($training['organization'] ?? 'No record yet') ?></td>
-        <td><?= htmlspecialchars($training['date_period'] ?? 'No record yet') ?></td>
-        <td><?= htmlspecialchars($training['status'] ?? 'No record yet') ?></td>
-        <td class="actions">
-            <button type="button" class="btn btn-sm btn-info view-training-btn">View</button>
-            <?php if (($training['record_source'] ?? '') === 'cc_certification_engagements'): ?>
-                <?php
-                    $statusValue = $training['status'] ?? '';
-                    $workflowButtons = '';
-
-                    if ($statusValue === 'Pending') {
-                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-success approve-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Approve</button>';
-                    } elseif (in_array($statusValue, ['Approved', 'Ongoing'], true)) {
-                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-warning complete-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Mark Completed</button>';
-                    } elseif ($statusValue === 'Completed') {
-                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-primary generate-certificate-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Generate Certificate</button>';
-                        $workflowButtons .= '<button type="button" class="btn btn-sm btn-secondary archive-engagement-btn" data-engagement-id="' . (int)($training['record_id'] ?? 0) . '">Archive</button>';
-                    }
-
-                    echo $workflowButtons;
-                ?>
-            <?php endif; ?>
-        </td>
-    </tr>
-    <?php
-    return ob_get_clean();
-}
-
-function renderCredentialsTableRows($facultyList, $term = '') {
-    $rowsHtml = '';
-
-    foreach ($facultyList as $faculty) {
-        $searchableText = implode(' ', [
-            $faculty['employee_code'] ?? '',
-            $faculty['first_name'] ?? '',
-            $faculty['middle_name'] ?? '',
-            $faculty['last_name'] ?? '',
-            $faculty['suffix'] ?? '',
-            $faculty['department'] ?? '',
-            $faculty['position_id'] ?? '',
-            $faculty['position_name'] ?? '',
-            $faculty['employment_type'] ?? '',
-            $faculty['employment_status'] ?? '',
-        ]);
-
-        if ($term !== '' && stripos($searchableText, $term) === false) {
-            continue;
-        }
-
-        $rowsHtml .= renderCredentialsRow($faculty);
-    }
-
-    if ($rowsHtml === '') {
-        return '<tr class="no-data"><td colspan="7" class="text-center text-muted" style="padding: 20px;">No faculty records available.</td></tr>';
-    }
-
-    return $rowsHtml;
-}
-
-function renderAttainmentTableRows($educationSummary, $term = '') {
-    $rowsHtml = '';
-
-    foreach ($educationSummary as $education) {
-        $searchableText = implode(' ', [
-            $education['employee_code'] ?? '',
-            $education['faculty_name'] ?? '',
-            $education['highest_degree'] ?? '',
-            $education['school_name'] ?? '',
-            $education['year_graduated'] ?? '',
-            $education['department'] ?? '',
-        ]);
-
-        if ($term !== '' && stripos($searchableText, $term) === false) {
-            continue;
-        }
-
-        $rowsHtml .= renderAttainmentRow($education);
-    }
-
-    if ($rowsHtml === '') {
-        return '<tr class="no-data"><td colspan="6" class="text-center text-muted" style="padding: 20px;">No educational attainment records yet.</td></tr>';
-    }
-
-    return $rowsHtml;
-}
-
-function renderTrainingTableRows($trainingSummary, $term = '', $filter = 'all') {
-    $rowsHtml = '';
-
-    foreach ($trainingSummary as $training) {
-        $statusValue = strtolower((string)($training['status'] ?? ''));
-        if ($filter === 'archived') {
-            if ($statusValue !== 'archived') {
-                continue;
-            }
-        } elseif ($filter === 'completed') {
-            if ($statusValue !== 'completed') {
-                continue;
-            }
-        } elseif ($filter === 'active') {
-            if (!in_array($statusValue, ['pending', 'ongoing', 'for review', 'approved'], true)) {
-                continue;
-            }
-        } else {
-            if ($statusValue === 'archived') {
-                continue;
-            }
-        }
-
-        $searchableText = implode(' ', [
-            $training['employee_code'] ?? '',
-            $training['faculty_name'] ?? '',
-            $training['type'] ?? '',
-            $training['title'] ?? '',
-            $training['organization'] ?? '',
-            $training['date_period'] ?? '',
-            $training['status'] ?? '',
-        ]);
-
-        if ($term !== '' && stripos($searchableText, $term) === false) {
-            continue;
-        }
-
-        $rowsHtml .= renderTrainingRow($training);
-    }
-
-    if ($rowsHtml === '') {
-        return '<tr class="no-data"><td colspan="8" class="text-center text-muted" style="padding: 20px;">No trainings or certifications recorded yet.</td></tr>';
-    }
-
-    return $rowsHtml;
-}
-
-function renderCredentialsPanel($facultyList) {
-    ob_start();
-    ?>
-    <div class="academics-panel fm-panel active" id="fm-panel-credentials">
-        <div class="section-header">
-            <h3>Faculty Credentials</h3>
-            <p class="text-muted" style="margin: 0;"><small>Browse faculty account details and employment status placeholders.</small></p>
-        </div>
-
-        <div class="search-filter-container">
-            <div class="search-box">
-                <input type="text" id="searchCredentials" placeholder="Search faculty credentials...">
-            </div>
-        </div>
-
-        <div class="table-card">
-            <div class="table-responsive">
-                <table id="credentialsTable">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Faculty Name</th>
-                            <th>Department</th>
-                            <th>Position</th>
-                            <th>Employment Type</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($facultyList)): ?>
-                            <?php foreach ($facultyList as $faculty): ?>
-                                <?php echo renderCredentialsRow($faculty); ?>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr class="no-data">
-                                <td colspan="7" class="text-center text-muted" style="padding: 20px;">No faculty records available.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <?php
-    return ob_get_clean();
-}
-
-function renderAttainmentPanel($educationSummary) {
-    ob_start();
-    ?>
-    <div class="academics-panel fm-panel" id="fm-panel-attainment">
-        <div class="section-header">
-            <h3>Educational Attainment</h3>
-            <p class="text-muted" style="margin: 0;"><small>Track each faculty's highest credential.</small></p>
-        </div>
-
-        <div class="search-filter-container">
-            <div class="search-box">
-                <input type="text" id="searchAttainment" placeholder="Search attainment records...">
-            </div>
-        </div>
-
-        <div class="table-card">
-            <div class="table-responsive">
-                <table id="attainmentTable">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Faculty Name</th>
-                            <th>Highest Degree</th>
-                            <th>School</th>
-                            <th>Year Graduated</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($educationSummary)): ?>
-                            <?php foreach ($educationSummary as $education): ?>
-                                <?php echo renderAttainmentRow($education); ?>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr class="no-data">
-                                <td colspan="6" class="text-center text-muted" style="padding: 20px;">No educational attainment records yet.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <?php
-    return ob_get_clean();
-}
-
-function renderTrainingsPanel($trainingSummary, $eligibleEmployees = []) {
-    ob_start();
-    ?>
-    <div class="academics-panel fm-panel" id="fm-panel-trainings">
-        <div class="section-header">
-            <h3>Trainings & Certifications</h3>
-                <p class="text-muted" style="margin: 0;"><small>Record faculty trainings and certificates.</small></p>
-                <div style="margin-top:8px;"><button id="addEngagementBtn" type="button" class="btn btn-sm btn-primary">Add Engagement</button></div>
-        </div>
-
-        <div class="search-filter-container training-filter-container">
-            <div class="search-box">
-                <input type="text" id="searchTrainings" placeholder="Search trainings and certifications...">
-            </div>
-            <div class="training-status-filters" role="group" aria-label="Training status filter">
-                <button type="button" class="training-status-filter active" data-training-filter="all">All</button>
-                <button type="button" class="training-status-filter" data-training-filter="active">Active</button>
-                <button type="button" class="training-status-filter" data-training-filter="completed">Completed</button>
-                <button type="button" class="training-status-filter" data-training-filter="archived">Archived</button>
-            </div>
-        </div>
-
-        <div class="table-card">
-            <div class="table-responsive">
-                <table id="trainingsTable">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Faculty Name</th>
-                            <th>Type</th>
-                            <th>Title</th>
-                            <th>Organization</th>
-                            <th>Date/Period</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($trainingSummary)): ?>
-                            <?php foreach ($trainingSummary as $training): ?>
-                                <?php echo renderTrainingRow($training); ?>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr class="no-data">
-                                <td colspan="8" class="text-center text-muted" style="padding: 20px;">No trainings or certifications recorded yet.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <?php
-    return ob_get_clean();
-}
-
 ?>
+    <!-- Page Header -->
     <div class="module-header">
         <div>
-            <h1> Faculty Management</h1>
-            <p>View and manage faculty credentials, attainment, and trainings.</p>
+            <h1>Academics Management</h1>
+            <p>Monitor programs, curriculum, subjects, sections, and faculty load</p>
         </div>
     </div>
+
 
     <div class="module-content">
-        <div class="stats-grid employment-stats-grid">
-            <?php foreach ($employmentTypeStats as $label => $count): ?>
-                <div class="stat-card faculty-type-card">
-                    <h6><?= htmlspecialchars($label) ?></h6>
-                    <h3><?= (int)$count ?></h3>
-                </div>
-            <?php endforeach; ?>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h6>Programs</h6>
+            <h3><?php echo $stats['programs']; ?></h3>
         </div>
-
-        <?php if (!empty($documentStatusStats)): ?>
-            <div class="stats-grid document-status-grid">
-                <?php foreach ($documentStatusStats as $status): ?>
-                    <div class="stat-card document-status-card">
-                        <h6><?= htmlspecialchars($status['label']) ?></h6>
-                        <h3><?= (int)$status['count'] ?></h3>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="academics-tabs">
-            <button class="academics-tab active" data-fm-tab="credentials">
-                <i class="fas fa-id-badge"></i> Faculty Credentials
-            </button>
-            <button class="academics-tab" data-fm-tab="attainment">
-                <i class="fas fa-graduation-cap"></i> Educational Attainment
-            </button>
-            <button class="academics-tab" data-fm-tab="trainings">
-                <i class="fas fa-certificate"></i> Trainings & Certifications
-            </button>
+        <div class="stat-card subjects">
+            <h6>Subjects</h6>
+            <h3><?php echo $stats['subjects']; ?></h3>
         </div>
-
-        <?php echo renderCredentialsPanel($facultyList); ?>
-
-        <?php echo renderAttainmentPanel($educationSummary); ?>
-
-        <?php echo renderTrainingsPanel($trainingSummary, $eligibleEmployees); ?>
+        <div class="stat-card sections">
+            <h6>Sections</h6>
+            <h3><?php echo $stats['sections']; ?></h3>
+        </div>
+        <div class="stat-card faculty">
+            <h6>Faculty Load</h6>
+            <h3><?php echo $stats['faculty']; ?></h3>
+        </div>
     </div>
 
-    <div id="fmAddEngagementModal" class="modal">
-    <div class="modal-dialog" style="max-width:560px;">
+    <!-- Tabs -->
+    <div class="academics-tabs">
+        <button class="academics-tab active" data-tab="programs">
+            <i class="fas fa-book"></i> Programs & Curriculum
+        </button>
+        <button class="academics-tab" data-tab="subjects">
+            <i class="fas fa-list"></i> Subjects
+        </button>
+        <button class="academics-tab" data-tab="sections">
+            <i class="fas fa-layer-group"></i> Sections
+        </button>
+        <button class="academics-tab" data-tab="faculty">
+            <i class="fas fa-users"></i> Faculty Load
+        </button>
+    </div>
+
+    <!-- TAB: Programs & Curriculum -->
+    <div class="academics-panel active" id="tab-programs">
+        <div class="section-header">
+            <h3>Programs & Curriculum</h3>
+            <p class="text-muted" style="margin: 0;"><small>Read-only monitoring</small></p>
+        </div>
+
+        <div class="search-filter-container">
+            <div class="search-box">
+                <input type="text" id="searchPrograms" placeholder="Search programs...">
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-responsive">
+                <table id="programsTable">
+                    <thead>
+                        <tr>
+                            <th>Program Code</th>
+                            <th>Program Name</th>
+                            <th>Effective Year</th>
+                            <th>Active Curriculum</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($programs)): ?>
+                            <?php foreach ($programs as $prog): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($prog['code'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($prog['name'] ?? 'Program'); ?></td>
+                                    <td><?php echo htmlspecialchars(!empty($prog['effective_year']) ? $prog['effective_year'] : 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars(!empty($prog['is_active']) ? ($prog['is_active'] == 1 ? 'Active' : 'Inactive') : 'N/A'); ?></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewCurriculumDetails(<?php echo (int)($prog['id'] ?? 0); ?>)">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No programs found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Subjects -->
+    <div class="academics-panel" id="tab-subjects">
+        <div class="section-header">
+            <h3>Subject Catalog</h3>
+        </div>
+
+        <div class="card mb-3 compact-filter-card">
+            <div class="card-body py-3 px-3 px-md-4">
+                <!-- Filter Row 1: Search, Course, Year Level -->
+                <div class="row g-2 mb-2">
+                    <div class="col-12 col-md-6 filter-col">
+                        <label for="searchSubjects" class="form-label">Search</label>
+                        <input type="text" id="searchSubjects" class="form-control" placeholder="Search subjects...">
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 filter-col">
+                        <label for="filterSubjectCourse" class="form-label">Course</label>
+                        <select id="filterSubjectCourse" class="form-select">
+                            <option value="">All Courses</option>
+                            <?php foreach ($programs as $prog): ?>
+                                <option value="<?php echo htmlspecialchars($prog['code']); ?>"><?php echo htmlspecialchars($prog['code']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3 filter-col">
+                        <label for="filterSubjectYear" class="form-label">Year Level</label>
+                        <select id="filterSubjectYear" class="form-select">
+                            <option value="">All Year Levels</option>
+                            <option value="1st">1st Year</option>
+                            <option value="2nd">2nd Year</option>
+                            <option value="3rd">3rd Year</option>
+                            <option value="4th">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Filter Row 2: Semester, Status, Reset Filters -->
+                <div class="row g-2">
+                    <div class="col-12 col-sm-6 col-md-4 filter-col">
+                        <label for="filterSubjectSemester" class="form-label">Semester</label>
+                        <select id="filterSubjectSemester" class="form-select">
+                            <option value="">All Semesters</option>
+                            <option value="1st">1st Semester</option>
+                            <option value="2nd">2nd Semester</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 filter-col">
+                        <label for="filterSubjectStatus" class="form-label">Status</label>
+                        <select id="filterSubjectStatus" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4 d-flex align-items-end filter-col">
+                        <button type="button" id="resetSubjectFilters" class="btn btn-outline-secondary w-100">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-responsive">
+                <table id="subjectsTable" class="table table-striped table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Subject Code</th>
+                            <th>Subject Name</th>
+                            <th>Units</th>
+                            <th>Lecture Hours</th>
+                            <th>Laboratory Hours</th>
+                            <th>Course</th>
+                            <th>Year Level</th>
+                            <th>Semester</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($subjectCatalog)): ?>
+                            <?php foreach ($subjectCatalog as $subj): ?>
+                                <tr data-year-level="<?php echo htmlspecialchars($subj['year_level'] ?? ''); ?>"
+                                    data-semester="<?php echo htmlspecialchars($subj['semester'] ?? ''); ?>"
+                                    data-course="<?php echo htmlspecialchars($subj['course_code'] ?? ''); ?>"
+                                    data-status="<?php echo htmlspecialchars(!empty($subj['is_active']) ? 'active' : 'inactive'); ?>">
+                                    <td><?php echo htmlspecialchars($subj['code'] ?? 'SUBJ101'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['name'] ?? 'Subject'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['units'] ?? '0'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['lecture_hours'] ?? '0'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['lab_hours'] ?? '0'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['course_code'] ?: 'Unassigned'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['year_level'] ? ($subj['year_level'] === '1' ? '1st Year' : ($subj['year_level'] === '2' ? '2nd Year' : ($subj['year_level'] === '3' ? '3rd Year' : ($subj['year_level'] === '4' ? '4th Year' : $subj['year_level'])))) : 'Unassigned'); ?></td>
+                                    <td><?php echo htmlspecialchars($subj['semester'] ? $subj['semester'] . ' Semester' : 'Unassigned'); ?></td>
+                                    <td>
+                                        <?php if ($subj['curriculum_id'] && $subj['is_active'] == 1): ?>
+                                            <span class="badge bg-success">Active</span>
+                                        <?php elseif ($subj['curriculum_id']): ?>
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-warning text-dark">Unassigned</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewSubjectDetails('<?php echo htmlspecialchars($subj['id'] ?? ''); ?>')">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">No subjects found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Sections -->
+    <div class="academics-panel" id="tab-sections">
+        <div class="section-header">
+            <h3>Manage Sections</h3>
+        </div>
+
+        <div class="card mb-3 compact-filter-card" id="sectionsFilterCard">
+            <div class="card-body py-3 px-3 px-md-4">
+                <!-- Filter Row 1: Search (larger) and Program -->
+                <div class="row g-2 mb-2">
+                    <div class="col-12 col-md-8 filter-col">
+                        <label for="searchSections" class="form-label">Search Section Code</label>
+                        <input type="text" id="searchSections" class="form-control" placeholder="Search section code...">
+                    </div>
+                    <div class="col-12 col-md-4 filter-col">
+                        <label for="filterSectionProgram" class="form-label">Course / Program</label>
+                        <select id="filterSectionProgram" class="form-select">
+                            <option value="">All Programs</option>
+                            <?php foreach ($programs as $prog): ?>
+                                <option value="<?php echo htmlspecialchars($prog['code']); ?>"><?php echo htmlspecialchars($prog['code']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <!-- Filter Row 2: Year Level | Semester | Reset (inline on desktop) -->
+                <div class="row g-2">
+                    <div class="col-12 col-md-4 filter-col">
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label for="filterSectionYear" class="form-label">Year Level</label>
+                                <select id="filterSectionYear" class="form-select">
+                                    <option value="">All Year Levels</option>
+                                    <option value="1st">1st Year</option>
+                                    <option value="2nd">2nd Year</option>
+                                    <option value="3rd">3rd Year</option>
+                                    <option value="4th">4th Year</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 filter-col">
+                        <div style="display:flex; gap:15px;">
+                            <div style="flex:1;">
+                                <label for="filterSectionSemester" class="form-label">Semester</label>
+                                <select id="filterSectionSemester" class="form-select">
+                                    <option value="">All Semesters</option>
+                                    <option value="1st">1st Semester</option>
+                                    <option value="2nd">2nd Semester</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 d-flex align-items-end filter-col">
+                        <div style="width:100%; display:flex; gap:10px;">
+                            <button type="button" id="resetSectionFilters" class="btn btn-outline-secondary" style="flex:1;">Reset Filters</button>
+                            <button type="button" id="addSectionBtn" class="btn btn-primary" style="flex:1;" onclick="openAddSectionModal()">Add Section</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-responsive">
+                <table id="sectionsTable">
+                    <thead>
+                        <tr>
+                            <th>Section Code</th>
+                            <th>Year Level</th>
+                            <th>Semester</th>
+                            <th>School Year</th>
+                            <th>Adviser</th>
+                            <th>Total Students</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($sections)): ?>
+                            <?php foreach ($sections as $sec): ?>
+                                <?php
+                                    $sectionId = $sec['id'] ?? '';
+                                    $sectionProgram = $sec['program'] ?? 'N/A';
+                                    $sectionYearLevel = $sec['grade_level'] ?? 'N/A';
+                                    $sectionSemester = $sec['semester_name'] ?? 'N/A';
+                                    $sectionSchoolYear = $sec['school_year_name'] ?? 'N/A';
+                                    $adviserName = trim($sec['adviser_name'] ?? '') ?: 'Not Assigned';
+                                    $totalStudents = $sec['total_students'] ?? '0';
+                                    $statusText = (!empty($sec['status']) && strtolower($sec['status']) === 'inactive') ? 'Inactive' : 'Active';
+                                    $statusBadgeClass = $statusText === 'Active' ? 'badge-success' : 'badge-secondary';
+                                    $adviserActionLabel = $adviserName === 'Not Assigned' ? 'Assign Adviser' : 'Reassign Adviser';
+                                ?>
+                                <tr data-section-id="<?php echo htmlspecialchars($sectionId); ?>"
+                                    data-program="<?php echo htmlspecialchars($sectionProgram); ?>"
+                                    data-year-level="<?php echo htmlspecialchars($sectionYearLevel); ?>"
+                                    data-semester="<?php echo htmlspecialchars($sectionSemester); ?>"
+                                    data-school-year="<?php echo htmlspecialchars($sectionSchoolYear); ?>"
+                                    data-adviser="<?php echo htmlspecialchars($adviserName); ?>"
+                                    data-total-students="<?php echo htmlspecialchars($totalStudents); ?>"
+                                    data-status="<?php echo htmlspecialchars($statusText); ?>">
+                                    <td><?php echo htmlspecialchars($sec['section_code'] ?? 'N/A'); ?></td>
+                                    <td><span class="badge badge-info"><?php echo htmlspecialchars($sectionYearLevel); ?></span></td>
+                                    <td><span class="badge badge-warning"><?php echo htmlspecialchars($sectionSemester); ?></span></td>
+                                    <td><?php echo htmlspecialchars($sectionSchoolYear); ?></td>
+                                    <td><?php echo htmlspecialchars($adviserName); ?></td>
+                                    <td><?php echo htmlspecialchars($totalStudents); ?></td>
+                                    <td><span class="badge <?php echo $statusBadgeClass; ?>"><?php echo htmlspecialchars($statusText); ?></span></td>
+                                    <td>
+                                        <div class="actions">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewSectionDetails(this.closest('tr'))">
+                                                <i class="bi bi-eye"></i> View Details
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openAssignAdviserModal(this.closest('tr'))">
+                                                <i class="bi bi-person-badge"></i> <?php echo $adviserActionLabel; ?>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">No sections found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Faculty Load -->
+    <div class="academics-panel" id="tab-faculty">
+        <div class="section-header">
+            <h3>Manage Faculty Load</h3>
+        </div>
+
+        <div class="search-filter-container">
+            <div class="search-box">
+                <input type="text" id="searchFaculty" placeholder="Search faculty...">
+            </div>
+            <select class="filter-select" id="filterLoadStatus">
+                <option value="">All Status</option>
+                <option value="Fully Loaded">Fully Loaded</option>
+                <option value="Underloaded">Underloaded</option>
+                <option value="Overloaded">Overloaded</option>
+            </select>
+        </div>
+
+        <div class="table-card">
+            <div class="table-responsive">
+                <table id="facultyTable">
+                    <thead>
+                        <tr>
+                            <th>Faculty Name</th>
+                            <th>Department</th>
+                            <th>Assigned Sections</th>
+                            <th>Assigned Subjects</th>
+                            <th>Teaching Units</th>
+                            <th>Maximum Load</th>
+                            <th>Load Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($facultyLoads)): ?>
+                            <?php foreach ($facultyLoads as $fac): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($fac['faculty_name'] ?? 'N/A'); ?></td>
+                                    <td><?php echo htmlspecialchars($fac['department'] ?? 'N/A'); ?></td>
+                                    <td><?php echo intval($fac['assigned_sections'] ?? 0); ?></td>
+                                    <td><?php echo intval($fac['assigned_subjects'] ?? 0); ?></td>
+                                    <td><?php echo intval($fac['teaching_units'] ?? 0); ?></td>
+                                    <td><?php echo intval($fac['max_load'] ?? 15); ?></td>
+                                    <td>
+                                        <?php
+                                        $loadStatus = $fac['load_status'] ?? 'Underloaded';
+                                        $badgeClassMap = [
+                                            'Underloaded' => 'badge-warning',
+                                            'Fully Loaded' => 'badge-success',
+                                            'Overloaded' => 'badge-danger'
+                                        ];
+                                        $badgeClass = $badgeClassMap[$loadStatus] ?? 'badge-secondary';
+                                        ?>
+                                        <span class="badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($loadStatus); ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="actions">
+                                            <button class="btn btn-sm btn-info" onclick="openAssignFacultyLoadModal('<?php echo $fac['id'] ?? 'N/A'; ?>', '<?php echo htmlspecialchars($fac['faculty_name'] ?? 'N/A'); ?>', '<?php echo intval($fac['teaching_units'] ?? 0); ?>', '<?php echo intval($fac['max_load'] ?? 15); ?>', '<?php echo htmlspecialchars($fac['department'] ?? 'N/A'); ?>')">
+                                                Assign Instructor
+                                            </button>
+                                            <button class="btn btn-sm btn-info" onclick="openAssignFacultySubjectModal('<?php echo $fac['id'] ?? 'N/A'; ?>', '<?php echo htmlspecialchars($fac['faculty_name'] ?? 'N/A'); ?>', '<?php echo intval($fac['teaching_units'] ?? 0); ?>', '<?php echo intval($fac['max_load'] ?? 15); ?>', '<?php echo htmlspecialchars($fac['department'] ?? 'N/A'); ?>')">
+                                                Assign Subjects
+                                            </button>
+                                            <button class="btn btn-sm btn-info" onclick="viewFacultyLoadDetails('<?php echo $fac['id'] ?? 'N/A'; ?>', '<?php echo htmlspecialchars($fac['faculty_name'] ?? 'N/A'); ?>', '<?php echo intval($fac['teaching_units'] ?? 0); ?>', '<?php echo intval($fac['max_load'] ?? 15); ?>', '<?php echo intval($fac['assigned_sections'] ?? 0); ?>', '<?php echo intval($fac['assigned_subjects'] ?? 0); ?>', '<?php echo htmlspecialchars($fac['department'] ?? 'N/A'); ?>')">
+                                                View Details
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">No faculty loads found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    </div>
+    <!-- Statistics Cards -->
+    
+<!-- MODALS -->
+
+<!-- Curriculum Details Modal -->
+<div class="modal" id="curriculumDetailsModal">
+    <div class="modal-dialog">
         <div class="modal-header">
-            <h5 class="modal-title">Add Engagement</h5>
-            <button type="button" class="modal-close" aria-label="Close">&times;</button>
+            <h5 class="modal-title">Curriculum Details</h5>
+            <button type="button" class="modal-close" onclick="closeCurriculumModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <form id="addEngagementForm" data-custom-submit>
+            <div class="form-group">
+                <label class="form-label">Program</label>
+                <input type="text" class="form-control" id="currProgramName" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Curriculum</label>
+                <input type="text" class="form-control" id="currVersion" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Effective Year</label>
+                <input type="text" class="form-control" id="currUnits" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <input type="text" class="form-control" id="currStatus" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject Flow</label>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; max-height: 300px; overflow-y: auto;">
+                    <div id="subjectFlowList"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Enrollment & Curriculum Summary</label>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                    <div id="enrollmentSummaryContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subject Details Modal -->
+<div class="modal" id="subjectDetailsModal">
+    <div class="modal-dialog" style="max-width: 900px;">
+        <div class="modal-header">
+            <h5 class="modal-title">Subject Details</h5>
+            <button type="button" class="modal-close" onclick="closeSubjectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="card mb-3">
+                <div class="card-header">Subject Information</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Subject Code</label>
+                            <input type="text" class="form-control" id="subjCode" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Units</label>
+                            <input type="text" class="form-control" id="subjUnits" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Lecture Hours</label>
+                            <input type="text" class="form-control" id="subjLectureHours" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Subject Name</label>
+                            <input type="text" class="form-control" id="subjName" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Laboratory Hours</label>
+                            <input type="text" class="form-control" id="subjLabHours" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Curriculum Assignment</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="subjectAssignmentTable">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Course Name</th>
+                                    <th>Curriculum Name</th>
+                                    <th>Effective Year</th>
+                                    <th>Year Level</th>
+                                    <th>Semester</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectAssignmentBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Loading assignments...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Status</div>
+                <div class="card-body">
+                    <p id="subjectAssignmentStatus" class="mb-0"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Section Modal -->
+<div class="modal" id="sectionModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h5 class="modal-title" id="sectionModalTitle">Add Section</h5>
+            <button type="button" class="modal-close" onclick="closeSectionModal()">&times;</button>
+        </div>
+        <form id="sectionForm">
+            <div class="modal-body">
                 <div class="form-group">
-                    <label for="aeEmployee">Employee</label>
-                    <select id="aeEmployee" name="employee_id" class="form-control" required>
-                        <option value="">Select employee</option>
-                        <?php foreach ($eligibleEmployees as $f): ?>
-                            <?php $fullname = htmlspecialchars(trim($f['first_name'] . ' ' . ($f['middle_name'] ?? '') . ' ' . $f['last_name'] . ' ' . ($f['suffix'] ?? ''))); ?>
-                            <option value="<?= (int)$f['employee_id'] ?>" data-employment-type="<?= htmlspecialchars($f['employment_type'] ?? '') ?>" data-position-id="<?= htmlspecialchars($f['position_id'] ?? '') ?>"><?= htmlspecialchars($f['employee_code']) ?> - <?= $fullname ?></option>
+                    <label class="form-label">Section Code <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="sectionCode" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Grade Level <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="sectionGradeLevel" min="1" max="4" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Program <span class="required">*</span></label>
+                    <select class="form-control" id="sectionProgram" required>
+                        <option value="">Select Program</option>
+                        <?php foreach ($programs as $prog): ?>
+                            <option value="<?php echo (int)($prog['id'] ?? 0); ?>"><?php echo htmlspecialchars(($prog['code'] ?? '') . ' - ' . ($prog['name'] ?? '')); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label for="aeType">Engagement Type</label>
-                    <input id="aeType" name="engagement_type" class="form-control" value="" readonly disabled />
+                    <label class="form-label">School Year <span class="required">*</span></label>
+                    <select class="form-control" id="sectionSchoolYear" required>
+                        <option value="">Select School Year</option>
+                        <?php foreach ($schoolYearOptions as $schoolYear): ?>
+                            <option value="<?php echo (int)($schoolYear['id'] ?? 0); ?>"><?php echo htmlspecialchars($schoolYear['name'] ?? ''); ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-
                 <div class="form-group">
-                    <label for="aeTitle">Title</label>
-                    <input id="aeTitle" name="title" class="form-control" required />
+                    <label class="form-label">Semester <span class="required">*</span></label>
+                    <select class="form-control" id="sectionSemester" required disabled>
+                        <option value="">Select Semester</option>
+                    </select>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeSectionModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="saveSectionBtn">Save Section</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-                <div class="form-group">
-                    <label for="aeOrg">Organization</label>
-                    <input id="aeOrg" name="organization" class="form-control" required />
-                </div>
+<!-- Assign Adviser Modal -->
+<div class="modal" id="adviserModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+            <h5 class="modal-title" id="adviserModalTitle">Assign Adviser</h5>
+            <button type="button" class="modal-close" onclick="closeAdviserModal()">&times;</button>
+        </div>
+        <form id="adviserForm" data-custom-submit>
+            <div class="modal-body">
+                <input type="hidden" id="adviserSectionId">
 
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label for="aeStart">Start Date</label>
-                        <input id="aeStart" name="start_date" type="date" class="form-control" required />
+                <div class="card mb-3">
+                    <div class="card-header">Section Information</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Section Code</label>
+                                <p class="mb-0" id="adviserSectionCode">N/A</p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Year Level</label>
+                                <p class="mb-0" id="adviserSectionYear">N/A</p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Semester</label>
+                                <p class="mb-0" id="adviserSectionSemester">N/A</p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">School Year</label>
+                                <p class="mb-0" id="adviserSectionSchoolYear">N/A</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group col-md-6">
-                        <label for="aeEnd">End Date</label>
-                        <input id="aeEnd" name="end_date" type="date" class="form-control" required />
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">Current Adviser</div>
+                    <div class="card-body">
+                        <p class="mb-0" id="adviserCurrentAdviser">Not Assigned</p>
                     </div>
                 </div>
 
-                <div style="margin-top:12px; text-align:right;">
-                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Engagement</button>
+                <div class="card">
+                    <div class="card-header">Faculty Assignment</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label" for="adviserSelect">Select Faculty Member <span class="required">*</span></label>
+                            <select class="form-control" id="adviserSelect" required>
+                                <option value="">Choose Faculty Member</option>
+                                <?php foreach ($facultyLoads as $faculty): ?>
+                                    <option value="<?php echo htmlspecialchars($faculty['faculty_name']); ?>" data-id="<?php echo htmlspecialchars($faculty['id']); ?>">
+                                        <?php echo htmlspecialchars($faculty['faculty_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAdviserModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="adviserActionButton">Assign Adviser</button>
+            </div>
+        </form>
+    </div>
+</div> 
+
+<!-- Section Details Modal -->
+<div class="modal" id="sectionDetailsModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+            <h5 class="modal-title">Section Details</h5>
+            <button type="button" class="modal-close" onclick="closeSectionDetailsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="card mb-3">
+                <div class="card-header">Section Information</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Section Code</label>
+                            <p class="mb-0" id="sectionDetailsCode">N/A</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Year Level</label>
+                            <p class="mb-0" id="sectionDetailsYear">N/A</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Semester</label>
+                            <p class="mb-0" id="sectionDetailsSemester">N/A</p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">School Year</label>
+                            <p class="mb-0" id="sectionDetailsSchoolYear">N/A</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Enrollment</div>
+                <div class="card-body">
+                    <p class="mb-0" id="sectionDetailsTotalStudents">0</p>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Faculty</div>
+                <div class="card-body">
+                    <p class="mb-0" id="sectionDetailsAdviser">Not Assigned</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Status</div>
+                <div class="card-body">
+                    <span class="badge badge-success" id="sectionDetailsStatus">Active</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeSectionDetailsModal()">Close</button>
         </div>
     </div>
 </div>
 
-<div id="fmProfileModal" class="modal">
+<!-- Add/Edit Faculty Load Modal -->
+<div class="modal" id="facultyLoadModal">
     <div class="modal-dialog">
         <div class="modal-header">
-            <h5 class="modal-title">Faculty Profile</h5>
-            <button type="button" class="modal-close" aria-label="Close">&times;</button>
+            <h5 class="modal-title" id="facultyLoadModalTitle">Assign Faculty Load</h5>
+            <button type="button" class="modal-close" onclick="closeFacultyLoadModal()">&times;</button>
+        </div>
+        <form id="facultyLoadForm">
+            <div class="modal-body">
+                <input type="hidden" id="facultyLoadId">
+                <div class="form-group">
+                    <label class="form-label">Faculty Member <span class="required">*</span></label>
+                    <select class="form-control" id="facultySelect" required>
+                        <option value="">Select Faculty</option>
+                        <option value="Dr. Maria Santos">Dr. Maria Santos</option>
+                        <option value="Prof. Juan Reyes">Prof. Juan Reyes</option>
+                        <option value="Dr. Rita Ocampo">Dr. Rita Ocampo</option>
+                        <option value="Prof. Ramon Miguel">Prof. Ramon Miguel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Section/Class <span class="required">*</span></label>
+                    <select class="form-control" id="loadSectionSelect" required>
+                        <option value="">Select Section</option>
+                        <option value="IT-1A">IT-1A</option>
+                        <option value="IT-1B">IT-1B</option>
+                        <option value="CS-2A">CS-2A</option>
+                        <option value="EN-3A">EN-3A</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject Code <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="loadSubject" placeholder="e.g., SUBJ101" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Load (Units) <span class="required">*</span></label>
+                    <input type="number" class="form-control" id="loadUnits" min="1" max="6" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Schedule <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="loadSchedule" placeholder="e.g., MWF 9:00-10:30" required>
+                </div>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 15px; display: none;" id="conflictWarning">
+                    <small><strong>⚠️ Schedule Conflict Detected:</strong> This faculty member has another class during this time.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeFacultyLoadModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Assign Load</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Assign Sections Modal -->
+<div class="modal" id="assignFacultyLoadModal">
+    <div class="modal-dialog" style="max-width: 900px;">
+        <div class="modal-header">
+            <h5 class="modal-title">Assign Instructor</h5>
+            <button type="button" class="modal-close" onclick="closeAssignFacultyLoadModal()">&times;</button>
+        </div>
+        <form id="assignFacultyLoadForm" data-custom-submit>
+            <div class="modal-body">
+                <input type="hidden" id="assignLoadFacultyId">
+                
+                <!-- Faculty Information Section -->
+                <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #0d6efd;">
+                    <h6 style="margin-bottom: 15px; font-weight: 600; color: #333;">Faculty Information</h6>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Faculty Name</label>
+                            <input type="text" class="form-control" id="assignLoadFacultyName" readonly>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" id="assignLoadDepartment" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assignment Details Section -->
+                <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                    <h6 style="margin-bottom: 15px; font-weight: 600; color: #333;">Assignment Details</h6>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">School Year <span class="required">*</span></label>
+                            <select class="form-select" id="assignLoadSchoolYear" required>
+                                <option value="">Select School Year</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Semester <span class="required">*</span></label>
+                            <select class="form-select" id="assignLoadSemester" required disabled>
+                                <option value="">Select Semester</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Sections <span class="required">*</span></label>
+                        <select class="form-select" id="assignLoadSection" multiple size="8" required>
+                        </select>
+                        <small class="text-muted">Hold Ctrl (Windows) / Cmd (Mac) to select multiple sections.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAssignFacultyLoadModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Instructor Assignments</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Assign Faculty Subjects Modal -->
+<div class="modal" id="assignFacultySubjectModal">
+    <div class="modal-dialog" style="max-width: 700px;">
+        <div class="modal-header">
+            <h5 class="modal-title">Assign Subjects</h5>
+            <button type="button" class="modal-close" onclick="closeAssignFacultySubjectModal()">&times;</button>
+        </div>
+        <form id="assignFacultySubjectForm" data-custom-submit="true">
+            <div class="modal-body">
+                <input type="hidden" id="assignSubjectFacultyId">
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #0d6efd;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="form-label">Faculty Name</label>
+                            <input type="text" class="form-control" id="assignSubjectFacultyName" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" id="assignSubjectDepartment" readonly>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div>
+                            <label class="form-label">Maximum Load</label>
+                            <input type="text" class="form-control" id="assignSubjectMaxLoad" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Current Teaching Load</label>
+                            <input type="text" class="form-control" id="assignSubjectCurrentLoad" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">Remaining Load</label>
+                            <input type="text" class="form-control" id="assignSubjectRemainingLoad" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                        <div>
+                            <label class="form-label">Section <span class="required">*</span></label>
+                            <select class="form-select" id="assignSubjectSection" required>
+                                <option value="">Select Section</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Subject <span class="required">*</span></label>
+                            <select class="form-select" id="assignSubjectSubject" required disabled>
+                                <option value="">Select Subject</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAssignFacultySubjectModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Subject Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Faculty Load Details Modal -->
+<div class="modal" id="facultyLoadDetailsModal">
+    <div class="modal-dialog" style="max-width: 900px;">
+        <div class="modal-header">
+            <h5 class="modal-title">Faculty Load Details</h5>
+            <button type="button" class="modal-close" onclick="closeFacultyLoadDetailsModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <tbody>
-                        <tr><th scope="row">Employee ID</th><td id="fmModalEmployeeId"></td></tr>
-                        <tr><th scope="row">Faculty Name</th><td id="fmModalFacultyName"></td></tr>
-                        <tr><th scope="row">Department</th><td id="fmModalDepartment"></td></tr>
-                        <tr><th scope="row">Email</th><td id="fmModalEmail"></td></tr>
-                        <tr><th scope="row">Date Created</th><td id="fmModalCreatedAt"></td></tr>
-                        <tr><th scope="row">Position</th><td id="fmModalPosition"></td></tr>
-                        <tr><th scope="row">Employment Type</th><td id="fmModalEmploymentType"></td></tr>
-                        <tr><th scope="row">Status</th><td id="fmModalStatus"></td></tr>
+            <!-- Faculty Information Section -->
+            <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #0d6efd;">
+                <h6 style="margin-bottom: 15px; font-weight: 600; color: #333;">Faculty Information</h6>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label"><strong>Faculty Name</strong></label>
+                        <p id="detailFacultyName" style="margin: 5px 0; padding: 8px 0; border-bottom: 1px solid #dee2e6;"></p>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label"><strong>Department</strong></label>
+                        <p id="detailDepartment" style="margin: 5px 0; padding: 8px 0; border-bottom: 1px solid #dee2e6;"></p>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label"><strong>Maximum Load</strong></label>
+                        <p id="detailMaxLoad" style="margin: 5px 0; padding: 8px 0; border-bottom: 1px solid #dee2e6; font-weight: 600;"></p>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label"><strong>Teaching Units</strong></label>
+                        <p id="detailTeachingUnits" style="margin: 5px 0; padding: 8px 0; border-bottom: 1px solid #dee2e6; font-weight: 600;"></p>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label"><strong>Remaining Load</strong></label>
+                        <p id="detailRemainingLoad" style="margin: 5px 0; padding: 8px 0; border-bottom: 1px solid #dee2e6; font-weight: 600; color: #28a745;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assigned Sections Section -->
+            <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                <h6 style="margin-bottom: 12px; font-weight: 600; color: #333;">Assigned Instructor Sections <span id="detailAssignedSectionsCount" style="background: #0d6efd; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600;">0</span></h6>
+                <div id="detailAssignedSections" style="margin: 0; padding: 10px; background: white; border-radius: 3px; border: 1px solid #dee2e6; color: #6c757d;">
+                    No instructor sections assigned
+                </div>
+            </div>
+            <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                <h6 style="margin-bottom: 12px; font-weight: 600; color: #333;">Assigned Adviser Sections <span id="detailAssignedAdviserSectionsCount" style="background: #0d6efd; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600;">0</span></h6>
+                <div id="detailAssignedAdviserSections" style="margin: 0; padding: 10px; background: white; border-radius: 3px; border: 1px solid #dee2e6; color: #6c757d;">
+                    No adviser sections assigned
+                </div>
+            </div>
+
+            <!-- Assigned Subjects Section -->
+            <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                <h6 style="margin-bottom: 12px; font-weight: 600; color: #333;">Assigned Subjects <span id="detailAssignedSubjectsCount" style="background: #0d6efd; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600;">0</span></h6>
+                <div id="detailAssignedSubjects" style="margin: 0; padding: 10px; background: white; border-radius: 3px; border: 1px solid #dee2e6; color: #6c757d;">No subjects assigned</div>
+            </div>
+
+            <!-- Class Schedule Section -->
+            <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                <h6 style="margin-bottom: 12px; font-weight: 600; color: #333;">Schedule Status</h6>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: white; border-bottom: 2px solid #dee2e6;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Subject Code</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Section</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600;">Status</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Day</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Time</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Room</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailScheduleList">
+                            <tr>
+                                <td colspan="6" style="padding: 20px; text-align: center; color: #6c757d;">No schedules assigned</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <details style="margin-top: 25px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d;">
+                <summary style="cursor: pointer; font-weight: 600; color: #333; font-size: 1rem;">Faculty Load History</summary>
+                <div id="detailLoadHistory" style="margin-top: 15px; color: #6c757d;">Loading historical assignments...</div>
+            </details>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeFacultyLoadDetailsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Section Students Modal -->
+<div class="modal" id="sectionStudentsModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h5 class="modal-title">Section Students</h5>
+            <button type="button" class="modal-close" onclick="closeSectionStudentsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="text" class="form-control" id="sectionStudentSearch" placeholder="Search students..." style="margin-bottom: 15px;">
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table style="width: 100%; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 8px; text-align: left;">Student ID</th>
+                            <th style="padding: 8px; text-align: left;">Name</th>
+                            <th style="padding: 8px; text-align: left;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sectionStudentsList">
+                        <tr>
+                            <td colspan="3" style="padding: 8px; text-align: center; color: #6c757d;">No students loaded</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close">Close</button>
-        </div>
     </div>
 </div>
 
-<div id="fmEducationModal" class="modal">
-    <div class="modal-dialog" style="max-width: 760px;">
-        <div class="modal-header">
-            <h5 class="modal-title">Educational Attainment</h5>
-            <button type="button" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div style="padding: 10px 0;">
-                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; font-size: 14px;">
-                    <div>
-                        <small style="color: #666;">Employee ID</small>
-                        <div id="fmEducationEmployeeId" style="font-weight: 600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color: #666;">Faculty Name</small>
-                        <div id="fmEducationFacultyName" style="font-weight: 600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color: #666;">Department</small>
-                        <div id="fmEducationDepartment" style="font-weight: 600;">N/A</div>
-                    </div>
-                </div>
+<script type="application/json" id="sectionSemesterOptionsData">
+<?php echo json_encode($semesterOptions, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>
+</script>
 
-                <h6 style="font-weight: 700; margin: 10px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">EDUCATIONAL HISTORY</h6>
-                <div class="table-responsive">
-                    <table class="table" style="margin-bottom: 0;">
-                        <thead>
-                            <tr>
-                                <th>Degree / Program</th>
-                                <th>School / Institution</th>
-                                <th>Year Graduated</th>
-                                <th>Education Level</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fmEducationHistoryBody">
-                            <tr>
-                                <td colspan="4" class="text-center text-muted" style="padding: 18px;">No educational attainment records found.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+<script type="application/json" id="subjectCatalogDetailsData"><?php echo json_encode($subjectAssignmentsById, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?></script>
 
-                <h6 style="font-weight: 700; margin: 20px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">FACULTY REQUIREMENTS</h6>
-                <div class="table-responsive">
-                    <table class="table" style="margin-bottom: 0;">
-                        <thead>
-                            <tr>
-                                <th>Requirement</th>
-                                <th>Status</th>
-                                <th>Remarks</th>
-                                <th>Submitted Date</th>
-                                <th>Follow-up Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fmEducationRequirementsBody">
-                            <tr>
-                                <td colspan="5" class="text-center text-muted" style="padding: 18px;">No faculty requirement records found.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close">Close</button>
-        </div>
-    </div>
-</div>
-
-<div id="fmTrainingModal" class="modal">
-    <div class="modal-dialog" style="max-width: 900px;">
-        <div class="modal-header">
-            <h5 class="modal-title">Training & Certification</h5>
-            <button type="button" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div style="padding: 10px 0;">
-                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; font-size: 14px;">
-                    <div>
-                        <small style="color: #666;">Employee ID</small>
-                        <div id="fmTrainingEmployeeId" style="font-weight: 600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color: #666;">Faculty Name</small>
-                        <div id="fmTrainingFacultyName" style="font-weight: 600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color: #666;">Employment Type</small>
-                        <div id="fmTrainingEmploymentType" style="font-weight: 600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color: #666;">Employment Status</small>
-                        <div id="fmTrainingEmploymentStatus" style="font-weight: 600;">N/A</div>
-                    </div>
-                </div>
-
-                <h6 style="font-weight: 700; margin: 10px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">TRAINING & CERTIFICATION HISTORY</h6>
-                <div class="table-responsive">
-                    <table class="table" style="margin-bottom: 0;">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Title</th>
-                                <th>Organization</th>
-                                <th>Date / Period</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fmTrainingHistoryBody">
-                            <tr>
-                                <td colspan="5" class="text-center text-muted" style="padding: 18px;">No training or certification records found.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close">Close</button>
-        </div>
-    </div>
-</div>
-
-<div id="fmShiftScheduleModal" class="modal">
-    <div class="modal-dialog" style="max-width: 760px;">
-        <div class="modal-header">
-            <h5 class="modal-title">Shift Schedule</h5>
-            <button type="button" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div id="fmShiftScheduleEmpty" class="text-muted" style="display:none;">No active shift schedule found.</div>
-
-            <div id="fmShiftScheduleContent" style="display:none;">
-                <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
-                    <div>
-                        <small style="color:#666;">Faculty Name</small>
-                        <div id="fmShiftFacultyName" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Employee ID</small>
-                        <div id="fmShiftEmployeeId" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Department</small>
-                        <div id="fmShiftDepartment" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
-                    <div>
-                        <small style="color:#666;">Shift Name</small>
-                        <div id="fmShiftName" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Start Time</small>
-                        <div id="fmShiftStartTime" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">End Time</small>
-                        <div id="fmShiftEndTime" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
-                    <div>
-                        <small style="color:#666;">Break Duration</small>
-                        <div id="fmShiftBreakDuration" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Effective From</small>
-                        <div id="fmShiftEffectiveFrom" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Effective To</small>
-                        <div id="fmShiftEffectiveTo" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-
-                <div style="margin-bottom:12px; font-size:14px;">
-                    <small style="color:#666;">Status</small>
-                    <div id="fmShiftStatus" style="font-weight:600;">N/A</div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Day</th>
-                                <th>Start</th>
-                                <th>Break Start</th>
-                                <th>Break End</th>
-                                <th>End</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fmShiftWeeklyBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close">Close</button>
-        </div>
-    </div>
-</div>
-
-<div id="fmEngagementDetailsModal" class="modal">
-    <div class="modal-dialog" style="max-width: 700px;">
-        <div class="modal-header">
-            <h5 class="modal-title">Engagement Details</h5>
-            <button type="button" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div id="fmEngagementDetailsEmpty" class="text-muted" style="display:none; padding:18px; text-align:center;">Unable to load engagement details. Please try again.</div>
-            
-            <div id="fmEngagementDetailsContent" style="display:none;">
-                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
-                    <div>
-                        <small style="color:#666;">Employee ID</small>
-                        <div id="fmEngagementDetailsEmployeeId" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Faculty Name</small>
-                        <div id="fmEngagementDetailsFacultyName" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Engagement Type</small>
-                        <div id="fmEngagementDetailsType" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Status</small>
-                        <div id="fmEngagementDetailsStatus" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-
-                <h6 style="font-weight: 700; margin: 15px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">ENGAGEMENT INFORMATION</h6>
-                <div style="display:grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
-                    <div>
-                        <small style="color:#666;">Title</small>
-                        <div id="fmEngagementDetailsTitle" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">Organization</small>
-                        <div id="fmEngagementDetailsOrganization" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-
-                <h6 style="font-weight: 700; margin: 15px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">DATES</h6>
-                <div style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-bottom:18px; font-size:14px;">
-                    <div>
-                        <small style="color:#666;">Start Date</small>
-                        <div id="fmEngagementDetailsStartDate" style="font-weight:600;">N/A</div>
-                    </div>
-                    <div>
-                        <small style="color:#666;">End Date</small>
-                        <div id="fmEngagementDetailsEndDate" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-
-                <div id="fmEngagementDetailsCertGenContainer" style="display:none; margin-bottom:18px; font-size:14px;">
-                    <h6 style="font-weight: 700; margin: 15px 0 8px; border-bottom: 1px solid #e1e1e1; padding-bottom: 8px;">CERTIFICATE</h6>
-                    <div>
-                        <small style="color:#666;">Certificate Generated Date</small>
-                        <div id="fmEngagementDetailsCertGenDate" style="font-weight:600;">N/A</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary modal-close">Close</button>
-        </div>
-    </div>
-</div>
-
-
+<link rel="stylesheet" href="css/pages/academics-management.css">

@@ -21,7 +21,7 @@ class Department {
     }
 
     public function countDepartmentEmployees($department_id) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM sms_employee WHERE department = :department_id");
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM em_employees WHERE department = :department_id");
         $stmt->execute([':department_id' => $department_id]);
         return $stmt->fetchColumn();
     }
@@ -33,9 +33,9 @@ class Department {
                     CONCAT(e.first_name, ' ', e.last_name) AS department_head_name,
                     COUNT(emp.employee_id) AS employee_count
                 FROM sd_department d
-                LEFT JOIN sms_employee e 
+                LEFT JOIN em_employees e 
                     ON d.department_head = e.employee_id
-                LEFT JOIN sms_employee emp 
+                LEFT JOIN em_employees emp 
                     ON emp.department = d.department_id
                 GROUP BY d.department_id, d.department_name, e.first_name, e.last_name";
 

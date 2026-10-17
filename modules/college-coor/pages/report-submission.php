@@ -1,7 +1,4 @@
 <?php
-
-ini_set('display_errors', '1');
-error_reporting(E_ALL);
     include_once __DIR__ . '/../../../auth/session.php';
     include __DIR__ . '/../classes/Report.php';
     include __DIR__ . '/../classes/Department.php';

@@ -621,7 +621,7 @@ $stats = [
                 </div>
                 <div class="form-group">
                     <label class="form-label">Grade Level <span class="required">*</span></label>
-                    <input type="number" class="form-control" id="sectionGradeLevel" min="1" max="4" required>
+                    <input type="text" class="form-control" id="sectionGradeLevel" maxlength="50" placeholder="e.g., 1st Year" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Program <span class="required">*</span></label>
@@ -902,7 +902,7 @@ $stats = [
             <h5 class="modal-title">Assign Subjects</h5>
             <button type="button" class="modal-close" onclick="closeAssignFacultySubjectModal()">&times;</button>
         </div>
-        <form id="assignFacultySubjectForm" data-custom-submit="true">
+        <form id="assignFacultySubjectForm" data-custom-submit>
             <div class="modal-body">
                 <input type="hidden" id="assignSubjectFacultyId">
                 <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #0d6efd;">

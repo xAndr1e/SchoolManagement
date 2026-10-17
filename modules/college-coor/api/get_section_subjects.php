@@ -33,16 +33,34 @@ try {
     }
     
     // Determine numeric year level from section.grade_level
-    $rawYearLevel = $section['grade_level'];
-    if (is_numeric($rawYearLevel)) {
-        $yearLevel = (int)$rawYearLevel;
-    } else {
-        // convert strings like "1st Year" -> 1
-        if (preg_match('/(\\d+)/', $rawYearLevel, $m)) {
-            $yearLevel = (int)$m[1];
+    $rawYearLevel = (string)($section['grade_level'] ?? '');
+    $rawYearLevel = trim($rawYearLevel);
+    $yearLevel = 0;
+
+    if ($rawYearLevel !== '') {
+        if (preg_match('/\d+/', $rawYearLevel, $matches)) {
+            $yearLevel = (int)$matches[0];
         } else {
-            $yearLevel = 0;
+            $normalized = strtolower($rawYearLevel);
+            if (preg_match('/\b(first|one)\b/', $normalized)) {
+                $yearLevel = 1;
+            } elseif (preg_match('/\b(second|two)\b/', $normalized)) {
+                $yearLevel = 2;
+            } elseif (preg_match('/\b(third|three)\b/', $normalized)) {
+                $yearLevel = 3;
+            } elseif (preg_match('/\b(fourth|four)\b/', $normalized)) {
+                $yearLevel = 4;
+            }
         }
+    }
+
+    if ($yearLevel === 0) {
+        echo json_encode([
+            'success' => true,
+            'subjects' => [],
+            'message' => 'Cannot determine year level from "' . htmlspecialchars($rawYearLevel, ENT_QUOTES, 'UTF-8') . '". Please use a format like "1st Year".'
+        ]);
+        exit;
     }
 
     // Resolve semester name from rgr_semesters (curriculum_subjects.semester stores semester name)

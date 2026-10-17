@@ -292,7 +292,7 @@
         }
 
         try {
-          const duplicateCheckResponse = await fetch(`/sms/modules/college-coor/api/get_faculty_sections.php?faculty_id=${facultyId}`);
+          const duplicateCheckResponse = await fetch(`/modules/college-coor/api/get_faculty_sections.php?faculty_id=${facultyId}`);
           const duplicateCheckData = await duplicateCheckResponse.json();
           if (duplicateCheckData.success && Array.isArray(duplicateCheckData.sections)) {
             const activeDuplicates = duplicateCheckData.sections.filter(section => {

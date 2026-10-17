@@ -157,17 +157,31 @@ try {
             
             try {
                 FileStorage::streamStored($relative, $name, $mime, $download);
-            } catch (Throwable $e) {
-                error_log(
-                    '[SDM FILE DEBUG] ' .
-                    get_class($e) . ': ' .
-                    $e->getMessage() .
-                    ' in ' . $e->getFile() .
-                    ':' . $e->getLine()
+             } catch (Throwable $e) {
+                $logFile = '/home/sdm.bcp-sms.com/storage/file-debug.log';
+
+                $message = sprintf(
+                    "[%s] %s: %s in %s:%d\n",
+                    date('Y-m-d H:i:s'),
+                    get_class($e),
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine()
+                );
+
+                $written = @file_put_contents(
+                    $logFile,
+                    $message,
+                    FILE_APPEND | LOCK_EX
                 );
 
                 http_response_code(500);
-                echo 'File retrieval failed. Check the PHP error log.';
+                header('Content-Type: text/plain; charset=utf-8');
+
+                echo $written === false
+                    ? 'File retrieval failed; debug log could not be written.'
+                    : 'File retrieval failed; see storage/file-debug.log.';
+
                 exit;
             }
 

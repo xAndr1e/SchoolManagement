@@ -323,7 +323,9 @@ final class SdmFileApi
                 );
 
                 throw new RuntimeException(
-                    $message ?: 'SDM download failed with HTTP ' . $status . '.'
+                    'SDM download failed: HTTP ' . $status .
+                    '; file_id=' . $fileId .
+                    '; response=' . ($message ?: 'No API error message')
                 );
             }
 

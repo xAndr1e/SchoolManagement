@@ -202,8 +202,6 @@ try {
             if (!$validated['valid']) {
                 approval_respond(['success' => false, 'message' => $validated['message']]);
             }
-            approval_respond(['success' => true, 'data' => $approval]);
-            break;
 
             $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
             $prep       = approval_prepare_attachment($approvalClass, $approvalId, $userInfo); // responds on error

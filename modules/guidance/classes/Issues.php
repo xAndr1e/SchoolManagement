@@ -1,5 +1,6 @@
 <?php
     include_once __DIR__ . '/../../../database/db.php';
+    include_once __DIR__ . '/FileStorage.php'; // shared with Report.php / Approval.php — same classes/ folder
 
     class Issues {
         private $conn;
@@ -57,6 +58,8 @@
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        // NOTE: i.* keeps the raw i.submitted_by (employee id) and i.department (department id);
+        // the controller's access check relies on both.
         public function getConcernById($issue_id) {
             $sql = "SELECT
                         i.*,
@@ -78,14 +81,18 @@
         }
 
         // ── CREATE / SAVE ────────────────────────────────────────────
-        // $data keys: title, details, desired_resolution, department_id, file_path (nullable)
+        // $data keys: title, details, desired_resolution, department_id
+        // Optional (only when a new attachment was uploaded): file_path, file_name, file_size
+        // file_path is a RELATIVE storage path (issues/attachments/...), never an absolute one.
         public function saveDraft($data, $issue_id = null) {
             $submitted_by = $_SESSION['employee_id'];
 
             if ($issue_id) {
+                $hasFile = array_key_exists('file_path', $data);
+
                 $sql = "UPDATE sd_issues SET
                             title = :title, details = :details, desired_resolution = :desired_resolution
-                            " . (array_key_exists('file_path', $data) ? ", file_path = :file_path" : "") . "
+                            " . ($hasFile ? ", file_path = :file_path, file_name = :file_name, file_size = :file_size" : "") . "
                         WHERE issue_id = :issue_id AND submitted_by = :submitted_by AND status = 'draft'";
                 $stmt = $this->conn->prepare($sql);
                 $params = [
@@ -95,17 +102,19 @@
                     ':issue_id'           => $issue_id,
                     ':submitted_by'       => $submitted_by,
                 ];
-                if (array_key_exists('file_path', $data)) {
+                if ($hasFile) {
                     $params[':file_path'] = $data['file_path'];
+                    $params[':file_name'] = $data['file_name'] ?? null;
+                    $params[':file_size'] = $data['file_size'] ?? null;
                 }
                 $stmt->execute($params);
                 return $issue_id;
             }
 
             $sql = "INSERT INTO sd_issues
-                        (title, details, desired_resolution, department, submitted_by, file_path, status, created_at)
+                        (title, details, desired_resolution, department, submitted_by, file_path, file_name, file_size, status, created_at)
                     VALUES
-                        (:title, :details, :desired_resolution, :department, :submitted_by, :file_path, 'draft', NOW())";
+                        (:title, :details, :desired_resolution, :department, :submitted_by, :file_path, :file_name, :file_size, 'draft', NOW())";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute([
                 ':title'              => $data['title'],
@@ -114,6 +123,8 @@
                 ':department'         => $data['department_id'],
                 ':submitted_by'       => $submitted_by,
                 ':file_path'          => $data['file_path'] ?? null,
+                ':file_name'          => $data['file_name'] ?? null,
+                ':file_size'          => $data['file_size'] ?? null,
             ]);
             return $this->conn->lastInsertId();
         }
@@ -162,8 +173,9 @@
         }
 
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
+        // Saves into FileStorage and stores a RELATIVE path (issues/pdf/...) in pdf_path.
         public function generatePdf($issue_id) {
-            $autoload = __DIR__ . '/../vendor/autoload.php';
+            $autoload = __DIR__ . '/../../../vendor/autoload.php';
             if (!file_exists($autoload)) {
                 throw new \RuntimeException('PDF library not installed. Run: composer require dompdf/dompdf');
             }
@@ -181,14 +193,8 @@
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            $outputDir = __DIR__ . '/../../../uploads/issues/pdf/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            $fileName = 'concern_' . $issue_id . '_' . time() . '.pdf';
-            file_put_contents($outputDir . $fileName, $dompdf->output());
-
-            $relativePath = 'uploads/issues/pdf/' . $fileName;
+            $fileName     = 'concern_' . $issue_id . '_' . time() . '.pdf';
+            $relativePath = FileStorage::storeBytes($dompdf->output(), 'issues/pdf', $fileName);
 
             $stmt = $this->conn->prepare("UPDATE sd_issues SET pdf_path = :pdf_path WHERE issue_id = :issue_id");
             $stmt->execute([':pdf_path' => $relativePath, ':issue_id' => $issue_id]);

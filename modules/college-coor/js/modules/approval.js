@@ -132,7 +132,7 @@ async function submitApprovalForm(action) {
         const json = await res.json();
 
         if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-            setTimeout(() => window.location.href = `${FILE_BASE}index.php`, 1500);
+            setTimeout(() => window.location.href = '/sms/index.php', 1500);
             return;
         }
 
@@ -262,7 +262,7 @@ function renderApprovalDetail(approval) {
         : `<span class="muted">PDF not yet generated</span>`;
 
     const attachmentLine = approval.file_path
-        ? `<a class="attachment-link" href="${FILE_BASE}${esc(approval.file_path)}" target="_blank" rel="noopener">View Attachment</a>`
+        ? `<a class="attachment-link" href="${esc(approval.file_path)}" target="_blank">View Attachment</a>`
         : `<span class="muted">No attachment</span>`;
 
     const aiSummaryBox = `
@@ -318,7 +318,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('approval-pdf-modal-overlay');
     const frame   = document.getElementById('approval-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `${FILE_BASE}${pdfPath}`;
+    frame.src = `${pdfPath}`;
     overlay.classList.add('active');
 }
 

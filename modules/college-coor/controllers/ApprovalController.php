@@ -261,7 +261,7 @@ function handleOptionalAttachment() {
         return ['success' => false, 'message' => 'File exceeds the 5 MB limit.'];
     }
 
-    $uploadDir = __DIR__ . '/../../../uploads/approvals/';
+    $uploadDir = __DIR__ . '/../../uploads/approvals/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }

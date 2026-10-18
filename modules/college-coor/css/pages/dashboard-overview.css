@@ -1242,14 +1242,6 @@
                 flex-shrink: 0;
             }
 
-            .notif-icon-img {
-                width: 20px;
-                height: 20px;
-                display: block;
-                object-fit: contain;
-                filter: none;
-            }
-
             .notif-text {
                 min-width: 0;
             }

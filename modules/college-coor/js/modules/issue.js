@@ -270,9 +270,9 @@ function renderConcernDetail(concern) {
         ? `<button type="button" class="btn-view" id="concern-open-pdf" data-pdf-path="${esc(concern.pdf_path)}">View PDF</button>`
         : `<span class="muted">PDF not yet generated</span>`;
 
-    const attachmentLine = concern.file_path
-        ? `<a class="btn-view" href="${esc(concern.file_path)}" target="_blank">View Attachment</a>`
-        : `<span class="muted">No attachment</span>`;
+const attachmentLine = concern.file_path
+    ? `<a class="btn-view" href="/${esc(concern.file_path).replace(/^\/+/, '')}" target="_blank" rel="noopener">View Attachment</a>`
+    : `<span class="muted">No attachment</span>`;
 
     const aiSummaryBox = `
         <div class="concern-ai-box">
@@ -306,7 +306,7 @@ function renderConcernDetail(concern) {
     `;
 
     document.getElementById('concern-open-pdf')?.addEventListener('click', (e) => {
-        openPdfModal(e.currentTarget.dataset.pdfPath);
+        frame.src = '/' + String(pdfPath).replace(/^\/+/, '');
     });
     document.getElementById('concern-summarize-btn')?.addEventListener('click', (e) => {
         summarizeConcern(e.currentTarget.dataset.issueId);

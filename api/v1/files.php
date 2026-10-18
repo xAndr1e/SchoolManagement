@@ -18,6 +18,17 @@ header('Cache-Control: no-store');
 
 function respond(int $status, array $data): void
 {
+    @file_put_contents(
+        '/home/sdm.bcp-sms.com/storage/file-debug.log',
+        '[' . date('Y-m-d H:i:s') . '] ' . $status
+            . ' file=' . __FILE__
+            . ' action=' . ($_POST['action'] ?? '-')
+            . ' id=' . ($_POST['file_id'] ?? '-')
+            . ' msg=' . ($data['error'] ?? ($data['success'] ?? '') ? 'ok' : '')
+            . PHP_EOL,
+        FILE_APPEND | LOCK_EX
+    );
+
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data, JSON_UNESCAPED_SLASHES);

@@ -1,8 +1,4 @@
 <?php
-/**
- * ActivityLog
- * Reads/writes lbr_activity_log AND reads rgr_activity_log.
- */
 class ActivityLog
 {
     private PDO $db;

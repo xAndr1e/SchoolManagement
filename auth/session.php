@@ -47,5 +47,7 @@ $current_employee_name = $_SESSION['employee_name'] ?? 'Unknown';
 $current_employee_id   = $_SESSION['employee_id'];
 $current_department_id   = $_SESSION['department_id'];
 $current_department_name = $_SESSION['department_name'] ?? 'Unknown';
+$current_unit_id         = $_SESSION['unit_id'] ?? null;
+$current_unit_name       = $_SESSION['unit_name'] ?? 'Unknown';
 $current_role          = (int) $_SESSION['role'];
 $current_role_name     = $_SESSION['role_name'];

@@ -385,13 +385,12 @@ function renderCredentialsRow($faculty) {
         data-email="<?= htmlspecialchars($faculty['email']) ?>"
         data-created-at="<?= htmlspecialchars($faculty['created_at']) ?>"
         data-position-id="<?= htmlspecialchars($faculty['position_id']) ?>"
-        data-position-name="<?= htmlspecialchars($faculty['position_name'] ?? '') ?>"
         data-employment-type="<?= htmlspecialchars($faculty['employment_type']) ?>"
         data-employment-status="<?= htmlspecialchars($faculty['employment_status']) ?>">
         <td><?= htmlspecialchars($faculty['employee_code']) ?></td>
         <td><?= $fullName ?></td>
         <td><?= htmlspecialchars($faculty['department']) ?></td>
-        <td><?= htmlspecialchars($faculty['position_name'] ?? $faculty['position_id']) ?></td>
+        <td><?= htmlspecialchars($faculty['position_id']) ?></td>
         <td><?= htmlspecialchars($faculty['employment_type']) ?></td>
         <td><?= htmlspecialchars($faculty['employment_status']) ?></td>
         <td class="actions">

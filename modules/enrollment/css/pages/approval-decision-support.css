@@ -187,20 +187,6 @@
     outline: none;
     border-color: var(--color2);
 }
-/* Add at the end of your CSS file */
-
-/* Fix sidebar overlapping issue */
-.module-content {
-    margin-left: 260px; /* Adjust based on your sidebar width */
-    padding: 20px;
-    width: calc(100% - 260px);
-}
-
-.module-header {
-    margin-left: 260px;
-    padding: 20px 20px 0 20px;
-}
-
 
 @media (max-width: 720px) {
     .ads-controls {

@@ -8,6 +8,10 @@ const APPROVAL_STATUS_LABELS = {
     rejected: 'Rejected',
 };
 
+// Attachment rules — keep in sync with FileStorage.php (the server re-checks everything).
+const APPROVAL_MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initApprovalModule() {
     const moduleRoot = document.querySelector('.approval-module');
@@ -45,6 +49,21 @@ function initApprovalModule() {
     bindOnce(closeModalBtn, 'click', closeCreateModal);
     bindOnce(modalOverlay, 'click', (e) => {
         if (e.target === modalOverlay) closeCreateModal();
+    });
+
+    // --- Optional attachment: check type/size before the user even submits ---
+    const attachmentInput = document.getElementById('approval-attachment');
+    bindOnce(attachmentInput, 'change', () => {
+        const file  = attachmentInput.files[0];
+        const error = file ? validateApprovalAttachment(file) : null;
+        if (error) {
+            attachmentInput.value = '';
+            const formError = document.getElementById('approval-form-error');
+            if (formError) {
+                formError.textContent   = error;
+                formError.style.display = 'block';
+            }
+        }
     });
 
     // --- View/PDF modal wiring ---
@@ -111,6 +130,33 @@ function initApprovalModule() {
 window.addEventListener('page:loaded', initApprovalModule);
 document.addEventListener('DOMContentLoaded', initApprovalModule);
 
+// ── ATTACHMENT / FILE HELPERS ─────────────────────────────────────────────────
+function validateApprovalAttachment(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!APPROVAL_ALLOWED_EXTENSIONS.includes(ext)) {
+        return 'This file type is not allowed. Use PDF, Word, Excel, JPG or PNG.';
+    }
+    if (file.size > APPROVAL_MAX_ATTACHMENT_BYTES) {
+        return `That file is ${approvalFormatFileSize(file.size)}. The maximum is 10 MB.`;
+    }
+    return null;
+}
+
+function approvalFormatFileSize(bytes) {
+    const n = Number(bytes) || 0;
+    if (n >= 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    if (n >= 1024)        return Math.round(n / 1024) + ' KB';
+    return n + ' B';
+}
+
+// Files are never linked by their disk path. They are always requested through the
+// controller, which checks the session/role and streams the bytes.
+function approvalFileUrl(approvalId, kind, download = false) {
+    const params = new URLSearchParams({ action: 'file', approval_id: approvalId, kind });
+    if (download) params.set('download', '1');
+    return `${ApprovalController}?${params.toString()}`;
+}
+
 // ── SUBMIT / DRAFT ────────────────────────────────────────────────────────────
 async function submitApprovalForm(action) {
     const approvalForm = document.getElementById('approval-form');
@@ -124,6 +170,8 @@ async function submitApprovalForm(action) {
     const originalLabel = submitBtn.textContent;
     submitBtn.textContent = action === 'submit' ? 'Submitting…' : submitBtn.textContent;
 
+    // FormData includes the optional "attachment" file input automatically (multipart/form-data).
+    // Do NOT set a Content-Type header manually — the browser adds the multipart boundary.
     const formData = new FormData(approvalForm);
     formData.set('action', action);
 
@@ -132,15 +180,18 @@ async function submitApprovalForm(action) {
         const json = await res.json();
 
         if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-            ssetTimeout(() => window.location.href = '/index.php', 1500);
+            setTimeout(() => window.location.href = '/sms/index.php', 1500);
             return;
         }
 
         if (json.success) {
             document.getElementById('approval-modal-overlay')?.classList.remove('active');
+            if (json.debug) console.error('Approval debug:', json.debug);
             showToast(action === 'submit' ? 'Approval request submitted successfully!' : 'Draft saved.', 'success');
+            if (json.warning) showToast(json.warning, 'error');
             loadApprovalQueue();
         } else {
+            if (json.debug) console.error('Approval debug:', json.debug);
             formError.textContent   = json.message;
             formError.style.display = 'block';
         }
@@ -257,13 +308,19 @@ function renderApprovalDetail(approval) {
             </div>`;
     }
 
-    const pdfButton = approval.pdf_path
-        ? `<button type="button" class="attachment-link" id="approval-open-pdf" data-pdf-path="${esc(approval.pdf_path)}">View PDF</button>`
+    // The server no longer sends file paths — only has_pdf / has_attachment flags.
+    const pdfButton = approval.has_pdf
+        ? `<button type="button" class="attachment-link" id="approval-open-pdf" data-approval-id="${esc(approval.approval_id)}">View PDF</button>`
         : `<span class="muted">PDF not yet generated</span>`;
 
-const attachmentLine = approval.file_path
-    ? `<a class="attachment-link" href="${esc(approval.file_path).replace(/^\/+/, '')}" target="_blank" rel="noopener">View Attachment</a>`
-    : `<span class="muted">No attachment</span>`;
+    const attachmentLine = approval.has_attachment
+        ? `<span class="approval-attachment-info">
+                <span class="approval-attachment-name">${esc(approval.attachment_name ?? 'Attachment')}${approval.attachment_size ? ` (${esc(approvalFormatFileSize(approval.attachment_size))})` : ''}</span>
+                <button type="button" class="attachment-link" id="approval-open-attachment"
+                        data-approval-id="${esc(approval.approval_id)}" data-mime="${esc(approval.attachment_mime ?? '')}">View</button>
+                <a class="attachment-link approval-link-btn" href="${esc(approvalFileUrl(approval.approval_id, 'attachment', true))}">Download</a>
+           </span>`
+        : `<span class="muted">No attachment</span>`;
 
     const aiSummaryBox = `
         <div class="approval-ai-box">
@@ -297,7 +354,10 @@ const attachmentLine = approval.file_path
     `;
 
     document.getElementById('approval-open-pdf')?.addEventListener('click', (e) => {
-        frame.src = '/' + String(pdfPath).replace(/^\/+/, '');
+        openApprovalFileModal(approvalFileUrl(e.currentTarget.dataset.approvalId, 'pdf'), 'Approval PDF');
+    });
+    document.getElementById('approval-open-attachment')?.addEventListener('click', (e) => {
+        openApprovalAttachment(e.currentTarget.dataset.approvalId, e.currentTarget.dataset.mime);
     });
     document.getElementById('approval-summarize-btn')?.addEventListener('click', (e) => {
         summarizeApproval(e.currentTarget.dataset.approvalId);
@@ -314,12 +374,25 @@ const attachmentLine = approval.file_path
     });
 }
 
-function openPdfModal(pdfPath) {
+// Opens any controller file URL in the in-modal viewer (PDFs and images render in the iframe).
+function openApprovalFileModal(url, title = 'Approval PDF') {
     const overlay = document.getElementById('approval-pdf-modal-overlay');
     const frame   = document.getElementById('approval-pdf-frame');
-    if (!overlay || !frame || !pdfPath) return;
-    frame.src = `${pdfPath}`;
+    const heading = document.getElementById('approval-pdf-modal-title');
+    if (!overlay || !frame || !url) return;
+    if (heading) heading.textContent = title;
+    frame.src = url;
     overlay.classList.add('active');
+}
+
+// PDFs and images preview in the modal; Word/Excel files can't, so they download instead.
+function openApprovalAttachment(approvalId, mime) {
+    const previewable = mime === 'application/pdf' || String(mime).startsWith('image/');
+    if (previewable) {
+        openApprovalFileModal(approvalFileUrl(approvalId, 'attachment'), 'Attachment');
+    } else {
+        window.location.href = approvalFileUrl(approvalId, 'attachment', true);
+    }
 }
 
 async function reviewApproval(approvalId, notes) {
@@ -398,10 +471,14 @@ async function summarizeApproval(approvalId) {
 function showToast(message, type = 'info') {
     const bg = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8';
 
+    // Stack above any toast that is still visible (e.g. "submitted" + a PDF warning).
+    const bottom = 24 + document.querySelectorAll('.approval-toast').length * 64;
+
     const toast = document.createElement('div');
+    toast.className = 'approval-toast';
     toast.textContent = message;
     toast.style.cssText = `
-        position:fixed; bottom:24px; right:24px; z-index:9999;
+        position:fixed; bottom:${bottom}px; right:24px; z-index:9999;
         background:${bg}; color:#fff; padding:12px 20px;
         border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,.2);
         font-size:.9rem; max-width:320px;

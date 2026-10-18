@@ -1,5 +1,6 @@
 <?php
     include_once __DIR__ . '/../../../database/db.php';
+    include_once __DIR__ . '/FileStorage.php'; // shared with Report.php — same classes/ folder
 
     class Approval {
         private $conn;
@@ -48,12 +49,15 @@
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        // NOTE: a.submit_by stays the raw employee_id here (used by the controller's access check).
+        // submitter_department_id mirrors the join used by getApprovals() for department filtering.
         public function getApprovalById($approval_id) {
             $sql = "SELECT
                         a.*,
                         CONCAT(e1.first_name, ' ', e1.last_name) AS submit_by_name,
                         CONCAT(rv.first_name, ' ', rv.last_name) AS reviewed_by_name,
                         CONCAT(e2.first_name, ' ', e2.last_name) AS decided_by_name,
+                        e1.department_id AS submitter_department_id,
                         d.department_name
                     FROM sd_approvals a
                     LEFT JOIN em_employees e1 ON a.submit_by   = e1.employee_id
@@ -69,8 +73,10 @@
         }
 
         // ── CREATE / SAVE ────────────────────────────────────────────
-        // $data keys: title, description, justification, file_path (nullable)
-        
+        // $data keys: title, description, justification
+        // Optional (only when a new attachment was uploaded): file_path, file_name, file_size
+        // file_path is a RELATIVE storage path (approvals/attachments/...), never an absolute one.
+
         public function saveDraft($data, $approval_id = null) {
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 session_start();
@@ -101,13 +107,15 @@
 
             if ($approval_id) {
                 // Update only a draft owned by the current employee.
+                $hasFile = array_key_exists('file_path', $data);
+
                 $sql = "UPDATE sd_approvals SET
                             title = :title,
                             description = :description,
                             justification = :justification,
                             department = :department"
-                            . (array_key_exists('file_path', $data)
-                                ? ", file_path = :file_path"
+                            . ($hasFile
+                                ? ", file_path = :file_path, file_name = :file_name, file_size = :file_size"
                                 : "") . "
                         WHERE approval_id = :approval_id
                         AND submit_by = :submit_by
@@ -124,8 +132,10 @@
                     ':submit_by'     => $submit_by,
                 ];
 
-                if (array_key_exists('file_path', $data)) {
+                if ($hasFile) {
                     $params[':file_path'] = $data['file_path'];
+                    $params[':file_name'] = $data['file_name'] ?? null;
+                    $params[':file_size'] = $data['file_size'] ?? null;
                 }
 
                 $stmt->execute($params);
@@ -141,6 +151,8 @@
                             justification,
                             department,
                             file_path,
+                            file_name,
+                            file_size,
                             submit_by,
                             status,
                             created_at
@@ -152,6 +164,8 @@
                             :justification,
                             :department,
                             :file_path,
+                            :file_name,
+                            :file_size,
                             :submit_by,
                             'draft',
                             NOW()
@@ -165,6 +179,8 @@
                 ':justification' => $data['justification'],
                 ':department'    => $departmentId,
                 ':file_path'     => $data['file_path'] ?? null,
+                ':file_name'     => $data['file_name'] ?? null,
+                ':file_size'     => $data['file_size'] ?? null,
                 ':submit_by'     => $submit_by,
             ]);
 
@@ -218,8 +234,9 @@
         }
 
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
+        // Saves into FileStorage and stores a RELATIVE path (approvals/pdf/...) in pdf_path.
         public function generatePdf($approval_id) {
-            $autoload = __DIR__ . '/../vendor/autoload.php';
+            $autoload = __DIR__ . '/../../../vendor/autoload.php';
             if (!file_exists($autoload)) {
                 throw new \RuntimeException('PDF library not installed. Run: composer require dompdf/dompdf');
             }
@@ -237,14 +254,8 @@
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            $outputDir = __DIR__ . '/../../uploads/approvals/pdf/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            $fileName = 'approval_' . $approval_id . '_' . time() . '.pdf';
-            file_put_contents($outputDir . $fileName, $dompdf->output());
-
-            $relativePath = 'uploads/approvals/pdf/' . $fileName;
+            $fileName     = 'approval_' . $approval_id . '_' . time() . '.pdf';
+            $relativePath = FileStorage::storeBytes($dompdf->output(), 'approvals/pdf', $fileName);
 
             $stmt = $this->conn->prepare("UPDATE sd_approvals SET pdf_path = :pdf_path WHERE approval_id = :approval_id");
             $stmt->execute([':pdf_path' => $relativePath, ':approval_id' => $approval_id]);

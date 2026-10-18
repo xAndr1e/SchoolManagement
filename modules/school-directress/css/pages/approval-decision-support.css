@@ -373,6 +373,24 @@ School Directress — Approval & Decision Support
     color: var(--color1);
 }
 
+/* Attachment row in the approval detail modal.
+   Paste at the END of your approvals CSS file (approval- prefix, no global overrides). */
+.approval-attachment-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;            /* wraps on narrow screens instead of overflowing */
+    gap: 8px;
+    min-width: 0;
+}
+.approval-attachment-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.approval-link-btn {
+    display: inline-block;
+    text-decoration: none;
+}
+
 /* ── Misc ──────────────────────────────────────────────── */
 
 .approval-module .muted {

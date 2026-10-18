@@ -1,10 +1,14 @@
-// ============================================================
-// assets/js/AIController.js
-// ============================================================
-
 const API_URL = 'api.php';
 
 const AI = (() => {
+
+    function csrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    }
+
+    async function confirmExternal(message, title, okText, variant = 'warning') {
+        return window.app.ui.confirm(message, title, okText, 'Cancel', variant);
+    }
 
     async function refreshRiskReport() {
         const spinner = document.getElementById('riskSpinner');
@@ -17,7 +21,7 @@ const AI = (() => {
         empty.style.display   = 'none';
 
         try {
-            const res  = await fetch(API_URL + '?action=ai_risk_report');
+            const res  = await fetch(API_URL + '?action=ai_risk_report', { credentials: 'same-origin' });
             const json = await res.json();
             const data = json.data ?? [];
 
@@ -77,17 +81,28 @@ const AI = (() => {
     }
 
     async function runReminderCheck() {
-        if (!confirm('Run AI reminder check now? This will send reminders to at-risk borrowers.')) return;
+        const ok = await confirmExternal(
+            'Run AI reminder check now? This will send reminders to at-risk borrowers.',
+            'Run AI Check',
+            'Run Now',
+            'warning'
+        );
+        if (!ok) return;
 
         try {
-            const res   = await fetch(API_URL + '?action=ai_run_reminders', { method: 'POST' });
+            const res = await fetch(API_URL + '?action=ai_run_reminders', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-CSRF-Token': csrf() },
+            });
             const json  = await res.json();
             const count = (json.data ?? []).length;
-            alert('AI check complete - ' + count + ' reminder(s) sent.');
+
+            window.app.ui.showNotif(`AI check complete — ${count} reminder(s) sent.`, 'success');
             refreshRiskReport();
             loadReminderLog();
         } catch (err) {
-            alert('Reminder check failed.');
+            window.app.ui.showNotif('Reminder check failed.', 'error');
             console.error('Reminder error:', err);
         }
     }
@@ -100,7 +115,7 @@ const AI = (() => {
         wrap.innerHTML = '';
 
         try {
-            const res  = await fetch(API_URL + '?action=ai_reminder_log');
+            const res  = await fetch(API_URL + '?action=ai_reminder_log', { credentials: 'same-origin' });
             const json = await res.json();
             const data = json.data ?? [];
 
@@ -137,7 +152,7 @@ const AI = (() => {
                             <div class="fw-600">${escHtml(r.borrower_name)} - <em>${escHtml(r.book_title)}</em></div>
                             <div class="small text-muted">
                                 ${typeIcon}
-                                <span class="badge ${stageColors[r.reminder_stage] ?? 'badge-info'}" style="font-size:.65rem">${r.reminder_stage.replace('_', ' ')}</span>
+                                <span class="badge ${stageColors[r.reminder_stage] ?? 'badge-info'}" style="font-size:.65rem">${(r.reminder_stage || '').replace('_', ' ')}</span>
                                 Risk: <strong>${r.risk_score}%</strong>
                                 &bull; ${escHtml(r.status)}
                             </div>
@@ -160,8 +175,8 @@ const AI = (() => {
         if (!select) return;
 
         try {
-            const res     = await fetch(API_URL + '?action=get_borrowers');
-            const json    = await res.json();
+            const res  = await fetch(API_URL + '?action=get_borrowers', { credentials: 'same-origin' });
+            const json = await res.json();
 
             const members = Array.isArray(json.borrowers) ? json.borrowers
                           : Array.isArray(json.data)      ? json.data
@@ -203,10 +218,14 @@ const AI = (() => {
         spinner.style.display = 'block';
 
         try {
-            const res  = await fetch(API_URL + '?action=ai_recommendations', {
-                method : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body   : JSON.stringify({ borrower_id: borrowerId, limit }),
+            const res = await fetch(API_URL + '?action=ai_recommendations', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrf(),
+                },
+                body: JSON.stringify({ borrower_id: borrowerId, limit }),
             });
             const json = await res.json();
             const recs = json.data?.recommendations ?? [];
@@ -313,7 +332,7 @@ const AI = (() => {
         return d.toLocaleDateString();
     }
 
-    return { init, refreshRiskReport, runReminderCheck, loadReminderLog, loadRecommendations };
+    return { init, refreshRiskReport, runReminderCheck, loadReminderLog, loadRecommendations, confirmExternal };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {

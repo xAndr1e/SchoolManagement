@@ -1,9 +1,4 @@
 <?php
-/**
- * SettingsApiController
- * Handles settings-related API actions:
- *   get_settings | save_settings
- */
 class SettingsApiController
 {
     private Settings    $settings;
@@ -15,10 +10,6 @@ class SettingsApiController
         $this->log      = new ActivityLog();
     }
 
-    // ------------------------------------------------------------------
-    // Dispatch
-    // ------------------------------------------------------------------
-
     public function handle(string $action, array $input): never
     {
         match ($action) {
@@ -28,12 +19,12 @@ class SettingsApiController
         };
     }
 
-    // ------------------------------------------------------------------
-    // Actions
-    // ------------------------------------------------------------------
-
     private function getSettings(): never
     {
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
         Response::json($this->settings->all());
     }
 
@@ -41,6 +32,11 @@ class SettingsApiController
     {
         $this->settings->save($input);
         $this->log->log('Settings Updated', 'Library settings updated');
-        Response::success('Settings saved!');
+
+        Response::json([
+            'success'  => true,
+            'message'  => 'Settings saved!',
+            'settings' => $this->settings->all(),
+        ]);
     }
 }

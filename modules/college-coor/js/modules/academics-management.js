@@ -80,87 +80,57 @@ document.addEventListener("click", function (e) {
 
 // Curriculum Details
 function viewCurriculumDetails(programId) {
-  openModalById("curriculumDetailsModal");
-  document.getElementById("currProgramName").value = "Loading...";
-  document.getElementById("currVersion").value = "Loading...";
-  document.getElementById("currUnits").value = "Loading...";
-  document.getElementById("currStatus").value = "Loading...";
-  document.getElementById("subjectFlowList").innerHTML =
-    '<div class="text-muted">Loading curriculum details...</div>';
-  document.getElementById("enrollmentSummaryContent").innerHTML =
-    '<div class="text-muted">Loading summary...</div>';
+    openModalById('curriculumDetailsModal');
+    document.getElementById('currProgramName').value = 'Loading...';
+    document.getElementById('currVersion').value = 'Loading...';
+    document.getElementById('currUnits').value = 'Loading...';
+    document.getElementById('currStatus').value = 'Loading...';
+    document.getElementById('subjectFlowList').innerHTML = '<div class="text-muted">Loading curriculum details...</div>';
+    document.getElementById('enrollmentSummaryContent').innerHTML = '<div class="text-muted">Loading summary...</div>';
 
-  fetch(
-    `/modules/college-coor/api/get_curriculum.php?course_id=${encodeURIComponent(programId)}`,
-  )
-    .then(async (response) => {
-      const rawText = await response.text();
-      let data = null;
+    fetch(`/modules/college-coor/api/get_curriculum.php?course_id=${encodeURIComponent(programId)}`)
+        .then(async response => {
+            const rawText = await response.text();
+            let data = null;
 
-      try {
-        data = rawText ? JSON.parse(rawText) : null;
-      } catch (parseError) {
-        console.error(
-          "Invalid JSON returned from get_curriculum.php:",
-          rawText.substring(0, 2000),
-        );
-        throw new Error(
-          `Invalid JSON response from server (${response.status}).`,
-        );
-      }
+            try {
+                data = rawText ? JSON.parse(rawText) : null;
+            } catch (parseError) {
+                console.error('Invalid JSON returned from get_curriculum.php:', rawText.substring(0, 2000));
+                throw new Error(`Invalid JSON response from server (${response.status}).`);
+            }
 
-      if (!response.ok && (!data || data.success !== false)) {
-        throw new Error(
-          data?.message || `Request failed with status ${response.status}`,
-        );
-      }
+            if (!response.ok && (!data || data.success !== false)) {
+                throw new Error(data?.message || `Request failed with status ${response.status}`);
+            }
 
-      return data;
-    })
-    .then((data) => {
-      if (!data || data.success === false) {
-        document.getElementById("currProgramName").value =
-          "No program data found";
-        document.getElementById("currVersion").value =
-          "No curriculum data found";
-        document.getElementById("currUnits").value = "No curriculum data found";
-        document.getElementById("currStatus").value =
-          "No curriculum data found";
-        document.getElementById("subjectFlowList").innerHTML =
-          '<div class="text-muted">No curriculum has been assigned for this program yet.</div>';
-        document.getElementById("enrollmentSummaryContent").innerHTML =
-          '<div class="text-muted">No enrollment summary available.</div>';
-        return;
-      }
+            return data;
+        })
+        .then(data => {
+            if (!data || data.success === false) {
+                document.getElementById('currProgramName').value = 'No program data found';
+                document.getElementById('currVersion').value = 'No curriculum data found';
+                document.getElementById('currUnits').value = 'No curriculum data found';
+                document.getElementById('currStatus').value = 'No curriculum data found';
+                document.getElementById('subjectFlowList').innerHTML = '<div class="text-muted">No curriculum has been assigned for this program yet.</div>';
+                document.getElementById('enrollmentSummaryContent').innerHTML = '<div class="text-muted">No enrollment summary available.</div>';
+                return;
+            }
 
-      document.getElementById("currProgramName").value =
-        data.program_name || "No program data found";
-      document.getElementById("currVersion").value =
-        data.curriculum_name || "No curriculum data found";
-      document.getElementById("currUnits").value =
-        data.effective_year || "No curriculum data found";
-      document.getElementById("currStatus").value =
-        data.status || "No curriculum data found";
+            document.getElementById('currProgramName').value = data.program_name || 'No program data found';
+            document.getElementById('currVersion').value = data.curriculum_name || 'No curriculum data found';
+            document.getElementById('currUnits').value = data.effective_year || 'No curriculum data found';
+            document.getElementById('currStatus').value = data.status || 'No curriculum data found';
 
-      if (data.subject_flow && data.subject_flow.length > 0) {
-        const flowHtml = data.subject_flow
-          .map((yearGroup) => {
-            const yearLabel =
-              yearGroup.year_level === 1
-                ? "FIRST YEAR"
-                : yearGroup.year_level === 2
-                  ? "SECOND YEAR"
-                  : yearGroup.year_level === 3
-                    ? "THIRD YEAR"
-                    : yearGroup.year_level === 4
-                      ? "FOURTH YEAR"
-                      : `YEAR ${yearGroup.year_level}`;
+            if (data.subject_flow && data.subject_flow.length > 0) {
+                const flowHtml = data.subject_flow.map(yearGroup => {
+                    const yearLabel = yearGroup.year_level === 1 ? 'FIRST YEAR' :
+                        yearGroup.year_level === 2 ? 'SECOND YEAR' :
+                        yearGroup.year_level === 3 ? 'THIRD YEAR' :
+                        yearGroup.year_level === 4 ? 'FOURTH YEAR' : `YEAR ${yearGroup.year_level}`;
 
-            const semestersHtml = (yearGroup.semesters || [])
-              .map((semGroup) => {
-                const subjectsHtml = (semGroup.subjects || [])
-                  .map(
-                    (subject) => `
+                    const semestersHtml = (yearGroup.semesters || []).map(semGroup => {
+                        const subjectsHtml = (semGroup.subjects || []).map(subject => `
                             <tr>
                                 <td style="padding: 6px 8px; border-bottom: 1px solid #e9ecef;">${subject.code || ""}</td>
                                 <td style="padding: 6px 8px; border-bottom: 1px solid #e9ecef;">${subject.name || ""}</td>
@@ -338,78 +308,71 @@ function closeSubjectModal() {
 
 // Section Management
 function getSectionSemesterOptions() {
-  const raw =
-    document.getElementById("sectionSemesterOptionsData")?.textContent || "[]";
+    const raw = document.getElementById('sectionSemesterOptionsData')?.textContent || '[]';
 
-  try {
-    return JSON.parse(raw) || [];
-  } catch (error) {
-    console.error("Error parsing section semester options:", error);
-    return [];
-  }
+    try {
+        return JSON.parse(raw) || [];
+    } catch (error) {
+        console.error('Error parsing section semester options:', error);
+        return [];
+    }
 }
 
 function loadSectionSchoolYears() {
   const schoolYearSelect = document.getElementById("sectionSchoolYear");
   const semesterSelect = document.getElementById("sectionSemester");
 
-  if (schoolYearSelect) schoolYearSelect.value = "";
-  if (semesterSelect) {
-    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-    semesterSelect.disabled = true;
-  }
+    if (schoolYearSelect) schoolYearSelect.value = '';
+    if (semesterSelect) {
+        semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+        semesterSelect.disabled = true;
+    }
 }
 
+
 function loadSectionSemesters() {
-  const schoolYearSelect = document.getElementById("sectionSchoolYear");
-  const semesterSelect = document.getElementById("sectionSemester");
-  const schoolYearId = String(schoolYearSelect.value || "");
-  const semesterOptions = getSectionSemesterOptions();
+    const schoolYearSelect = document.getElementById('sectionSchoolYear');
+    const semesterSelect = document.getElementById('sectionSemester');
+    const schoolYearId = String(schoolYearSelect.value || '');
+    const semesterOptions = getSectionSemesterOptions();
 
-  semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-  semesterSelect.disabled = true;
-
-  if (!schoolYearId) {
-    return;
-  }
-
-  const matchingSemesters = semesterOptions.filter(
-    (semester) => String(semester.school_year_id) === schoolYearId,
-  );
-
-  if (matchingSemesters.length > 0) {
-    semesterSelect.innerHTML =
-      '<option value="">Select Semester</option>' +
-      matchingSemesters
-        .map(
-          (semester) => `
-                <option value="${semester.id}">${semester.name}</option>
-            `,
-        )
-        .join("");
-    semesterSelect.disabled = false;
-  } else {
-    semesterSelect.innerHTML = '<option value="">No semesters found</option>';
+    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
     semesterSelect.disabled = true;
-  }
+
+    if (!schoolYearId) {
+        return;
+    }
+
+    const matchingSemesters = semesterOptions.filter(semester => String(semester.school_year_id) === schoolYearId);
+
+    if (matchingSemesters.length > 0) {
+        semesterSelect.innerHTML = '<option value="">Select Semester</option>' +
+            matchingSemesters.map(semester => `
+                <option value="${semester.id}">${semester.name}</option>
+            `).join('');
+        semesterSelect.disabled = false;
+    } else {
+        semesterSelect.innerHTML = '<option value="">No semesters found</option>';
+        semesterSelect.disabled = true;
+    }
 }
 
 function openAddSectionModal() {
-  const form = document.getElementById("sectionForm");
-  if (!form) {
-    console.error("sectionForm not found in DOM");
-    return;
-  }
-  form.reset();
+    const form = document.getElementById('sectionForm');
+    if (!form) {
+        console.error('sectionForm not found in DOM');
+        return;
+    }
+    form.reset();
 
-  const title = document.getElementById("sectionModalTitle");
-  if (title) title.textContent = "Add Section";
+    const title = document.getElementById('sectionModalTitle');
+    if (title) title.textContent = 'Add Section';
 
-  const saveBtn = document.getElementById("saveSectionBtn");
-  if (saveBtn) saveBtn.disabled = false;
+    const saveBtn = document.getElementById('saveSectionBtn');
+    if (saveBtn) saveBtn.disabled = false;
 
-  loadSectionSchoolYears();
-  openModalById("sectionModal");
+    loadSectionSchoolYears();
+    openModalById('sectionModal');
 }
 
 function closeSectionModal() {
@@ -561,73 +524,45 @@ function closeFacultyLoadModal() {
   closeModalById("facultyLoadModal");
 }
 
-function viewFacultyLoadDetails(
-  facultyId,
-  facultyName,
-  teachingUnits,
-  maxLoad,
-  assignedSections,
-  assignedSubjects,
-  department,
-) {
-  document.getElementById("detailFacultyName").textContent =
-    facultyName || "N/A";
-  document.getElementById("detailDepartment").textContent = department || "N/A";
-  document.getElementById("detailMaxLoad").textContent = maxLoad + " Units";
-  document.getElementById("detailTeachingUnits").textContent =
-    teachingUnits + " Units";
+function viewFacultyLoadDetails(facultyId, facultyName, teachingUnits, maxLoad, assignedSections, assignedSubjects, department) {
+    document.getElementById('detailFacultyName').textContent = facultyName || 'N/A';
+    document.getElementById('detailDepartment').textContent = department || 'N/A';
+    document.getElementById('detailMaxLoad').textContent = maxLoad + ' Units';
+    document.getElementById('detailTeachingUnits').textContent = teachingUnits + ' Units';
 
-  const remainingLoad = Math.max(0, maxLoad - teachingUnits);
-  document.getElementById("detailRemainingLoad").textContent =
-    remainingLoad + " Units";
+    const remainingLoad = Math.max(0, maxLoad - teachingUnits);
+    document.getElementById('detailRemainingLoad').textContent = remainingLoad + ' Units';
 
-  document.getElementById("detailAssignedSectionsCount").textContent =
-    assignedSections || 0;
-  document.getElementById("detailAssignedAdviserSectionsCount").textContent = 0;
-  document.getElementById("detailAssignedSubjectsCount").textContent =
-    assignedSubjects || 0;
+    document.getElementById('detailAssignedSectionsCount').textContent = assignedSections || 0;
+    document.getElementById('detailAssignedAdviserSectionsCount').textContent = 0;
+    document.getElementById('detailAssignedSubjectsCount').textContent = assignedSubjects || 0;
 
-  const instructorSectionsContainer = document.getElementById(
-    "detailAssignedSections",
-  );
-  const adviserSectionsContainer = document.getElementById(
-    "detailAssignedAdviserSections",
-  );
-  const assignedSubjectsContainer = document.getElementById(
-    "detailAssignedSubjects",
-  );
-  instructorSectionsContainer.innerHTML =
-    '<div style="color: #6c757d;">Loading instructor assignments...</div>';
-  adviserSectionsContainer.innerHTML =
-    '<div style="color: #6c757d;">Loading adviser assignments...</div>';
-  assignedSubjectsContainer.innerHTML =
-    '<div style="color: #6c757d;">Loading assigned subjects...</div>';
+    const instructorSectionsContainer = document.getElementById('detailAssignedSections');
+    const adviserSectionsContainer = document.getElementById('detailAssignedAdviserSections');
+    const assignedSubjectsContainer = document.getElementById('detailAssignedSubjects');
+    instructorSectionsContainer.innerHTML = '<div style="color: #6c757d;">Loading instructor assignments...</div>';
+    adviserSectionsContainer.innerHTML = '<div style="color: #6c757d;">Loading adviser assignments...</div>';
+    assignedSubjectsContainer.innerHTML = '<div style="color: #6c757d;">Loading assigned subjects...</div>';
 
-  fetch(
-    `/modules/college-coor/api/get_faculty_sections.php?faculty_id=${facultyId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success && data.sections && data.sections.length > 0) {
-        const instructorSections = data.sections.filter(
-          (section) => section.role === "Instructor",
-        );
-        const adviserSections = data.sections.filter(
-          (section) => section.role === "Adviser",
-        );
+    fetch(`/modules/college-coor/api/get_faculty_sections.php?faculty_id=${facultyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.sections && data.sections.length > 0) {
+                const instructorSections = data.sections.filter(section => section.role === 'Instructor');
+                const adviserSections = data.sections.filter(section => section.role === 'Adviser');
 
-        function groupByYearSemester(sections) {
-          return sections.reduce((groups, section) => {
-            const year = section.school_year || "Unknown School Year";
-            const semester = section.semester || "Unknown Semester";
-            const key = `${year}||${semester}`;
-            if (!groups[key]) {
-              groups[key] = { year, semester, sections: [] };
-            }
-            groups[key].sections.push(section);
-            return groups;
-          }, {});
-        }
+                function groupByYearSemester(sections) {
+                    return sections.reduce((groups, section) => {
+                        const year = section.school_year || 'Unknown School Year';
+                        const semester = section.semester || 'Unknown Semester';
+                        const key = `${year}||${semester}`;
+                        if (!groups[key]) {
+                            groups[key] = { year, semester, sections: [] };
+                        }
+                        groups[key].sections.push(section);
+                        return groups;
+                    }, {});
+                }
 
         function renderGroupedSections(groups) {
           return Object.values(groups)
@@ -700,30 +635,26 @@ function viewFacultyLoadDetails(
         '<div style="color: #6c757d;">Unable to load adviser assignments.</div>';
     });
 
-  fetch(
-    `/modules/college-coor/api/get_faculty_assignments.php?faculty_id=${facultyId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      const scheduleList = document.getElementById("detailScheduleList");
+    fetch(`/modules/college-coor/api/get_faculty_assignments.php?faculty_id=${facultyId}`)
+        .then(response => response.json())
+        .then(data => {
+            const scheduleList = document.getElementById('detailScheduleList');
 
-      if (data.success && data.assignments && data.assignments.length > 0) {
-        const grouped = data.assignments.reduce((groups, assignment) => {
-          const year = assignment.school_year || "Unknown School Year";
-          const semester = assignment.semester || "Unknown Semester";
-          const key = `${year}||${semester}`;
-          if (!groups[key]) {
-            groups[key] = { year, semester, rows: [] };
-          }
-          groups[key].rows.push(assignment);
-          return groups;
-        }, {});
+            if (data.success && data.assignments && data.assignments.length > 0) {
+                const grouped = data.assignments.reduce((groups, assignment) => {
+                    const year = assignment.school_year || 'Unknown School Year';
+                    const semester = assignment.semester || 'Unknown Semester';
+                    const key = `${year}||${semester}`;
+                    if (!groups[key]) {
+                        groups[key] = { year, semester, rows: [] };
+                    }
+                    groups[key].rows.push(assignment);
+                    return groups;
+                }, {});
 
-        assignedSubjectsContainer.innerHTML = Object.values(grouped)
-          .map((group) => {
-            const rowsHtml = group.rows
-              .map((assignment) => {
-                return `
+                assignedSubjectsContainer.innerHTML = Object.values(grouped).map(group => {
+                    const rowsHtml = group.rows.map(assignment => {
+                        return `
                             <tr>
                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${assignment.section_code || "N/A"}</td>
                                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${assignment.subject_code || "N/A"}</td>
@@ -793,50 +724,35 @@ function viewFacultyLoadDetails(
                             <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${roomCode}</td>
                         </tr>
                     `;
-              })
-              .join("")
-          : '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #6c757d;">No schedules assigned</td></tr>';
+                }).join('')
+                : '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #6c757d;">No schedules assigned</td></tr>';
 
-      const historyContainer = document.getElementById("detailLoadHistory");
-      historyContainer.innerHTML =
-        '<div style="color: #6c757d;">Loading historical assignments...</div>';
-      fetch(
-        `/modules/college-coor/api/get_faculty_assignments_history.php?faculty_id=${facultyId}`,
-      )
-        .then((response) => response.json())
-        .then((historyData) => {
-          if (
-            historyData.success &&
-            historyData.history &&
-            historyData.history.length > 0
-          ) {
-            const groupedHistory = historyData.history.reduce(
-              (groups, assignment) => {
-                const year = assignment.school_year || "Unknown School Year";
-                const semester = assignment.semester || "Unknown Semester";
-                const section = assignment.section_code || "Unknown Section";
-                const key = `${year}||${semester}`;
+            const historyContainer = document.getElementById('detailLoadHistory');
+            historyContainer.innerHTML = '<div style="color: #6c757d;">Loading historical assignments...</div>';
+            fetch(`/modules/college-coor/api/get_faculty_assignments_history.php?faculty_id=${facultyId}`)
+                .then(response => response.json())
+                .then(historyData => {
+                    if (historyData.success && historyData.history && historyData.history.length > 0) {
+                        const groupedHistory = historyData.history.reduce((groups, assignment) => {
+                            const year = assignment.school_year || 'Unknown School Year';
+                            const semester = assignment.semester || 'Unknown Semester';
+                            const section = assignment.section_code || 'Unknown Section';
+                            const key = `${year}||${semester}`;
 
-                if (!groups[key]) {
-                  groups[key] = { year, semester, sections: {} };
-                }
+                            if (!groups[key]) {
+                                groups[key] = { year, semester, sections: {} };
+                            }
 
-                if (!groups[key].sections[section]) {
-                  groups[key].sections[section] = {
-                    section_code: section,
-                    assignments: [],
-                  };
-                }
+                            if (!groups[key].sections[section]) {
+                                groups[key].sections[section] = { section_code: section, assignments: [] };
+                            }
 
-                groups[key].sections[section].assignments.push(assignment);
-                return groups;
-              },
-              {},
-            );
+                            groups[key].sections[section].assignments.push(assignment);
+                            return groups;
+                        }, {});
 
-            historyContainer.innerHTML = Object.values(groupedHistory)
-              .map((group) => {
-                return `
+                        historyContainer.innerHTML = Object.values(groupedHistory).map(group => {
+                            return `
                                 <div style="margin-bottom: 18px;">
                                     <div style="font-weight: 700; margin-bottom: 8px;">School Year: ${group.year} · Semester: ${group.semester}</div>
                                     ${Object.values(group.sections)
@@ -944,25 +860,22 @@ function openAssignFacultyLoadModal(
 }
 
 function loadSchoolYears() {
-  const schoolYearSelect = document.getElementById("assignLoadSchoolYear");
-  const semesterSelect = document.getElementById("assignLoadSemester");
-  const sectionSelect = document.getElementById("assignLoadSection");
+    const schoolYearSelect = document.getElementById('assignLoadSchoolYear');
+    const semesterSelect = document.getElementById('assignLoadSemester');
+    const sectionSelect = document.getElementById('assignLoadSection');
 
-  schoolYearSelect.innerHTML = '<option value="">Select School Year</option>';
-  semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-  semesterSelect.disabled = true;
-  sectionSelect.innerHTML = "";
-  sectionSelect.disabled = true;
+    schoolYearSelect.innerHTML = '<option value="">Select School Year</option>';
+    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+    semesterSelect.disabled = true;
+    sectionSelect.innerHTML = '';
+    sectionSelect.disabled = true;
 
-  fetch("/modules/college-coor/api/get_school_years.php")
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success && data.school_years && data.school_years.length > 0) {
-        schoolYearSelect.innerHTML =
-          '<option value="">Select School Year</option>' +
-          data.school_years
-            .map(
-              (year) => `
+    fetch('/modules/college-coor/api/get_school_years.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.school_years && data.school_years.length > 0) {
+                schoolYearSelect.innerHTML = '<option value="">Select School Year</option>' +
+                    data.school_years.map(year => `
                         <option value="${year.id}">${year.name}</option>
                     `,
             )
@@ -982,31 +895,26 @@ function loadSchoolYears() {
 }
 
 function loadSemestersForSchoolYear() {
-  const schoolYearSelect = document.getElementById("assignLoadSchoolYear");
-  const semesterSelect = document.getElementById("assignLoadSemester");
-  const sectionSelect = document.getElementById("assignLoadSection");
-  const schoolYearId = schoolYearSelect.value;
+    const schoolYearSelect = document.getElementById('assignLoadSchoolYear');
+    const semesterSelect = document.getElementById('assignLoadSemester');
+    const sectionSelect = document.getElementById('assignLoadSection');
+    const schoolYearId = schoolYearSelect.value;
 
-  semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-  semesterSelect.disabled = true;
-  sectionSelect.innerHTML = "";
-  sectionSelect.disabled = true;
+    semesterSelect.innerHTML = '<option value="">Select Semester</option>';
+    semesterSelect.disabled = true;
+    sectionSelect.innerHTML = '';
+    sectionSelect.disabled = true;
 
-  if (!schoolYearId) {
-    return;
-  }
+    if (!schoolYearId) {
+        return;
+    }
 
-  fetch(
-    `/modules/college-coor/api/get_semesters.php?school_year_id=${schoolYearId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success && data.semesters && data.semesters.length > 0) {
-        semesterSelect.innerHTML =
-          '<option value="">Select Semester</option>' +
-          data.semesters
-            .map(
-              (semester) => `
+    fetch(`/modules/college-coor/api/get_semesters.php?school_year_id=${schoolYearId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.semesters && data.semesters.length > 0) {
+                semesterSelect.innerHTML = '<option value="">Select Semester</option>' +
+                    data.semesters.map(semester => `
                         <option value="${semester.id}">${semester.name}</option>
                     `,
             )
@@ -1037,31 +945,26 @@ function getSectionYearLabel(yearLevel) {
 }
 
 function loadSectionsForAssignment() {
-  const schoolYearSelect = document.getElementById("assignLoadSchoolYear");
-  const semesterSelect = document.getElementById("assignLoadSemester");
-  const sectionSelect = document.getElementById("assignLoadSection");
-  const schoolYearId = schoolYearSelect.value;
-  const semesterId = semesterSelect.value;
-  const facultyId = document.getElementById("assignLoadFacultyId").value;
+    const schoolYearSelect = document.getElementById('assignLoadSchoolYear');
+    const semesterSelect = document.getElementById('assignLoadSemester');
+    const sectionSelect = document.getElementById('assignLoadSection');
+    const schoolYearId = schoolYearSelect.value;
+    const semesterId = semesterSelect.value;
+    const facultyId = document.getElementById('assignLoadFacultyId').value;
 
-  sectionSelect.innerHTML = "";
-  sectionSelect.disabled = true;
+    sectionSelect.innerHTML = '';
+    sectionSelect.disabled = true;
 
-  if (!schoolYearId || !semesterId || !facultyId) {
-    return;
-  }
+    if (!schoolYearId || !semesterId || !facultyId) {
+        return;
+    }
 
-  fetch(
-    `/modules/college-coor/api/get_adviser_sections.php?faculty_id=${facultyId}&school_year_id=${schoolYearId}&semester_id=${semesterId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success && data.sections && data.sections.length > 0) {
-        sectionSelect.innerHTML =
-          '<option value="">Select Section</option>' +
-          data.sections
-            .map(
-              (section) => `
+    fetch(`/modules/college-coor/api/get_adviser_sections.php?faculty_id=${facultyId}&school_year_id=${schoolYearId}&semester_id=${semesterId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.sections && data.sections.length > 0) {
+                sectionSelect.innerHTML = '<option value="">Select Section</option>' +
+                    data.sections.map(section => `
                         <option value="${section.id}" data-code="${section.section_code}" data-program="${section.program_code}" data-year-level="${section.grade_level}">
                             ${section.section_code} | ${section.program_code} | ${getSectionYearLabel(section.grade_level)}
                         </option>
@@ -1083,46 +986,27 @@ function loadSectionsForAssignment() {
 }
 
 function loadSubjectsForSection() {
-  const sectionId = document.getElementById("assignLoadSection").value;
-  const subjectSelect = document.getElementById("assignLoadSubject");
-  const saveBtn = document.querySelector(
-    '#assignFacultyLoadForm button[type="submit"]',
-  );
-  const modalBody = document.querySelector(
-    "#assignFacultyLoadModal .modal-body",
-  );
-  let alertEl = modalBody
-    ? modalBody.querySelector("#assignSubjectAlert")
-    : null;
+    const sectionId = document.getElementById('assignLoadSection').value;
+    const subjectSelect = document.getElementById('assignLoadSubject');
+    const saveBtn = document.querySelector('#assignFacultyLoadForm button[type="submit"]');
+    const modalBody = document.querySelector('#assignFacultyLoadModal .modal-body');
+    let alertEl = modalBody ? modalBody.querySelector('#assignSubjectAlert') : null;
 
-  subjectSelect.innerHTML = '<option value="">Select Subject</option>';
-  subjectSelect.disabled = true;
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    subjectSelect.disabled = true;
 
-  if (!sectionId) {
-    return;
-  }
+    if (!sectionId) {
+        return;
+    }
 
-  fetch(
-    `/modules/college-coor/api/get_section_subjects.php?section_id=${sectionId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (alertEl) {
-        alertEl.remove();
-        alertEl = null;
-      }
+    fetch(`/modules/college-coor/api/get_section_subjects.php?section_id=${sectionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (alertEl) { alertEl.remove(); alertEl = null; }
 
-      if (
-        data &&
-        data.success &&
-        Array.isArray(data.subjects) &&
-        data.subjects.length > 0
-      ) {
-        subjectSelect.innerHTML =
-          '<option value="">Select Subject</option>' +
-          data.subjects
-            .map(
-              (subject) => `
+            if (data && data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+                subjectSelect.innerHTML = '<option value="">Select Subject</option>' +
+                    data.subjects.map(subject => `
                         <option value="${subject.id}" data-code="${subject.code}" data-name="${subject.name}" data-units="${subject.units}">
                             ${subject.code} - ${subject.name} (${subject.units} units)
                         </option>
@@ -1173,39 +1057,26 @@ function closeAssignFacultyLoadModal() {
   closeModalById("assignFacultyLoadModal");
 }
 
-function openAssignFacultySubjectModal(
-  facultyId,
-  facultyName,
-  teachingUnits,
-  maxLoad,
-  department,
-) {
-  document.getElementById("assignSubjectFacultyId").value = facultyId;
-  document.getElementById("assignSubjectFacultyName").value = facultyName;
-  document.getElementById("assignSubjectDepartment").value = department;
-  document.getElementById("assignSubjectMaxLoad").value = maxLoad + " Units";
-  document.getElementById("assignSubjectCurrentLoad").value =
-    teachingUnits + " Units";
-  document.getElementById("assignSubjectRemainingLoad").value =
-    Math.max(0, maxLoad - teachingUnits) + " Units";
+function openAssignFacultySubjectModal(facultyId, facultyName, teachingUnits, maxLoad, department) {
+    document.getElementById('assignSubjectFacultyId').value = facultyId;
+    document.getElementById('assignSubjectFacultyName').value = facultyName;
+    document.getElementById('assignSubjectDepartment').value = department;
+    document.getElementById('assignSubjectMaxLoad').value = maxLoad + ' Units';
+    document.getElementById('assignSubjectCurrentLoad').value = teachingUnits + ' Units';
+    document.getElementById('assignSubjectRemainingLoad').value = Math.max(0, maxLoad - teachingUnits) + ' Units';
 
-  const sectionSelect = document.getElementById("assignSubjectSection");
-  const subjectSelect = document.getElementById("assignSubjectSubject");
-  sectionSelect.innerHTML = '<option value="">Select Section</option>';
-  subjectSelect.innerHTML = '<option value="">Select Subject</option>';
-  subjectSelect.disabled = true;
+    const sectionSelect = document.getElementById('assignSubjectSection');
+    const subjectSelect = document.getElementById('assignSubjectSubject');
+    sectionSelect.innerHTML = '<option value="">Select Section</option>';
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    subjectSelect.disabled = true;
 
-  fetch(
-    `/modules/college-coor/api/get_instructor_sections.php?faculty_id=${facultyId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success && data.sections && data.sections.length > 0) {
-        sectionSelect.innerHTML =
-          '<option value="">Select Section</option>' +
-          data.sections
-            .map(
-              (section) => `
+    fetch(`/modules/college-coor/api/get_instructor_sections.php?faculty_id=${facultyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.sections && data.sections.length > 0) {
+                sectionSelect.innerHTML = '<option value="">Select Section</option>' +
+                    data.sections.map(section => `
                         <option value="${section.section_id}"
                             data-program-id="${section.program_id}"
                             data-year-level="${section.grade_level}"
@@ -1238,46 +1109,27 @@ function closeAssignFacultySubjectModal() {
 }
 
 function loadSubjectsForAssignedSection() {
-  const sectionId = document.getElementById("assignSubjectSection").value;
-  const subjectSelect = document.getElementById("assignSubjectSubject");
-  const saveBtn = document.querySelector(
-    '#assignFacultySubjectForm button[type="submit"]',
-  );
-  const modalBody = document.querySelector(
-    "#assignFacultySubjectModal .modal-body",
-  );
-  let alertEl = modalBody
-    ? modalBody.querySelector("#assignSubjectAlert")
-    : null;
+    const sectionId = document.getElementById('assignSubjectSection').value;
+    const subjectSelect = document.getElementById('assignSubjectSubject');
+    const saveBtn = document.querySelector('#assignFacultySubjectForm button[type="submit"]');
+    const modalBody = document.querySelector('#assignFacultySubjectModal .modal-body');
+    let alertEl = modalBody ? modalBody.querySelector('#assignSubjectAlert') : null;
 
-  subjectSelect.innerHTML = '<option value="">Select Subject</option>';
-  subjectSelect.disabled = true;
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    subjectSelect.disabled = true;
 
-  if (!sectionId) {
-    return;
-  }
+    if (!sectionId) {
+        return;
+    }
 
-  fetch(
-    `/modules/college-coor/api/get_section_subjects.php?section_id=${sectionId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (alertEl) {
-        alertEl.remove();
-        alertEl = null;
-      }
+    fetch(`/modules/college-coor/api/get_section_subjects.php?section_id=${sectionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (alertEl) { alertEl.remove(); alertEl = null; }
 
-      if (
-        data &&
-        data.success &&
-        Array.isArray(data.subjects) &&
-        data.subjects.length > 0
-      ) {
-        subjectSelect.innerHTML =
-          '<option value="">Select Subject</option>' +
-          data.subjects
-            .map(
-              (subject) => `
+            if (data && data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+                subjectSelect.innerHTML = '<option value="">Select Subject</option>' +
+                    data.subjects.map(subject => `
                         <option value="${subject.id}" data-code="${subject.code}" data-name="${subject.name}" data-units="${subject.units}">
                             ${subject.code} - ${subject.name} (${subject.units} units)
                         </option>
@@ -1729,23 +1581,21 @@ function calculateLoadStatus(loadStatusString) {
 }
 
 function loadFacultyLoadData() {
-  const tbody = document.getElementById("facultyTable")?.querySelector("tbody");
-  if (!tbody) return;
+    const tbody = document.getElementById('facultyTable')?.querySelector('tbody');
+    if (!tbody) return;
 
-  tbody.innerHTML =
-    '<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading faculty load...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading faculty load...</td></tr>';
 
-  fetch("/modules/college-coor/api/get_faculty_load.php")
-    .then((response) => {
-      if (!response.ok) throw new Error("API request failed");
-      return response.json();
-    })
-    .then((facultyLoads) => {
-      if (!facultyLoads || facultyLoads.length === 0) {
-        tbody.innerHTML =
-          '<tr><td colspan="8" class="text-center text-muted">No faculty loads found</td></tr>';
-        return;
-      }
+    fetch('/modules/college-coor/api/get_faculty_load.php')
+        .then(response => {
+            if (!response.ok) throw new Error('API request failed');
+            return response.json();
+        })
+        .then(facultyLoads => {
+            if (!facultyLoads || facultyLoads.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No faculty loads found</td></tr>';
+                return;
+            }
 
       tbody.innerHTML = facultyLoads
         .map((fac) => {
@@ -1790,36 +1640,32 @@ function loadFacultyLoadData() {
 }
 
 function updateFacultyLoadValues(facultyId) {
-  const row = document.querySelector(`tr[data-faculty-id="${facultyId}"]`);
-  if (!row) return;
+    const row = document.querySelector(`tr[data-faculty-id="${facultyId}"]`);
+    if (!row) return;
 
-  fetch(
-    `/modules/college-coor/api/get_faculty_load.php?faculty_id=${facultyId}`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (data && (Array.isArray(data) ? data[0] : data)) {
-        const fac = Array.isArray(data) ? data[0] : data;
-        const classesAssigned = parseInt(fac.classes_assigned) || 0;
-        const totalUnits = parseInt(fac.total_units) || 0;
-        const maxLoad = parseInt(fac.max_load) || 15;
-        const loadStatusData = calculateLoadStatus(fac.load_status);
+    fetch(`/modules/college-coor/api/get_faculty_load.php?faculty_id=${facultyId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && (Array.isArray(data) ? data[0] : data)) {
+                const fac = Array.isArray(data) ? data[0] : data;
+                const classesAssigned = parseInt(fac.classes_assigned) || 0;
+                const totalUnits = parseInt(fac.total_units) || 0;
+                const maxLoad = parseInt(fac.max_load) || 15;
+                const loadStatusData = calculateLoadStatus(fac.load_status);
 
-        const classesCell = row.querySelector(".faculty-classes-assigned");
-        if (classesCell) classesCell.textContent = classesAssigned;
+                const classesCell = row.querySelector('.faculty-classes-assigned');
+                if (classesCell) classesCell.textContent = classesAssigned;
 
-        const totalUnitsCell = row.querySelector(".faculty-total-units");
-        if (totalUnitsCell) totalUnitsCell.textContent = totalUnits;
+                const totalUnitsCell = row.querySelector('.faculty-total-units');
+                if (totalUnitsCell) totalUnitsCell.textContent = totalUnits;
 
-        const statusCell = row.querySelector(".faculty-load-status");
-        if (statusCell) {
-          statusCell.innerHTML = `<span class="badge ${loadStatusData.badge}">${loadStatusData.status}</span>`;
-        }
-      }
-    })
-    .catch((error) =>
-      console.error("Error updating faculty load values:", error),
-    );
+                const statusCell = row.querySelector('.faculty-load-status');
+                if (statusCell) {
+                    statusCell.innerHTML = `<span class="badge ${loadStatusData.badge}">${loadStatusData.status}</span>`;
+                }
+            }
+        })
+        .catch(error => console.error('Error updating faculty load values:', error));
 }
 
 function refreshFacultyLoad() {
@@ -1848,13 +1694,13 @@ window.addEventListener("page:loaded", function (e) {
   }
 });
 
-window.addEventListener("page:loaded", function (e) {
-  if (e.detail && e.detail.page === "academics-management") {
-    if (sessionStorage.getItem("refreshFacultyLoad") === "true") {
-      sessionStorage.removeItem("refreshFacultyLoad");
-      setTimeout(loadFacultyLoadData, 100);
-    }
-  }
+window.addEventListener('page:loaded', function(e) {
+    if (e.detail && e.detail.page === 'academics-management') {
+        if (sessionStorage.getItem('refreshFacultyLoad') === 'true') {
+            sessionStorage.removeItem('refreshFacultyLoad');
+            setTimeout(loadFacultyLoadData, 100);
+        }
+ }
 });
 // element-specific bindings moved to initAcademicsManagementBindings()
 
@@ -1867,218 +1713,92 @@ function bindOnce(el, flag, event, handler) {
 }
 
 function initAcademicsManagementBindings() {
-  // assignSubjectSection change
-  bindOnce(
-    document.getElementById("assignSubjectSection"),
-    "assignSubjectSection_change",
-    "change",
-    loadSubjectsForAssignedSection,
-  );
+    // assignSubjectSection change
+    bindOnce(document.getElementById('assignSubjectSection'), 'assignSubjectSection_change', 'change', loadSubjectsForAssignedSection);
 
-  // sectionSchoolYear change
-  bindOnce(
-    document.getElementById("sectionSchoolYear"),
-    "sectionSchoolYear_change",
-    "change",
-    loadSectionSemesters,
-  );
+    // sectionSchoolYear change
+    bindOnce(document.getElementById('sectionSchoolYear'), 'sectionSchoolYear_change', 'change', loadSectionSemesters);
 
-  // sectionForm submit
-  bindOnce(
-    document.getElementById("sectionForm"),
-    "sectionForm_submit",
-    "submit",
-    function (e) {
-      e.preventDefault();
+    // sectionForm submit
+    bindOnce(document.getElementById('sectionForm'), 'sectionForm_submit', 'submit', function (e) {
+        e.preventDefault();
 
-      const saveButton = document.getElementById("saveSectionBtn");
-      const sectionCode = document.getElementById("sectionCode").value.trim();
-      const gradeLevel = document
-        .getElementById("sectionGradeLevel")
-        .value.trim();
-      const programId = document.getElementById("sectionProgram").value;
-      const schoolYearId = document.getElementById("sectionSchoolYear").value;
-      const semesterId = document.getElementById("sectionSemester").value;
+        const saveButton = document.getElementById('saveSectionBtn');
+        const sectionCode = document.getElementById('sectionCode').value.trim();
+        const gradeLevel = document.getElementById('sectionGradeLevel').value.trim();
+        const programId = document.getElementById('sectionProgram').value;
+        const schoolYearId = document.getElementById('sectionSchoolYear').value;
+        const semesterId = document.getElementById('sectionSemester').value;
 
-      if (
-        !sectionCode ||
-        !gradeLevel ||
-        !programId ||
-        !schoolYearId ||
-        !semesterId
-      ) {
-        alert("Please fill in all required fields");
-        return;
-      }
+        if (!sectionCode || !gradeLevel || !programId || !schoolYearId || !semesterId) {
+            alert('Please fill in all required fields');
+            return;
+        }
 
-      const parsedGradeLevel = parseInt(gradeLevel, 10);
-      if (
-        Number.isNaN(parsedGradeLevel) ||
-        parsedGradeLevel < 1 ||
-        parsedGradeLevel > 4
-      ) {
-        alert("Grade level must be between 1 and 4");
-        return;
-      }
+        const parsedGradeLevel = parseInt(gradeLevel, 10);
+        if (Number.isNaN(parsedGradeLevel) || parsedGradeLevel < 1 || parsedGradeLevel > 4) {
+            alert('Grade level must be between 1 and 4');
+            return;
+        }
 
-      saveButton.disabled = true;
+        saveButton.disabled = true;
 
-      const formData = new FormData();
-      formData.append("section_code", sectionCode);
-      formData.append("grade_level", parsedGradeLevel.toString());
-      formData.append("program_id", programId);
-      formData.append("school_year_id", schoolYearId);
-      formData.append("semester_id", semesterId);
+        const formData = new FormData();
+        formData.append('section_code', sectionCode);
+        formData.append('grade_level', parsedGradeLevel.toString());
+        formData.append('program_id', programId);
+        formData.append('school_year_id', schoolYearId);
+        formData.append('semester_id', semesterId);
 
-      fetch("/modules/college-coor/api/add_section.php", {
-        method: "POST",
-        body: formData,
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            alert(data.message);
-            closeSectionModal();
-            location.reload();
-          } else {
-            alert("Error: " + (data.message || "Failed to add section"));
-          }
+        fetch('/modules/college-coor/api/add_section.php', {
+            method: 'POST',
+            body: formData
         })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("An error occurred while adding the section");
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                closeSectionModal();
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to add section'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding the section');
         })
         .finally(() => {
-          saveButton.disabled = false;
+            saveButton.disabled = false;
         });
-    },
-  );
+    });
 
-  // adviserForm submit
-  bindOnce(
-    document.getElementById("adviserForm"),
-    "adviserForm_submit",
-    "submit",
-    function (e) {
-      e.preventDefault();
+    // adviserForm submit
+    bindOnce(document.getElementById('adviserForm'), 'adviserForm_submit', 'submit', function (e) {
+        e.preventDefault();
 
-      const sectionId = document.getElementById("adviserSectionId").value;
-      const adviserSelect = document.getElementById("adviserSelect");
-      const facultyId =
-        adviserSelect.options[adviserSelect.selectedIndex].getAttribute(
-          "data-id",
-        );
+        const sectionId = document.getElementById('adviserSectionId').value;
+        const adviserSelect = document.getElementById('adviserSelect');
+        const facultyId = adviserSelect.options[adviserSelect.selectedIndex].getAttribute('data-id');
 
-      if (!sectionId || !facultyId) {
-        alert("Please select a valid adviser");
-        return;
-      }
+        if (!sectionId || !facultyId) {
+            alert('Please select a valid adviser');
+            return;
+        }
 
-      const formData = new FormData();
-      formData.append("section_id", sectionId);
-      formData.append("faculty_id", facultyId);
+        const formData = new FormData();
+        formData.append('section_id', sectionId);
+        formData.append('faculty_id', facultyId);
 
-      fetch("/modules/college-coor/api/assign_adviser.php", {
-        method: "POST",
-        body: formData,
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(
-              "Network response was not ok - Status: " + response.status,
-            );
-          }
-          return response.json();
+        fetch('/modules/college-coor/api/assign_adviser.php', {
+            method: 'POST',
+            body: formData
         })
-        .then((data) => {
-          if (data.success) {
-            alert(data.message);
-            closeAdviserModal();
-            location.reload();
-          } else {
-            alert("Error: " + data.message);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("Error assigning adviser: " + error.message);
-        });
-    },
-  );
-
-  // facultyLoadForm submit
-  bindOnce(
-    document.getElementById("facultyLoadForm"),
-    "facultyLoadForm_submit",
-    "submit",
-    function (e) {
-      e.preventDefault();
-      alert("Faculty load assigned successfully");
-
-      setTimeout(() => {
-        loadFacultyLoadData();
-      }, 500);
-
-      closeFacultyLoadModal();
-    },
-  );
-  // assignFacultySubjectForm submit
-  bindOnce(
-    document.getElementById("assignFacultySubjectForm"),
-    "assignFacultySubjectForm_submit",
-    "submit",
-    function (e) {
-      e.preventDefault(); // stops the redirect to the dashboard
-
-      const facultyId = document.getElementById("assignSubjectFacultyId").value;
-      const sectionSel = document.getElementById("assignSubjectSection");
-      const subjectSel = document.getElementById("assignSubjectSubject");
-      const sectionId = sectionSel.value;
-      const subjectId = subjectSel.value;
-
-      if (!facultyId || !sectionId || !subjectId) {
-        alert("Please select both a section and a subject");
-        return;
-      }
-
-      const sectionOpt = sectionSel.options[sectionSel.selectedIndex];
-      const submitBtn = this.querySelector('button[type="submit"]');
-      if (submitBtn) submitBtn.disabled = true;
-
-      const formData = new FormData();
-      formData.append("faculty_id", facultyId);
-      formData.append("section_id", sectionId);
-      formData.append("subject_id", subjectId);
-      formData.append("semester_id", sectionOpt.dataset.semesterId || "");
-      formData.append("school_year_id", sectionOpt.dataset.schoolYearId || "");
-
-      // TODO: replace with your real endpoint
-
-      fetch(
-        "/modules/college-coor/api/assign_subject_to_faculty.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            faculty_id: parseInt(facultyId, 10),
-            assignments: [
-              {
-                section_id: parseInt(sectionId, 10),
-                subject_id: parseInt(subjectId, 10),
-              },
-            ],
-          }),
-        },
-      )
-        .then((response) => response.json()) // the API sends JSON even on 400/401, so read it
-        .then((data) => {
-          if (data.success) {
-            alert(data.message || "Subject assigned successfully");
-            closeAssignFacultySubjectModal();
-            loadFacultyLoadData();
-          } else {
-            alert("Error: " + (data.message || "Failed to assign subject"));
-          }
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok - Status: ' + response.status);
+            }
+            return response.json();
         })
         .catch((error) => {
           console.error("Error assigning subject:", error);
@@ -2108,52 +1828,49 @@ function exposeGlobal(name, value) {
 }
 
 // Expose globals individually so a missing identifier doesn't break all exposures
-exposeGlobal("ACTIVE_TAB_KEY", ACTIVE_TAB_KEY);
-exposeGlobal("switchToTab", switchToTab);
-exposeGlobal("closeModalById", closeModalById);
-exposeGlobal("openModalById", openModalById);
-exposeGlobal("viewCurriculumDetails", viewCurriculumDetails);
-exposeGlobal("closeCurriculumModal", closeCurriculumModal);
-exposeGlobal("viewSubjectDetails", viewSubjectDetails);
-exposeGlobal("closeSubjectModal", closeSubjectModal);
-exposeGlobal("loadSectionSchoolYears", loadSectionSchoolYears);
-exposeGlobal("loadSectionSemesters", loadSectionSemesters);
-exposeGlobal("openAddSectionModal", openAddSectionModal);
-exposeGlobal("closeSectionModal", closeSectionModal);
-exposeGlobal("assignAdviser", assignAdviser);
-exposeGlobal("closeAdviserModal", closeAdviserModal);
-exposeGlobal("openAssignAdviserModal", openAssignAdviserModal);
-exposeGlobal("viewSectionDetails", viewSectionDetails);
-exposeGlobal("closeSectionDetailsModal", closeSectionDetailsModal);
-exposeGlobal("viewSectionStudents", viewSectionStudents);
-exposeGlobal("closeSectionStudentsModal", closeSectionStudentsModal);
-exposeGlobal("openAddFacultyLoadModal", openAddFacultyLoadModal);
-exposeGlobal("editFacultyLoad", editFacultyLoad);
-exposeGlobal("deleteFacultyLoad", deleteFacultyLoad);
-exposeGlobal("closeFacultyLoadModal", closeFacultyLoadModal);
-exposeGlobal("viewFacultyLoadDetails", viewFacultyLoadDetails);
-exposeGlobal("closeFacultyLoadDetailsModal", closeFacultyLoadDetailsModal);
-exposeGlobal(
-  "initializeAssignLoadModalEvents",
-  initializeAssignLoadModalEvents,
-);
-exposeGlobal("openAssignFacultyLoadModal", openAssignFacultyLoadModal);
-exposeGlobal("loadSchoolYears", loadSchoolYears);
-exposeGlobal("loadSemestersForSchoolYear", loadSemestersForSchoolYear);
-exposeGlobal("getSectionYearLabel", getSectionYearLabel);
-exposeGlobal("loadSectionsForAssignment", loadSectionsForAssignment);
-exposeGlobal("loadSubjectsForSection", loadSubjectsForSection);
-exposeGlobal("closeAssignFacultyLoadModal", closeAssignFacultyLoadModal);
-exposeGlobal("openAssignFacultySubjectModal", openAssignFacultySubjectModal);
-exposeGlobal("closeAssignFacultySubjectModal", closeAssignFacultySubjectModal);
-exposeGlobal("loadSubjectsForAssignedSection", loadSubjectsForAssignedSection);
-exposeGlobal("addAssignmentToTemp", addAssignmentToTemp);
-exposeGlobal("removeAssignmentFromTemp", removeAssignmentFromTemp);
-exposeGlobal("updateRunningTotal", updateRunningTotal);
-exposeGlobal("loadFacultyLoadData", loadFacultyLoadData);
-exposeGlobal("updateFacultyLoadValues", updateFacultyLoadValues);
-exposeGlobal("refreshFacultyLoad", refreshFacultyLoad);
-exposeGlobal("initializeAllSearches", initializeAllSearches);
-exposeGlobal("attachTableSearch", attachTableSearch);
-exposeGlobal("attachSectionSearch", attachSectionSearch);
-exposeGlobal("attachSubjectCatalogSearch", attachSubjectCatalogSearch);
+exposeGlobal('ACTIVE_TAB_KEY', ACTIVE_TAB_KEY);
+exposeGlobal('switchToTab', switchToTab);
+exposeGlobal('closeModalById', closeModalById);
+exposeGlobal('openModalById', openModalById);
+exposeGlobal('viewCurriculumDetails', viewCurriculumDetails);
+exposeGlobal('closeCurriculumModal', closeCurriculumModal);
+exposeGlobal('viewSubjectDetails', viewSubjectDetails);
+exposeGlobal('closeSubjectModal', closeSubjectModal);
+exposeGlobal('loadSectionSchoolYears', loadSectionSchoolYears);
+exposeGlobal('loadSectionSemesters', loadSectionSemesters);
+exposeGlobal('openAddSectionModal', openAddSectionModal);
+exposeGlobal('closeSectionModal', closeSectionModal);
+exposeGlobal('assignAdviser', assignAdviser);
+exposeGlobal('closeAdviserModal', closeAdviserModal);
+exposeGlobal('openAssignAdviserModal', openAssignAdviserModal);
+exposeGlobal('viewSectionDetails', viewSectionDetails);
+exposeGlobal('closeSectionDetailsModal', closeSectionDetailsModal);
+exposeGlobal('viewSectionStudents', viewSectionStudents);
+exposeGlobal('closeSectionStudentsModal', closeSectionStudentsModal);
+exposeGlobal('openAddFacultyLoadModal', openAddFacultyLoadModal);
+exposeGlobal('editFacultyLoad', editFacultyLoad);
+exposeGlobal('deleteFacultyLoad', deleteFacultyLoad);
+exposeGlobal('closeFacultyLoadModal', closeFacultyLoadModal);
+exposeGlobal('viewFacultyLoadDetails', viewFacultyLoadDetails);
+exposeGlobal('closeFacultyLoadDetailsModal', closeFacultyLoadDetailsModal);
+exposeGlobal('initializeAssignLoadModalEvents', initializeAssignLoadModalEvents);
+exposeGlobal('openAssignFacultyLoadModal', openAssignFacultyLoadModal);
+exposeGlobal('loadSchoolYears', loadSchoolYears);
+exposeGlobal('loadSemestersForSchoolYear', loadSemestersForSchoolYear);
+exposeGlobal('getSectionYearLabel', getSectionYearLabel);
+exposeGlobal('loadSectionsForAssignment', loadSectionsForAssignment);
+exposeGlobal('loadSubjectsForSection', loadSubjectsForSection);
+exposeGlobal('closeAssignFacultyLoadModal', closeAssignFacultyLoadModal);
+exposeGlobal('openAssignFacultySubjectModal', openAssignFacultySubjectModal);
+exposeGlobal('closeAssignFacultySubjectModal', closeAssignFacultySubjectModal);
+exposeGlobal('loadSubjectsForAssignedSection', loadSubjectsForAssignedSection);
+exposeGlobal('addAssignmentToTemp', addAssignmentToTemp);
+exposeGlobal('removeAssignmentFromTemp', removeAssignmentFromTemp);
+exposeGlobal('updateRunningTotal', updateRunningTotal);
+exposeGlobal('loadFacultyLoadData', loadFacultyLoadData);
+exposeGlobal('updateFacultyLoadValues', updateFacultyLoadValues);
+exposeGlobal('refreshFacultyLoad', refreshFacultyLoad);
+exposeGlobal('initializeAllSearches', initializeAllSearches);
+exposeGlobal('attachTableSearch', attachTableSearch);
+exposeGlobal('attachSectionSearch', attachSectionSearch);
+exposeGlobal('attachSubjectCatalogSearch', attachSubjectCatalogSearch);

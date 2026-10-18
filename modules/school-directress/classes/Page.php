@@ -15,6 +15,19 @@ class Page {
         'student-monitoring'            => 'Student Monitoring'
     ];
 
+    
+    private $icons = [
+        'dashboard-overview'           => 'fa-solid fa-house',
+        'user-management'              => 'fa-solid fa-users',
+        'department-unit-management'    => 'fa-solid fa-sitemap',
+        'approval-decision-support'     => 'fa-solid fa-clipboard-check',
+        'communications-announcements' => 'fa-solid fa-bullhorn',
+        'report-submission-management' => 'fa-solid fa-file-lines',
+        'concerns-issue-tracking'       => 'fa-solid fa-triangle-exclamation',
+        'student-monitoring'            => 'fa-solid fa-user-graduate'
+    ];
+
+
     private $sections = [
         'top'             => ['dashboard-overview'],
         'administration'  => ['user-management', 'department-unit-management'],
@@ -79,11 +92,30 @@ class Page {
 
     private function renderLink($p) {
         $label = $this->labels[$p] ?? ucwords(str_replace('-', ' ', $p));
-        if (in_array($p, $this->allowed)) {
-            $class = $this->isActive($p) ? 'active-menu-link' : 'menu-link';
-            echo "<li><a href=\"?page={$p}\" data-page=\"{$p}\" class=\"{$class}\">{$label}</a></li>";
+        $icon = $this->icons[$p] ?? 'fa-solid fa-circle';
+
+        if (in_array($p, $this->allowed, true)) {
+            $class = $this->isActive($p)
+                ? 'active-menu-link'
+                : 'menu-link';
+
+            echo '<li>';
+            echo '<a href="?page=' . htmlspecialchars($p, ENT_QUOTES, 'UTF-8') . '" ';
+            echo 'data-page="' . htmlspecialchars($p, ENT_QUOTES, 'UTF-8') . '" ';
+            echo 'class="' . $class . '">';
+
+            echo '<i class="' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . ' sidebar-icon" aria-hidden="true"></i>';
+            echo '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+
+            echo '</a>';
+            echo '</li>';
         } else {
-            echo "<li><a href=\"#\" class=\"menu-link\">{$label}</a></li>";
+            echo '<li>';
+            echo '<a href="#" class="menu-link">';
+            echo '<i class="' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . ' sidebar-icon" aria-hidden="true"></i>';
+            echo '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>';
+            echo '</a>';
+            echo '</li>';
         }
     }
 }

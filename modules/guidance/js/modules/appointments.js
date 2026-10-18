@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    const API_URL = 'controller/AppointmentsController.php';
+    const API_URL = 'controllers/AppointmentsController.php';
     const PAGE_KEY = 'appointments'; // must match the Page class's $_GET['page'] key
 
     /* ---------------------------------------------------------

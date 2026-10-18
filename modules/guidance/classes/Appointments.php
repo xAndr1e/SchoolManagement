@@ -400,7 +400,7 @@ class Appointments
             FROM em_employees e
             JOIN em_positions p
                 ON p.position_id = e.position_id
-            WHERE e.department_id = 8
+            WHERE e.unit_id = 17
               AND e.employment_status = 'active'
             ORDER BY e.last_name ASC
         ");

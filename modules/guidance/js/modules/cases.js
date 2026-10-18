@@ -22,7 +22,7 @@
 (function () {
     'use strict';
 
-    const API_URL = 'controller/CasesController.php';
+    const API_URL = 'controllers/CasesController.php';
     const PAGE_KEY = 'cases'; // must match the Page class's $_GET['page'] key
 
     /* ---------------------------------------------------------

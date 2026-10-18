@@ -149,6 +149,7 @@
                             type="file"
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
                         >
+                        <small class="muted">PDF, Word, Excel, JPG or PNG &middot; up to 10 MB</small>
                     </div>
 
                     <input type="hidden" id="concern-issue-id" name="issue_id" value="">
@@ -177,7 +178,7 @@
         </div>
     </div>
 
-    <!-- PDF Viewer Modal -->
+    <!-- File Viewer Modal (generated PDF and attachments) -->
     <div class="concern-modal-overlay" id="concern-pdf-modal-overlay">
         <div class="concern-modal concern-modal-lg" role="dialog" aria-modal="true" aria-labelledby="concern-pdf-modal-title">
             <div class="concern-modal-header">
@@ -185,7 +186,7 @@
                 <button type="button" class="concern-modal-close" id="concern-pdf-modal-close" aria-label="Close">&times;</button>
             </div>
             <div class="concern-modal-body concern-pdf-body">
-                <iframe id="concern-pdf-frame" class="concern-pdf-frame" src="" title="Concern PDF"></iframe>
+                <iframe id="concern-pdf-frame" class="concern-pdf-frame" src="" title="Concern file"></iframe>
             </div>
         </div>
     </div>

@@ -445,6 +445,108 @@
     resize: vertical;
 }
 
+/* ── Report attachment picker + attachment row ────────────────────────────
+   Paste at the END of your reports CSS file. Everything is rsm- prefixed and
+   uses the global --color variables (solid --color1 buttons, white text). */
+
+.rsm-field-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--color2);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.rsm-optional {
+    font-weight: 400;
+    opacity: .65;
+}
+
+.rsm-file-picker {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;            /* wraps on narrow screens instead of overflowing */
+    gap: 10px;
+    position: relative;
+}
+
+/* Visually hidden but still keyboard-focusable (don't use display:none) */
+.rsm-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.rsm-file-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--color1);
+    color: var(--color3);
+    font-size: .85rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.rsm-file-btn:hover { opacity: .9; }
+.rsm-file-input:focus-visible + .rsm-file-btn {
+    outline: 2px solid var(--color1);
+    outline-offset: 2px;
+}
+
+.rsm-file-picker label {
+    color: var(--color3);
+}
+
+.rsm-file-name {
+    flex: 1 1 140px;
+    min-width: 0;
+    font-size: .85rem;
+    opacity: .65;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rsm-file-name.rsm-file-name-set { opacity: 1; }
+
+.rsm-file-clear {
+    border: none;
+    background: transparent;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    color: inherit;
+    opacity: .6;
+}
+.rsm-file-clear:hover { opacity: 1; }
+.rsm-file-clear[hidden] { display: none; }
+
+.rsm-file-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: .75rem;
+    opacity: .65;
+}
+
+/* Attachment row in the report detail modal */
+.rsm-attachment-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+.rsm-attachment-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.rsm-link-btn {
+    display: inline-block;
+    text-decoration: none;
+}
+
 /* ── PDF viewer ────────────────────────────────────────── */
 
 .rsm-pdf-body {

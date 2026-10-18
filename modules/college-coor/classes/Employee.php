@@ -23,47 +23,128 @@ class Employee
         }
     }
 
-    /**
-     * Get all employees
-     */
-    public function getEmployees()
-    {
-        $sql = "SELECT 
-                    e.employee_id,
-                    e.employee_code,
-                    e.first_name,
-                    e.middle_name,
-                    e.last_name,
-                    d.department_name,
-                    p.position_name,
-                    e.employment_status
-                FROM em_employees AS e
+    public function getEmployees() {
+    $sql = "SELECT 
+                em.employee_id,
+                em.employee_code,
+                em.first_name,
+                em.middle_name,
+                em.last_name,
+                em.email,
+                em.mobile_no,
+                em.hire_date,
+                em.employment_type,
+                em.employment_status,
+                em.department_id,
+                em.position_id,
+                sd.department_name,
+                sp.position_name
+            FROM em_employees em
+            LEFT JOIN em_departments sd 
+                ON em.department_id = sd.department_id
+            LEFT JOIN em_positions sp
+                ON em.position_id = sp.position_id
+            ORDER BY em.employee_id";
 
-                LEFT JOIN em_departments AS d
-                    ON e.department_id = d.department_id
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-                LEFT JOIN em_positions AS p
-                    ON e.position_id = p.position_id
+    /* ── AJAX list support (User Management) ─────────────── */
 
-                WHERE e.is_archived = 0
+    private function buildEmployeeFilter(array $f) {
+        $where  = [];
+        $params = [];
 
-                ORDER BY e.employee_id";
+        $search = trim((string) ($f['search'] ?? ''));
+        if ($search !== '') {
+            $like = '%' . addcslashes($search, '%_\\') . '%';
+            $where[] = "(CONCAT_WS(' ', em.first_name, em.middle_name, em.last_name) LIKE :q1
+                         OR sd.department_name LIKE :q2
+                         OR sp.position_name LIKE :q3)";
+            $params[':q1'] = $like;
+            $params[':q2'] = $like;
+            $params[':q3'] = $like;
+        }
+
+        $dept = trim((string) ($f['department'] ?? ''));
+        if ($dept !== '') {
+            $where[] = 'sd.department_name = :dept';
+            $params[':dept'] = $dept;
+        }
+
+        $pos = trim((string) ($f['position'] ?? ''));
+        if ($pos !== '') {
+            $where[] = 'sp.position_name = :pos';
+            $params[':pos'] = $pos;
+        }
+
+        $status = trim((string) ($f['status'] ?? ''));
+        if ($status !== '') {
+            $where[] = 'em.employment_status = :status';
+            $params[':status'] = $status;
+        }
+
+        return [$where ? 'WHERE ' . implode(' AND ', $where) : '', $params];
+    }
+
+    public function countEmployeesFiltered(array $filters) {
+        list($whereSql, $params) = $this->buildEmployeeFilter($filters);
+
+        $sql = "SELECT COUNT(*)
+                FROM em_employees em
+                LEFT JOIN em_departments sd ON em.department_id = sd.department_id
+                LEFT JOIN em_positions sp   ON em.position_id = sp.position_id
+                $whereSql";
 
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
 
+    // $limit = null returns every matching row (used by export)
+    public function getEmployeesFiltered(array $filters, $limit = null, $offset = 0) {
+        list($whereSql, $params) = $this->buildEmployeeFilter($filters);
+
+        $sql = "SELECT 
+                    em.employee_id,
+                    em.employee_code,
+                    em.first_name,
+                    em.middle_name,
+                    em.last_name,
+                    em.email,
+                    em.mobile_no,
+                    em.hire_date,
+                    em.employment_type,
+                    em.employment_status,
+                    sd.department_name,
+                    u.unit_name,
+                    sp.position_name
+                FROM em_employees em
+                LEFT JOIN em_departments sd ON em.department_id = sd.department_id
+                LEFT JOIN em_units u ON em.unit_id = u.unit_id
+                LEFT JOIN em_positions sp   ON em.position_id = sp.position_id
+                $whereSql
+                ORDER BY em.employee_id";
+
+        if ($limit !== null) {
+            $sql .= ' LIMIT :limit OFFSET :offset';
+        }
+
+        $stmt = $this->conn->prepare($sql);
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int) $offset, PDO::PARAM_INT);
+        }
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get logged-in employee ID
-     */
-    public function getEmployeeId()
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
+    public function getEmployeeId() {
         return $_SESSION['employee_id'] ?? null;
     }
 
@@ -79,13 +160,7 @@ class Employee
         $employeeId = $_SESSION['employee_id'] ?? null;
 
         if ($employeeId) {
-            $sql = "SELECT 
-                        first_name,
-                        last_name
-                    FROM em_employees
-                    WHERE employee_id = :employee_id
-                    LIMIT 1";
-
+            $sql = "SELECT first_name, last_name FROM em_employees WHERE employee_id = :employee_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();
@@ -102,11 +177,30 @@ class Employee
         return 'Unknown User';
     }
 
-    /**
-     * Get logged-in employee position
-     */
-    public function getEmployeePosition()
-    {
+    public function getEmployeeUnit () {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $employeeId = $_SESSION['employee_id'] ?? null;
+
+        if ($employeeId) {
+            $sql = "SELECT su.unit_name 
+                    FROM em_employees em
+                    LEFT JOIN em_units su ON em.unit_id = su.unit_id
+                    WHERE em.employee_id = :employee_id LIMIT 1";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':employee_id', $employeeId);
+            $stmt->execute();
+            $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($employee) {
+                return htmlspecialchars($employee['unit_name']);
+            }
+        }
+        return 'Unknown Unit';
+    }
+    
+    public function getEmployeePosition() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -114,16 +208,10 @@ class Employee
         $employeeId = $_SESSION['employee_id'] ?? null;
 
         if ($employeeId) {
-            $sql = "SELECT 
-                        p.position_name
-                    FROM em_employees AS e
-
-                    LEFT JOIN em_positions AS p
-                        ON e.position_id = p.position_id
-
-                    WHERE e.employee_id = :employee_id
-                    LIMIT 1";
-
+            $sql = "SELECT sp.position_name 
+                    FROM em_employees em
+                    LEFT JOIN em_positions sp ON em.position_id = sp.position_id
+                    WHERE em.employee_id = :employee_id LIMIT 1";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();
@@ -136,34 +224,5 @@ class Employee
         }
 
         return 'Unknown Position';
-    }
-    public function getEmployeeRole()
-    {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        $employeeId = $_SESSION['employee_id'] ?? null;
-
-        if ($employeeId) {
-            $sql = "SELECT r.role_name
-                FROM em_employees AS e
-                LEFT JOIN em_roles AS r
-                    ON e.role_id = r.role_id
-                WHERE e.employee_id = :employee_id
-                LIMIT 1";
-
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bindParam(':employee_id', $employeeId);
-            $stmt->execute();
-
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($row && $row['role_name']) {
-                return htmlspecialchars($row['role_name']);
-            }
-        }
-
-        return 'Unknown Role';
     }
 }

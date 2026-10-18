@@ -1,24 +1,177 @@
 <?php
-session_start();
+require_once('../../auth/guard.php');
 
-// Check if user is logged in
-if(isset($_SESSION['user_id']) && isset($_SESSION['user_type'])) {
-    // Only allow admin access
-    if($_SESSION['user_type'] == 'admin') {
-        header("Location: admin/dashboard.php");
-        exit();
-    } 
-    // If not admin, redirect to appropriate dashboard or logout
-    else {
-        // Clear session and redirect to login
-        session_destroy();
-        header("Location: admin/dashboard.php?error=unauthorized");
-        exit();
+// Error reporting for development
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Define base path
+define('BASE_PATH', __DIR__);
+
+// Auto-loader
+spl_autoload_register(function ($class_name) {
+    $file = BASE_PATH . '/classes/' . $class_name . '.php';
+
+    if (file_exists($file)) {
+        require_once $file;
     }
-} 
-// If not logged in, redirect to login page
-else {
-    header("Location: admin/dashboard.php");
-    exit();
+});
+
+// Get page parameter
+$page = isset($_GET['page']) ? $_GET['page'] : 'dashboard-overview';
+
+// Allowed pages
+$allowed_pages = [
+    'dashboard-overview',
+    'applications',
+    'application-details',
+    'application-edit',
+    'students',
+    'student-details',
+    'student-edit',
+    'student-subjects',
+    'enrollments',
+    'courses',
+    'sections',
+    'section-details',
+    'requirements',
+    'semesters',
+    'school-years',
+    'archived-students',
+    'contact-messages',
+    'logout',                     // <-- ADDED
+];
+
+// Validate page
+if (!in_array($page, $allowed_pages)) {
+    $page = 'dashboard-overview';
 }
-?>
+
+// ---------------------------------------------------------
+// LOGOUT HANDLER — runs before anything renders
+// ---------------------------------------------------------
+if ($page === 'logout') {
+    require_once BASE_PATH . '/pages/logout.php';
+    exit;
+}
+
+// ---------------------------------------------------------
+// PAGE CONTROLLER
+// ---------------------------------------------------------
+
+class PageController
+{
+    private $currentPage;
+
+    public function __construct($page)
+    {
+        $this->currentPage = $page;
+    }
+
+    public function renderNav()
+    {
+        $navItems = [
+            'dashboard-overview' => [
+                'label' => 'Dashboard',
+                'icon'  => 'fa-solid fa-chart-pie'
+            ],
+            'applications' => [
+                'label' => 'Applications',
+                'icon'  => 'fa-solid fa-file-pen'
+            ],
+            'enrollments' => [
+                'label' => 'Enrollments',
+                'icon'  => 'fa-solid fa-user-graduate'
+            ],
+            'students' => [
+                'label' => 'Students',
+                'icon'  => 'fa-solid fa-users'
+            ],
+            'courses' => [
+                'label' => 'Courses',
+                'icon'  => 'fa-solid fa-book'
+            ],
+            'sections' => [
+                'label' => 'Sections',
+                'icon'  => 'fa-solid fa-layer-group'
+            ],
+            'requirements' => [
+                'label' => 'Requirements',
+                'icon'  => 'fa-solid fa-list-check'
+            ],
+            'semesters' => [
+                'label' => 'Semester Management',
+                'icon'  => 'fa-solid fa-calendar-days'
+            ],
+            'archived-students' => [
+                'label' => 'Archived Students',
+                'icon'  => 'fa-solid fa-box-archive'
+            ],
+            'contact-messages' => [
+                'label' => 'Contact Messages',
+                'icon'  => 'fa-solid fa-envelope'
+            ]
+        ];
+
+        foreach ($navItems as $pageKey => $item) {
+            $isActive    = ($this->currentPage === $pageKey);
+            $activeClass = $isActive ? 'active-menu-link' : 'menu-link';
+
+            echo '
+            <li>
+                <a href="?page=' . $pageKey . '" 
+                   class="' . $activeClass . '" 
+                   data-page="' . $pageKey . '">
+                    <i class="' . $item['icon'] . '"></i>
+                    <span>' . $item['label'] . '</span>
+                    ' . ($isActive ? '<span class="active-indicator"></span>' : '') . '
+                </a>
+            </li>';
+        }
+    }
+
+    public function getCurrentPage()
+    {
+        return $this->currentPage;
+    }
+}
+
+$pageController = new PageController($page);
+
+// Set page title before loading header
+$pageTitles = [
+    'dashboard-overview' => 'Dashboard Overview',
+    'applications'       => 'Applications',
+    'application-details'=> 'Application Details',
+    'application-edit'   => 'Edit Application',
+    'students'           => 'Students',
+    'student-details'    => 'Student Details',
+    'student-edit'       => 'Edit Student',
+    'student-subjects'   => 'Student Subjects',
+    'enrollments'        => 'Enrollments',
+    'courses'            => 'Courses',
+    'sections'           => 'Sections',
+    'section-details'    => 'Section Details',
+    'requirements'       => 'Requirements',
+    'semesters'          => 'Semester Management',
+    'school-years'       => 'School Years',
+    'archived-students'  => 'Archived Students',
+    'contact-messages'   => 'Contact Messages',
+];
+
+$pageTitle = $pageTitles[$page] ?? 'Bestlink College Enrollment System';
+
+// ---------------------------------------------------------
+// PAGE CONTENT
+// ---------------------------------------------------------
+
+$pageFile = BASE_PATH . '/pages/' . $page . '.php';
+
+// Check if page file exists
+if (!file_exists($pageFile)) {
+    header('Location: ?page=dashboard-overview');
+    exit;
+}
+
+// Include the page content
+include $pageFile;

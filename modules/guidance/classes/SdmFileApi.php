@@ -435,19 +435,30 @@ final class SdmFileApi
 
         $decoded = json_decode($body, true);
 
+        
         if ($status < 200 || $status >= 300) {
-            $message = is_array($decoded)
-                ? (string)($decoded['message']
+            $responseText = trim((string) $body);
+            $message = '';
+
+            if (is_array($decoded)) {
+                $message = (string) (
+                    $decoded['message']
                     ?? $decoded['error']
-                    ?? '')
-                : '';
+                    ?? ''
+                );
+            }
+
+            if ($message === '') {
+                $message = $responseText !== ''
+                    ? substr($responseText, 0, 1500)
+                    : 'No response body returned by SDM API.';
+            }
 
             throw new RuntimeException(
-                $message !== ''
-                    ? $message
-                    : 'SDM API returned HTTP ' . $status . '.'
+                'SDM API HTTP ' . $status . ': ' . $message
             );
         }
+
 
         if (!is_array($decoded)) {
             throw new RuntimeException(

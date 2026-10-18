@@ -1,4 +1,8 @@
 <?php
+function approval_debug_checkpoint($message)
+{
+    header('X-Approval-Debug: ' . $message);
+}
 // Buffer everything from this point on so any stray warning/notice from an
 // include below lands in this buffer instead of corrupting the JSON response.
 ob_start();
@@ -199,50 +203,93 @@ try {
         // POST submit an approval request — creates/promotes to 'submitted'
         // and auto-generates the PDF. PDF failure never blocks submission.
         // ------------------------------------------------------------------
+        
         case 'submit':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                approval_respond(['success' => false, 'message' => 'Method not allowed.']);
+                approval_respond([
+                    'success' => false,
+                    'message' => 'Method not allowed.'
+                ]);
             }
+
             $validated = validateApprovalInput($_POST);
+
             if (!$validated['valid']) {
-                approval_respond(['success' => false, 'message' => $validated['message']]);
+                approval_respond([
+                    'success' => false,
+                    'message' => $validated['message']
+                ]);
             }
 
-            $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
-            error_log('[APPROVAL DEBUG] Reached attachment preparation');
-            error_log('[APPROVAL DEBUG] Attachment preparation completed');
-            $prep       = approval_prepare_attachment($approvalClass, $approvalId, $userInfo); // responds on error
-            $fields     = array_merge($validated['fields'], $prep['extra']);
+            $stage = 'attachment_preparation';
+            $prep = null;
+            $newId = null;
 
             try {
-                $newId = $approvalClass->submitApproval($fields, $approvalId);
-                error_log('[APPROVAL DEBUG] Approval saved: ' . $newId);
-            } catch (\Throwable $e) {
-                FileStorage::delete($prep['newPath']);
-                throw $e;
-            }
-            approval_discard_replaced_file($prep);
+                $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
 
-            error_log('[APPROVAL DEBUG] Starting PDF generation');
-            $pdfGenerated = false;
-            $warning      = null;
-            $debug        = null;
-            try {
+                $prep = approval_prepare_attachment(
+                    $approvalClass,
+                    $approvalId,
+                    $userInfo
+                );
+
+                $fields = array_merge(
+                    $validated['fields'],
+                    $prep['extra']
+                );
+
+                $stage = 'saving_approval';
+
+                $newId = $approvalClass->submitApproval(
+                    $fields,
+                    $approvalId
+                );
+
+                approval_discard_replaced_file($prep);
+
+                $stage = 'generating_pdf';
+
                 $pdfGenerated = (bool) $approvalClass->generatePdf($newId);
+
+                approval_respond([
+                    'success' => true,
+                    'message' => 'Approval request submitted successfully.',
+                    'data' => [
+                        'approval_id' => $newId,
+                        'has_pdf' => $pdfGenerated
+                    ],
+                    'debug_stage' => 'completed'
+                ]);
+
             } catch (\Throwable $e) {
-                error_log('[ApprovalController] PDF generation failed for approval ' . $newId . ': ' . $e->getMessage());
-                $warning = 'Request submitted, but the PDF could not be generated. Contact your administrator.';
-                // TEMP debug info — remove once things are stable.
-                $debug = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
+                if ($newId === null && is_array($prep)
+                    && !empty($prep['newPath'])) {
+                    try {
+                        FileStorage::delete($prep['newPath']);
+                    } catch (\Throwable $cleanupError) {
+                        // Preserve the original error.
+                    }
+                }
+
+                $errorId = bin2hex(random_bytes(4));
+
+                // Temporary diagnostic response.
+                // Do not leave detailed exception messages enabled in production.
+                http_response_code(500);
+
+                approval_respond([
+                    'success' => false,
+                    'message' => 'Approval processing failed.',
+                    'debug_stage' => $stage,
+                    'debug_error_id' => $errorId,
+                    'debug_error' => $e->getMessage(),
+                    'debug_file' => basename($e->getFile()),
+                    'debug_line' => $e->getLine(),
+                    'approval_id' => $newId
+                ]);
             }
 
-            approval_respond([
-                'success' => true,
-                'message' => 'Approval request submitted successfully.',
-                'warning' => $warning,
-                'debug'   => $debug,
-                'data'    => ['approval_id' => $newId, 'has_pdf' => $pdfGenerated],
-            ]);
             break;
 
         // ------------------------------------------------------------------

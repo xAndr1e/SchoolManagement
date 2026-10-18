@@ -237,7 +237,7 @@
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            $outputDir = __DIR__ . '/uploads/approvals/pdf/';
+            $outputDir = __DIR__ . '/../../../uploads/approvals/pdf/';
             if (!is_dir($outputDir)) {
                 mkdir($outputDir, 0755, true);
             }

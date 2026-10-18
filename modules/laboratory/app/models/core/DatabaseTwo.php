@@ -8,8 +8,8 @@ class DatabaseTwo
     private function __construct()
     {
         $this->conn = new PDO(
-           "mysql:host=localhost;dbname=labo_payr_bcp;charset=utf8",
-                "labo_sms",
+           "mysql:host=localhost;dbname=laba_sms;charset=utf8",
+                "labo_test",
                 "1234",
             [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

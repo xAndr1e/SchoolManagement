@@ -13,21 +13,8 @@ declare(strict_types=1);
  *   Authorization: Bearer <APP_SECRET>
  *   X-SDM-App-ID: <APP_ID>
  *
- * Config: /home/sdm.bcp-sms.com/api-secrets.php
- *
- * Example config shape:
- *   return [
- *       'storage_path' => '/home/sdm.bcp-sms.com/storage',
- *       'apps' => [
- *           'guidance' => ['enabled' => true, 'secret' => '...'],
- *           // Optional: lets this app DOWNLOAD files owned by other apps.
- *           // Delete always stays restricted to the owning app.
- *           'sdm'      => ['enabled' => true, 'secret' => '...', 'can_read_all' => true],
- *       ],
- *   ];
- *
- * Clients always receive a generic "File not found." for any lookup failure.
- * The real reason is written to LOG_FILE (no secrets are logged).
+ * Config:
+ *   /home/sdm.bcp-sms.com/api-secrets.php
  */
 
 header('X-Content-Type-Options: nosniff');
@@ -35,25 +22,10 @@ header('Cache-Control: no-store');
 header('Referrer-Policy: no-referrer');
 
 const MAX_FILE_BYTES = 10485760; // 10 MB
-const LOG_FILE = '/home/sdm.bcp-sms.com/storage/file-debug.log';
 
 const ALLOWED_EXTENSIONS = [
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'
 ];
-
-/**
- * Append one line to the debug log. Never throws, never logs secrets.
- */
-function logEvent(string $event, array $context = []): void
-{
-    $line = '[' . date('Y-m-d H:i:s') . '] ' . $event;
-
-    if ($context) {
-        $line .= ' ' . json_encode($context, JSON_UNESCAPED_SLASHES);
-    }
-
-    @file_put_contents(LOG_FILE, $line . PHP_EOL, FILE_APPEND | LOCK_EX);
-}
 
 function respond(int $status, array $data): void
 {
@@ -61,22 +33,6 @@ function respond(int $status, array $data): void
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data, JSON_UNESCAPED_SLASHES);
     exit;
-}
-
-/**
- * Generic 404 for the client, specific reason in the log.
- */
-function notFound(string $reason, array $context = []): void
-{
-    logEvent(
-        '404 ' . $reason,
-        $context + [
-            'action' => (string)($_POST['action'] ?? '-'),
-            'id'     => (string)($_POST['file_id'] ?? '-'),
-        ]
-    );
-
-    respond(404, ['error' => 'File not found.']);
 }
 
 function requestMethod(): string
@@ -274,10 +230,6 @@ function validateFileContent(string $path, string $extension): string
     return $mime;
 }
 
-// ---------------------------------------------------------------------------
-// Request handling
-// ---------------------------------------------------------------------------
-
 // Only POST requests are supported.
 if (requestMethod() !== 'POST') {
     header('Allow: POST');
@@ -288,7 +240,6 @@ if (requestMethod() !== 'POST') {
 $configFile = '/home/sdm.bcp-sms.com/api-secrets.php';
 
 if (!is_file($configFile)) {
-    logEvent('500 config-missing');
     respond(500, ['error' => 'API configuration unavailable.']);
 }
 
@@ -299,7 +250,6 @@ if (
     !is_string($config['storage_path'] ?? null) ||
     !is_array($config['apps'] ?? null)
 ) {
-    logEvent('500 config-invalid');
     respond(500, ['error' => 'API configuration is invalid.']);
 }
 
@@ -320,12 +270,8 @@ if (
         $providedSecret
     )
 ) {
-    logEvent('401 unauthorized', ['app_id' => $appId]);
     respond(401, ['error' => 'Unauthorized.']);
 }
-
-// Optional per-app flag: may DOWNLOAD files owned by other apps.
-$canReadAll = ($config['apps'][$appId]['can_read_all'] ?? false) === true;
 
 $storageRoot = rtrim(
     str_replace('\\', '/', $config['storage_path']),
@@ -333,7 +279,6 @@ $storageRoot = rtrim(
 );
 
 if ($storageRoot === '') {
-    logEvent('500 storage-path-empty');
     respond(500, ['error' => 'Storage path is invalid.']);
 }
 
@@ -346,21 +291,15 @@ foreach ([$filesDir, $metadataDir] as $directory) {
         !mkdir($directory, 0750, true) &&
         !is_dir($directory)
     ) {
-        logEvent('500 storage-unavailable', ['dir' => $directory]);
         respond(500, ['error' => 'Private storage is unavailable.']);
     }
 
     if (!is_writable($directory)) {
-        logEvent('500 storage-not-writable', ['dir' => $directory]);
         respond(500, ['error' => 'Private storage is not writable.']);
     }
 }
 
 $action = (string)($_POST['action'] ?? '');
-
-// ---------------------------------------------------------------------------
-// Upload
-// ---------------------------------------------------------------------------
 
 if ($action === 'upload') {
     if (!isset($_FILES['file']) || !is_array($_FILES['file'])) {
@@ -414,7 +353,6 @@ if ($action === 'upload') {
     $metadataPath = $metadataDir . '/' . $fileId . '.json';
 
     if (!move_uploaded_file($tmp, $filePath)) {
-        logEvent('500 upload-move-failed', ['app_id' => $appId]);
         respond(500, ['error' => 'Could not save the file.']);
     }
 
@@ -444,18 +382,10 @@ if ($action === 'upload') {
     if ($written === false || $written !== strlen($encoded)) {
         @unlink($filePath);
         @unlink($metadataPath);
-        logEvent('500 upload-metadata-failed', ['id' => $fileId]);
         respond(500, ['error' => 'Could not save file metadata.']);
     }
 
     chmod($metadataPath, 0640);
-
-    logEvent('201 uploaded', [
-        'id' => $fileId,
-        'app_id' => $appId,
-        'ext' => $extension,
-        'size' => $size,
-    ]);
 
     respond(201, [
         'success' => true,
@@ -467,27 +397,17 @@ if ($action === 'upload') {
     ]);
 }
 
-// ---------------------------------------------------------------------------
-// Download and delete: both need a valid file ID and its metadata
-// ---------------------------------------------------------------------------
-
+// Download and delete require a valid file ID.
 $fileId = (string)($_POST['file_id'] ?? '');
 
 if (!preg_match('/^[a-f0-9]{32}$/', $fileId)) {
     respond(400, ['error' => 'A valid file_id is required.']);
 }
 
-if ($action !== 'download' && $action !== 'delete') {
-    respond(400, ['error' => 'Unsupported action.']);
-}
-
 $metadataPath = $metadataDir . '/' . $fileId . '.json';
 
 if (!is_file($metadataPath)) {
-    notFound('metadata-missing', [
-        'caller' => $appId,
-        'metadata_path' => $metadataPath,
-    ]);
+    respond(404, ['error' => 'File not found.']);
 }
 
 $metadataRaw = file_get_contents($metadataPath);
@@ -495,59 +415,33 @@ $metadata = is_string($metadataRaw)
     ? json_decode($metadataRaw, true)
     : null;
 
-if (!is_array($metadata)) {
-    notFound('metadata-unreadable', ['caller' => $appId]);
-}
-
-if (($metadata['file_id'] ?? '') !== $fileId) {
-    notFound('metadata-id-mismatch', [
-        'caller' => $appId,
-        'stored_id' => $metadata['file_id'] ?? null,
-    ]);
-}
-
 if (
+    !is_array($metadata) ||
+    ($metadata['file_id'] ?? '') !== $fileId ||
     !isset($metadata['extension']) ||
-    !is_string($metadata['extension']) ||
     !in_array($metadata['extension'], ALLOWED_EXTENSIONS, true)
 ) {
-    notFound('metadata-bad-extension', [
-        'caller' => $appId,
-        'extension' => $metadata['extension'] ?? null,
-    ]);
+    respond(404, ['error' => 'File not found.']);
 }
 
 // Files from the old shared-secret API have no app_id.
-// They stay inaccessible until ownership is explicitly migrated
-// (add "app_id" to the file's metadata JSON).
-if (!isset($metadata['app_id']) || !is_string($metadata['app_id'])) {
-    notFound('metadata-no-app-id', ['caller' => $appId]);
-}
-
-$isOwner = hash_equals($metadata['app_id'], $appId);
-
-// Downloads: owner, or an app flagged can_read_all.
-// Deletes: owner only, always.
-if (!$isOwner && !($action === 'download' && $canReadAll)) {
-    notFound('app-mismatch', [
-        'caller' => $appId,
-        'owner' => $metadata['app_id'],
-        'can_read_all' => $canReadAll,
-    ]);
+// They are deliberately inaccessible until ownership is explicitly migrated.
+if (
+    !isset($metadata['app_id']) ||
+    !is_string($metadata['app_id']) ||
+    !hash_equals($metadata['app_id'], $appId)
+) {
+    respond(404, ['error' => 'File not found.']);
 }
 
 $extension = $metadata['extension'];
 $filePath = $filesDir . '/' . $fileId . '.' . $extension;
 
-if (!is_file($filePath)) {
-    notFound('file-missing', [
-        'caller' => $appId,
-        'file_path' => $filePath,
-        'files_dir_exists' => is_dir($filesDir),
-    ]);
-}
-
 if ($action === 'download') {
+    if (!is_file($filePath) || !is_readable($filePath)) {
+        respond(404, ['error' => 'File not found.']);
+    }
+
     $actualSize = filesize($filePath);
 
     if (
@@ -555,26 +449,13 @@ if ($action === 'download') {
         $actualSize < 1 ||
         $actualSize > MAX_FILE_BYTES
     ) {
-        logEvent('500 stored-size-invalid', ['id' => $fileId]);
         respond(500, ['error' => 'Stored file size is invalid.']);
     }
 
     $mime = (string)($metadata['mime'] ?? 'application/octet-stream');
 
-    // Use the stored original name, sanitized; fall back to the ID.
-    $downloadName = preg_replace(
-        '/[^A-Za-z0-9._ -]/',
-        '_',
-        cleanOriginalName((string)($metadata['original_name'] ?? ''))
-    ) ?: ($fileId . '.' . $extension);
-
-    if ($downloadName === 'document') {
-        $downloadName = $fileId . '.' . $extension;
-    }
-
-    while (ob_get_level() > 0) {
-        ob_end_clean();
-    }
+    // The filename is generated by the server, not supplied by the caller.
+    $downloadName = $fileId . '.' . $extension;
 
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . $actualSize);
@@ -588,25 +469,28 @@ if ($action === 'download') {
     exit;
 }
 
-// action === 'delete' (owner only; enforced above)
-logEvent('delete', ['id' => $fileId, 'app_id' => $appId]);
+if ($action === 'delete') {
+    if (!is_file($filePath)) {
+        respond(404, ['error' => 'File not found.']);
+    }
 
-// Do not remove metadata if deleting the file itself fails.
-if (!unlink($filePath)) {
-    logEvent('500 delete-failed', ['id' => $fileId]);
-    respond(500, ['error' => 'Could not delete the file.']);
-}
+    // Do not remove metadata if deleting the file itself fails.
+    if (!unlink($filePath)) {
+        respond(500, ['error' => 'Could not delete the file.']);
+    }
 
-if (is_file($metadataPath) && !unlink($metadataPath)) {
-    // The file is already deleted. Report cleanup failure honestly.
-    logEvent('500 delete-metadata-failed', ['id' => $fileId]);
-    respond(500, [
-        'error' => 'File deleted, but metadata cleanup failed.',
+    if (is_file($metadataPath) && !unlink($metadataPath)) {
+        // The file is already deleted. Report cleanup failure honestly.
+        respond(500, [
+            'error' => 'File deleted, but metadata cleanup failed.',
+            'file_id' => $fileId,
+        ]);
+    }
+
+    respond(200, [
+        'success' => true,
         'file_id' => $fileId,
     ]);
 }
 
-respond(200, [
-    'success' => true,
-    'file_id' => $fileId,
-]);
+respond(400, ['error' => 'Unsupported action.']);

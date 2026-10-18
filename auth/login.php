@@ -65,11 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         WHERE user_account.employee_id = :employeeid
         LIMIT 1
     ");
-
-    $stmt->execute([
-        ':employeeid' => $employeeid
-    ]);
-
+    
     $stmt->execute([
         ':employeeid' => $employeeid
     ]);

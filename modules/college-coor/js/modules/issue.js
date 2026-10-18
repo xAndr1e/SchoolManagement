@@ -136,7 +136,7 @@ async function submitConcernForm(action) {
         const json = await res.json();
 
         if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-            setTimeout(() => window.location.href = '/sms/index.php', 1500);
+            setTimeout(() => window.location.href = '/index.php', 1500);
             return;
         }
 

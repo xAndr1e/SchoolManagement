@@ -271,7 +271,7 @@ function renderConcernDetail(concern) {
         : `<span class="muted">PDF not yet generated</span>`;
 
     const attachmentLine = concern.file_path
-        ? `<a class="btn-view" href="/sms/${esc(concern.file_path)}" target="_blank">View Attachment</a>`
+        ? `<a class="btn-view" href="${esc(concern.file_path)}" target="_blank">View Attachment</a>`
         : `<span class="muted">No attachment</span>`;
 
     const aiSummaryBox = `
@@ -327,7 +327,7 @@ function openPdfModal(pdfPath) {
     const overlay = document.getElementById('concern-pdf-modal-overlay');
     const frame   = document.getElementById('concern-pdf-frame');
     if (!overlay || !frame || !pdfPath) return;
-    frame.src = `/sms/${pdfPath}`;
+    frame.src = `${pdfPath}`;
     overlay.classList.add('active');
 }
 

@@ -442,6 +442,17 @@ final class SdmFileApi
                     ?? '')
                 : '';
 
+            // Log diagnostics server-side; do not expose them to the browser.
+            error_log(
+                '[SDM API] HTTP ' . $status
+                . ' | endpoint=' . parse_url($this->endpoint, PHP_URL_HOST)
+                . ' | response=' . substr(
+                    preg_replace('/[\r\n]+/', ' ', (string)$body),
+                    0,
+                    1000
+                )
+            );
+
             throw new RuntimeException(
                 $message !== ''
                     ? $message

@@ -132,7 +132,7 @@ async function submitApprovalForm(action) {
         const json = await res.json();
 
         if (!json.success && json.message?.toLowerCase().includes('session expired')) {
-            setTimeout(() => window.location.href = '/sms/index.php', 1500);
+            ssetTimeout(() => window.location.href = '/index.php', 1500);
             return;
         }
 
@@ -261,9 +261,9 @@ function renderApprovalDetail(approval) {
         ? `<button type="button" class="attachment-link" id="approval-open-pdf" data-pdf-path="${esc(approval.pdf_path)}">View PDF</button>`
         : `<span class="muted">PDF not yet generated</span>`;
 
-    const attachmentLine = approval.file_path
-        ? `<a class="attachment-link" href="/${esc(approval.file_path)}" target="_blank">View Attachment</a>`
-        : `<span class="muted">No attachment</span>`;
+const attachmentLine = approval.file_path
+    ? `<a class="attachment-link" href="/${esc(approval.file_path).replace(/^\/+/, '')}" target="_blank" rel="noopener">View Attachment</a>`
+    : `<span class="muted">No attachment</span>`;
 
     const aiSummaryBox = `
         <div class="approval-ai-box">
@@ -297,7 +297,7 @@ function renderApprovalDetail(approval) {
     `;
 
     document.getElementById('approval-open-pdf')?.addEventListener('click', (e) => {
-        openPdfModal(e.currentTarget.dataset.pdfPath);
+        frame.src = '/' + String(pdfPath).replace(/^\/+/, '');
     });
     document.getElementById('approval-summarize-btn')?.addEventListener('click', (e) => {
         summarizeApproval(e.currentTarget.dataset.approvalId);

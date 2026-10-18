@@ -35,7 +35,7 @@ header('Cache-Control: no-store');
 header('Referrer-Policy: no-referrer');
 
 const MAX_FILE_BYTES = 10485760; // 10 MB
-const LOG_FILE = '/home/sdm.bcp-sms.com/logs/sdm.bcp-sms.com.error_logs';
+const LOG_FILE = '/home/sdm.bcp-sms.com/storage/file-debug.log';
 
 const ALLOWED_EXTENSIONS = [
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'

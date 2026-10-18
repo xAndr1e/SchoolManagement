@@ -111,7 +111,7 @@
         </div>
 
         <!-- Create / Submit Report Modal -->
-        <div class="rsm-modal-overlay" id="rsm-modal-overlay" hidden aria-hidden="true" style="display:none;">
+        <div class="rsm-modal-overlay" id="rsm-modal-overlay">
             <div class="rsm-modal" role="dialog" aria-modal="true" aria-labelledby="rsm-modal-title">
                 <div class="rsm-modal-header">
                     <h3 id="rsm-modal-title">Create Report</h3>
@@ -168,7 +168,7 @@
         </div>
 
         <!-- Report Detail / Review Modal -->
-        <div class="rsm-modal-overlay" id="rsm-view-modal-overlay" hidden aria-hidden="true" style="display:none;">
+        <div class="rsm-modal-overlay" id="rsm-view-modal-overlay">
             <div class="rsm-modal rsm-modal-lg" role="dialog" aria-modal="true" aria-labelledby="rsm-view-modal-title">
                 <div class="rsm-modal-header">
                     <h3 id="rsm-view-modal-title">Report Details</h3>
@@ -182,7 +182,7 @@
         </div>
 
         <!-- PDF Viewer Modal -->
-        <div class="rsm-modal-overlay" id="rsm-pdf-modal-overlay" hidden aria-hidden="true" style="display:none;">
+        <div class="rsm-modal-overlay" id="rsm-pdf-modal-overlay">
             <div class="rsm-modal rsm-modal-lg" role="dialog" aria-modal="true" aria-labelledby="rsm-pdf-modal-title">
                 <div class="rsm-modal-header">
                     <h3 id="rsm-pdf-modal-title">Report PDF</h3>

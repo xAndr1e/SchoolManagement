@@ -360,41 +360,45 @@
     }
 
     async function refreshFacultyLoadChart() {
-        try {
-            // Use optimized API endpoint for distribution data
-            const response = await fetch('/modules/college-coor/api/get_faculty_load_distribution.php', {credentials:'same-origin'});
-            if (!response.ok) throw new Error('Failed to load faculty load distribution');
-            const distribution = await response.json();
-            
-            // Handle error response from API
-            if (distribution.error) {
-                throw new Error(distribution.error);
+    try {
+        const response = await fetch('/modules/college-coor/api/get_faculty_load_distribution.php', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Failed to load faculty load distribution');
+        const distribution = await response.json();
+        if (distribution.error) throw new Error(distribution.error);
+
+        const counts = {
+            under: distribution.underloaded || 0,
+            full: distribution.fully_loaded || 0,
+            over: distribution.overloaded || 0
+        };
+
+        // Kunin ang canvas PAGKATAPOS ng await
+        const canvas = document.getElementById('facultyLoadChart');
+        if (!canvas || !canvas.isConnected || typeof Chart === 'undefined') {
+            if (window.facultyLoadRefreshTimer) {
+                clearInterval(window.facultyLoadRefreshTimer);
+                window.facultyLoadRefreshTimer = null;
             }
-            
-            // Update chart with distribution data
-            const counts = {
-                under: distribution.underloaded || 0,
-                full: distribution.fully_loaded || 0,
-                over: distribution.overloaded || 0
-            };
-            
-            updateFaultyLoadSummary(counts);
-            
-            // Initialize chart if it doesn't exist
-            if (!facultyLoadChart) {
-                initFacultyLoadChart([]);
-                facultyLoadChart.data.datasets[0].data = [counts.under, counts.full, counts.over];
-                facultyLoadChart.update();
-                return;
-            }
-            
-            // Update chart data
-            facultyLoadChart.data.datasets[0].data = [counts.under, counts.full, counts.over];
-            facultyLoadChart.update();
-        } catch (error) {
-            console.error('Error refreshing faculty load chart:', error);
+            facultyLoadChart = null;
+            return;
         }
+
+        updateFaultyLoadSummary(counts);
+
+        let current = Chart.getChart(canvas);
+        if (!current) {
+            initFacultyLoadChart([]);
+            current = Chart.getChart(canvas);
+            if (!current) return;
+        }
+
+        facultyLoadChart = current;
+        current.data.datasets[0].data = [counts.under, counts.full, counts.over];
+        current.update();
+    } catch (error) {
+        console.error('Error refreshing faculty load chart:', error);
     }
+}
 
     function initDashboardCharts() {
         const data = dashboard().chartData;

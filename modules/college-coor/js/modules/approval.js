@@ -262,7 +262,7 @@ function renderApprovalDetail(approval) {
         : `<span class="muted">PDF not yet generated</span>`;
 
     const attachmentLine = approval.file_path
-        ? `<a class="attachment-link" href="/sms/${esc(approval.file_path)}" target="_blank">View Attachment</a>`
+        ? `<a class="attachment-link" href="/${esc(approval.file_path)}" target="_blank">View Attachment</a>`
         : `<span class="muted">No attachment</span>`;
 
     const aiSummaryBox = `

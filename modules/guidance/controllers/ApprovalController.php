@@ -209,17 +209,21 @@ try {
             }
 
             $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
+            error_log('[APPROVAL DEBUG] Reached attachment preparation');
+            error_log('[APPROVAL DEBUG] Attachment preparation completed');
             $prep       = approval_prepare_attachment($approvalClass, $approvalId, $userInfo); // responds on error
             $fields     = array_merge($validated['fields'], $prep['extra']);
 
             try {
                 $newId = $approvalClass->submitApproval($fields, $approvalId);
+                error_log('[APPROVAL DEBUG] Approval saved: ' . $newId);
             } catch (\Throwable $e) {
                 FileStorage::delete($prep['newPath']);
                 throw $e;
             }
             approval_discard_replaced_file($prep);
 
+            error_log('[APPROVAL DEBUG] Starting PDF generation');
             $pdfGenerated = false;
             $warning      = null;
             $debug        = null;

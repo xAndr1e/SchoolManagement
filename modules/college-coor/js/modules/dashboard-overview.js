@@ -162,19 +162,7 @@
         }
         list.innerHTML = events.map(event => {
             const unread = !readNotificationIds.includes(String(event.id));
-            // Choose icon image based on notification type (fall back to generic)
-            const type = (event.type || 'Academic').toString().toLowerCase();
-            const iconMap = {
-                'academic': 'academic.svg',
-                'faculty': 'teacher.svg',
-                'sports': 'sports.svg',
-                'system': 'system-edit-line.svg',
-                'event': 'events.svg'
-            };
-            const iconFile = iconMap[type] || 'notification-left.svg';
-            const iconSrc = `/modules/college-coor/assets/img/${iconFile}`;
-            const iconHtml = `<img src="${iconSrc}" class="notif-icon-img" alt="${escapeHtml(event.type || '')}">`;
-            return `<li class="notif-item${unread ? ' unread' : ''}" data-event-id="${escapeHtml(event.id)}" data-date="${escapeHtml(event.date)}" data-day="${escapeHtml(event.day)}" data-priority="${escapeHtml(event.priority)}" data-start="${escapeHtml(event.start_iso || '')}" data-end="${escapeHtml(event.end_iso || '')}" data-created="${escapeHtml(event.notification_created_iso || '')}"><button type="button" class="notif-link" data-event-id="${escapeHtml(event.id)}" data-date="${escapeHtml(event.date)}" data-day="${escapeHtml(event.day)}"><div class="notif-left"><span class="notif-icon">${iconHtml}</span><div class="notif-text"><span class="notif-title">${escapeHtml(event.title)}</span><span class="notif-status">${escapeHtml(event.remaining)}</span></div></div><div class="notif-right"><span class="notif-time">${escapeHtml(event.notification || '')}</span>${unread ? '<span class="notif-unread-dot"></span>' : ''}</div></button></li>`;
+            return `<li class="notif-item${unread ? ' unread' : ''}" data-event-id="${escapeHtml(event.id)}" data-date="${escapeHtml(event.date)}" data-day="${escapeHtml(event.day)}" data-priority="${escapeHtml(event.priority)}" data-start="${escapeHtml(event.start_iso || '')}" data-end="${escapeHtml(event.end_iso || '')}" data-created="${escapeHtml(event.notification_created_iso || '')}"><button type="button" class="notif-link" data-event-id="${escapeHtml(event.id)}" data-date="${escapeHtml(event.date)}" data-day="${escapeHtml(event.day)}"><div class="notif-left"><span class="notif-icon">${event.icon || '🔔'}</span><div class="notif-text"><span class="notif-title">${escapeHtml(event.title)}</span><span class="notif-status">${escapeHtml(event.remaining)}</span></div></div><div class="notif-right"><span class="notif-time">${escapeHtml(event.notification || '')}</span>${unread ? '<span class="notif-unread-dot"></span>' : ''}</div></button></li>`;
         }).join('');
         list.querySelectorAll('.notif-link').forEach(link => link.addEventListener('click', function () {
             markNotificationRead(this.dataset.eventId);

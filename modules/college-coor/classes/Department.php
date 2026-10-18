@@ -15,6 +15,21 @@ class Department {
         }
     }
 
+    private function resolveTable(array $candidates) {
+        foreach ($candidates as $table) {
+            try {
+                $stmt = $this->conn->query("SHOW TABLES LIKE '" . str_replace("'", "''", $table) . "'");
+                if ($stmt && $stmt->fetch()) {
+                    return $table;
+                }
+            } catch (Throwable $e) {
+                // Ignore and continue to the next possibility.
+            }
+        }
+
+        return $candidates[0];
+    }
+
     public function getAllDepartments() {
         $stmt = $this->conn->prepare("SELECT department_id, department_name FROM em_departments");
         $stmt->execute();
@@ -28,6 +43,9 @@ class Department {
     }
 
     public function getDepartmentsWithDetails() {
+        $deptTable = $this->resolveTable(['em_departments', 'sd_department']);
+        $employeeTable = $this->resolveTable(['em_employees', 'sms_employee']);
+
         $sql = "SELECT 
                     d.department_id,
                     d.department_name,

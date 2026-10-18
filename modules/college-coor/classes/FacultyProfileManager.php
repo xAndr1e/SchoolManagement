@@ -57,6 +57,7 @@ class FacultyProfileManager {
                 FROM cc_faculty cf
                 INNER JOIN em_employees e ON e.employee_id = cf.employee_id
                 LEFT JOIN em_departments d ON d.department_id = e.department_id
+                LEFT JOIN em_positions p ON p.position_id = e.position_id
                 WHERE e.is_archived = 0
                 ORDER BY e.last_name ASC, e.first_name ASC";
 
@@ -83,6 +84,7 @@ class FacultyProfileManager {
                 FROM cc_faculty cf
                 INNER JOIN em_employees e ON e.employee_id = cf.employee_id
                 LEFT JOIN em_departments d ON d.department_id = e.department_id
+                LEFT JOIN em_positions p ON p.position_id = e.position_id
                 WHERE cf.id = :id AND e.is_archived = 0
                 LIMIT 1";
 

@@ -161,6 +161,9 @@ try {
                 error_log('[IssueController] File missing on disk for concern ' . $issueId . ' (' . $kind . '): ' . $relative);
                 concern_file_error(404, 'The file is missing on the server.');
             }
+            $ok = $issuesClass->markReviewed($issueId, $userInfo['employee_id'], $notes !== '' ? $notes : null);
+            concern_respond(['success' => $ok, 'message' => $ok ? 'Marked as reviewed.' : 'Unable to review this concern.']);
+            break;
 
             FileStorage::stream($absolute, $name, $mime, $download); // ends the request
             break;
@@ -176,6 +179,9 @@ try {
             if (!$validated['valid']) {
                 concern_respond(['success' => false, 'message' => $validated['message']]);
             }
+            $result = $issuesClass->generateAiSummary($issueId);
+            concern_respond($result);
+            break;
 
             $issueId = (int) ($_POST['issue_id'] ?? 0) ?: null;
             $prep    = concern_prepare_attachment($issuesClass, $issueId, $userInfo); // responds on error

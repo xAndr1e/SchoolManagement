@@ -9,7 +9,7 @@ class DatabaseTwo
     {
         $this->conn = new PDO(
            "mysql:host=localhost;dbname=labo_payr_bcp;charset=utf8",
-                "labo_db",
+                "labo_sms",
                 "1234",
             [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

@@ -69,7 +69,8 @@ final class SdmFileApi
             );
         }
 
-        $configPath = '/home/gms.bcp-sms.com/sdm-api-config.php';
+        $configPath = $configPath
+        ?? (getenv('SDM_API_CONFIG_FILE') ?: '/home/gms.bcp-sms.com/sdm-api-config.php');
 
         if (!is_file($configPath) || !is_readable($configPath)) {
             throw new RuntimeException(
@@ -322,7 +323,9 @@ final class SdmFileApi
                 );
 
                 throw new RuntimeException(
-                    $message ?: 'SDM download failed with HTTP ' . $status . '.'
+                    'SDM download failed: HTTP ' . $status .
+                    '; file_id=' . $fileId .
+                    '; response=' . ($message ?: 'No API error message')
                 );
             }
 

@@ -435,23 +435,19 @@ final class SdmFileApi
 
         $decoded = json_decode($body, true);
 
-        
         if ($status < 200 || $status >= 300) {
-            http_response_code(502);
-            header('Content-Type: text/plain; charset=UTF-8');
+            $message = is_array($decoded)
+                ? (string)($decoded['message']
+                    ?? $decoded['error']
+                    ?? '')
+                : '';
 
-            echo "SDM API ERROR\n";
-            echo "HTTP Status: " . $status . "\n";
-            echo "Endpoint: " . parse_url(
-                $this->endpoint,
-                PHP_URL_HOST
-            ) . "\n";
-            echo "Response body:\n";
-            echo substr((string) $body, 0, 5000);
-
-            exit;
+            throw new RuntimeException(
+                $message !== ''
+                    ? $message
+                    : 'SDM API returned HTTP ' . $status . '.'
+            );
         }
-
 
         if (!is_array($decoded)) {
             throw new RuntimeException(

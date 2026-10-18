@@ -143,15 +143,15 @@ foreach ($calendarEventsData as $event) {
     // Automatic priority classification (based on minutes until start)
     if ($totalMinutes <= 48 * 60) {
         $priority   = 'urgent';
-        $icon       = 'ðŸ”´';
+        $icon       = '...';
         $badgeClass = 'bg-danger';
     } elseif ($totalMinutes <= 72 * 60) {
         $priority   = 'high';
-        $icon       = 'ðŸŸ ';
+        $icon       = '...';
         $badgeClass = 'bg-warning text-dark';
     } else {
         $priority   = 'normal';
-        $icon       = 'ðŸŸ¢';
+        $icon       = '...';
         $badgeClass = 'bg-success';
     }
 

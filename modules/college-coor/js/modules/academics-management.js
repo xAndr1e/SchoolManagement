@@ -332,18 +332,6 @@ function loadSectionSchoolYears() {
   }
 }
 
-function loadSectionSchoolYears() {
-  const schoolYearSelect = document.getElementById("sectionSchoolYear");
-  const semesterSelect = document.getElementById("sectionSemester");
-
-    if (schoolYearSelect) schoolYearSelect.value = '';
-    if (semesterSelect) {
-        semesterSelect.innerHTML = '<option value="">Select Semester</option>';
-        semesterSelect.disabled = true;
-    }
-}
-
-
 function loadSectionSemesters() {
   const schoolYearSelect = document.getElementById("sectionSchoolYear");
   const semesterSelect = document.getElementById("sectionSemester");

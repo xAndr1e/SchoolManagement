@@ -240,15 +240,7 @@ async function umRequest(action, params, method) {
         throw new Error('Your session has ended. Redirecting to sign in…');
     }
     if (!res.ok || !json.success) {
-        const debug = json && json.debug;
-        const details = debug
-            ? `\nFile: ${debug.file}\nLine: ${debug.line}\nType: ${debug.type}`
-            : '';
-
-        const e = new Error(
-            ((json && json.message) || 'Request failed.') + details
-        );
-
+        const e = new Error((json && json.message) || 'Request failed.');
         e.status = res.status;
         e.errors = (json && json.errors) || {};
         throw e;

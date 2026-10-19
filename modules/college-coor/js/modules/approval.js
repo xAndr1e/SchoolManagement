@@ -176,123 +176,13 @@ async function submitApprovalForm(action) {
     formData.set('action', action);
 
     try {
-        const res  = await fetch(`${ApprovalController}?action=get&approval_id=${encodeURIComponent(approvalId)}`);
-        const json = await res.json();
-
-        if (!json.success) {
-            body.innerHTML = `<p class="muted">${esc(json.message)}</p>`;
-            return;
-        }
-
-        renderApprovalDetail(json.data);
-    } catch (err) {
-        console.error('viewApproval error:', err);
-        body.innerHTML = '<p class="muted">Failed to load approval request.</p>';
-    }
-}
-
-function renderApprovalDetail(approval) {
-    const moduleRoot    = document.querySelector('.approval-module');
-    const isDirectress  = moduleRoot?.dataset.isDirectress === '1';
-    const body          = document.getElementById('approval-view-modal-body');
-    const statusLabel   = APPROVAL_STATUS_LABELS[approval.status] ?? approval.status;
-
-    let reviewSection = '';
-    if (isDirectress && approval.status === 'submitted') {
-        reviewSection = `
-            <div class="approval-review-box">
-                <label for="approval-review-notes">Review Notes (optional)</label>
-                <textarea id="approval-review-notes" rows="2" placeholder="Any notes for this review"></textarea>
-                <div class="approval-actions">
-                    <button type="button" class="approval-submit-btn" id="approval-mark-reviewed" data-approval-id="${esc(approval.approval_id)}">Mark as Reviewed</button>
-                </div>
-            </div>`;
-    } else if (isDirectress && approval.status === 'reviewed') {
-        reviewSection = `
-            <div class="approval-review-box">
-                <label for="approval-decision-notes">Decision Notes (optional)</label>
-                <textarea id="approval-decision-notes" rows="2" placeholder="Any notes for this decision"></textarea>
-                <div class="approval-actions">
-                    <button type="button" class="btn-approve approval-decide-btn" data-decision="approved" data-approval-id="${esc(approval.approval_id)}">Approve</button>
-                    <button type="button" class="btn-reject approval-decide-btn" data-decision="rejected" data-approval-id="${esc(approval.approval_id)}">Reject</button>
-                </div>
-            </div>`;
-    }
-
-    const pdfButton = approval.pdf_path
-        ? `<button type="button" class="attachment-link" id="approval-open-pdf" data-pdf-path="${esc(approval.pdf_path)}">View PDF</button>`
-        : `<span class="muted">PDF not yet generated</span>`;
-
-const attachmentLine = approval.file_path
-    ? `<a class="attachment-link" href="${esc(approval.file_path).replace(/^\/+/, '')}" target="_blank" rel="noopener">View Attachment</a>`
-    : `<span class="muted">No attachment</span>`;
-
-    const aiSummaryBox = `
-        <div class="approval-ai-box">
-            <div class="approval-ai-box-header">
-                <strong>AI Summary</strong>
-                <button type="button" class="attachment-link" id="approval-summarize-btn" data-approval-id="${esc(approval.approval_id)}">
-                    ${approval.ai_summary ? 'Regenerate' : 'Generate Summary'}
-                </button>
-            </div>
-            <p id="approval-ai-summary-text" class="muted">${approval.ai_summary ? esc(approval.ai_summary) : 'No AI summary yet.'}</p>
-        </div>`;
-
-    body.innerHTML = `
-        <div class="approval-detail-row"><span class="approval-detail-label">Title</span><span>${esc(approval.title)}</span></div>
-        <div class="approval-detail-row"><span class="approval-detail-label">Department</span><span>${esc(approval.department_name ?? 'N/A')}</span></div>
-        <div class="approval-detail-row"><span class="approval-detail-label">Submitted By</span><span>${esc(approval.submit_by_name ?? 'N/A')}</span></div>
-        <div class="approval-detail-row"><span class="approval-detail-label">Status</span><span class="badge badge-${esc(approval.status)}">${esc(statusLabel)}</span></div>
-        <div class="approval-detail-row"><span class="approval-detail-label">Attachment</span>${attachmentLine}</div>
-
-        <h4>Description</h4>
-        <p>${esc(approval.description)}</p>
-
-        <h4>Justification</h4>
-        <p>${esc(approval.justification) || '<span class="muted">None provided.</span>'}</p>
-
-        ${aiSummaryBox}
-
-        <div class="approval-actions">${pdfButton}</div>
-
-        ${reviewSection}
-    `;
-
-    document.getElementById('approval-open-pdf')?.addEventListener('click', (e) => {
-        frame.src = '/' + String(pdfPath).replace(/^\/+/, '');
-    });
-    document.getElementById('approval-summarize-btn')?.addEventListener('click', (e) => {
-        summarizeApproval(e.currentTarget.dataset.approvalId);
-    });
-    document.getElementById('approval-mark-reviewed')?.addEventListener('click', (e) => {
-        const notes = document.getElementById('approval-review-notes')?.value ?? '';
-        reviewApproval(e.currentTarget.dataset.approvalId, notes);
-    });
-    body.querySelectorAll('.approval-decide-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const notes = document.getElementById('approval-decision-notes')?.value ?? '';
-            decideApproval(e.currentTarget.dataset.approvalId, e.currentTarget.dataset.decision, notes);
-        });
-    });
-}
-
-function openPdfModal(pdfPath) {
-    const overlay = document.getElementById('approval-pdf-modal-overlay');
-    const frame   = document.getElementById('approval-pdf-frame');
-    if (!overlay || !frame || !pdfPath) return;
-    frame.src = `${pdfPath}`;
-    overlay.classList.add('active');
-}
-
-async function reviewApproval(approvalId, notes) {
-    try {
-        const formData = new FormData();
-        formData.append('action', 'review');
-        formData.append('approval_id', approvalId);
-        formData.append('notes', notes);
-
         const res  = await fetch(ApprovalController, { method: 'POST', body: formData });
         const json = await res.json();
+
+        if (!json.success && json.message?.toLowerCase().includes('session expired')) {
+            setTimeout(() => window.location.href = '/sms/index.php', 1500);
+            return;
+        }
 
         if (json.success) {
             document.getElementById('approval-modal-overlay')?.classList.remove('active');

@@ -180,11 +180,11 @@ async function submitConcernForm(action) {
     formData.set('action', action);
 
     try {
-        const res  = await fetch(`${IssuesController}?action=get&issue_id=${encodeURIComponent(issueId)}`);
+        const res  = await fetch(IssuesController, { method: 'POST', body: formData });
         const json = await res.json();
 
-        if (!json.success) {
-            body.innerHTML = `<p class="muted">${esc(json.message)}</p>`;
+        if (!json.success && json.message?.toLowerCase().includes('session expired')) {
+            setTimeout(() => window.location.href = '/sms/index.php', 1500);
             return;
         }
 

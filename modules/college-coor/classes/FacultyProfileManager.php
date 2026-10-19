@@ -51,6 +51,7 @@ class FacultyProfileManager {
                     e.email,
                     d.department_name AS department,
                     e.position_id,
+                    p.position_name,
                     e.employment_type,
                     e.employment_status,
                     e.created_at
@@ -78,6 +79,7 @@ class FacultyProfileManager {
                     e.email,
                     d.department_name AS department,
                     e.position_id,
+                    p.position_name,
                     e.employment_type,
                     e.employment_status,
                     e.created_at

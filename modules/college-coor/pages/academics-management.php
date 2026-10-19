@@ -613,7 +613,7 @@ $stats = [
             <h5 class="modal-title" id="sectionModalTitle">Add Section</h5>
             <button type="button" class="modal-close" onclick="closeSectionModal()">&times;</button>
         </div>
-        <form id="sectionForm" data-custom-submit>
+        <form id="sectionForm">
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Section Code <span class="required">*</span></label>
@@ -621,7 +621,7 @@ $stats = [
                 </div>
                 <div class="form-group">
                     <label class="form-label">Grade Level <span class="required">*</span></label>
-                    <input type="number" class="form-control" id="sectionGradeLevel" min="1" max="4" required>
+                    <input type="text" class="form-control" id="sectionGradeLevel" maxlength="50" placeholder="e.g., 1st Year" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Program <span class="required">*</span></label>

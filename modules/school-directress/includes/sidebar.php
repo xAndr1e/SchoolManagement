@@ -11,21 +11,29 @@ $employeeClass = new Employee();
         <div class="sidebar-icons">
 
             <!-- Bell Icon + Notification Dropdown -->
-            <div class="icon-wrapper" id="bellWrapper">
-                <i class="fa-regular fa-bell" id="bellBtn"></i>
-                <div class="icon-dropdown" id="bellDropdown">
-                    <div class="dropdown-header">
-                        <span>Notifications</span>
-                        <button class="mark-all-read">Mark all as read</button>
-                    </div>
-                    <ul class="notif-list">
-                        <li class="notif-item">
-                        </li>
-                    <div class="dropdown-footer">
-                        <a href="#">View all notifications</a>
-                    </div>
+            
+        <div class="icon-wrapper" id="bellWrapper">
+            <i class="fa-regular fa-bell" id="bellBtn"></i>
+            <span id="notifBadge" class="hidden">0</span>
+
+            <div class="icon-dropdown notif-dropdown" id="bellDropdown">
+                <div class="dropdown-header">
+                    <span>Notifications</span>
+                    <button type="button" class="mark-all-read">
+                        Mark all as read
+                    </button>
+                </div>
+
+                <ul class="notif-list">
+                    <li class="notif-item">Loading notifications...</li>
+                </ul>
+
+                <div class="dropdown-footer">
+                    <a href="#">View all notifications</a>
                 </div>
             </div>
+        </div>
+
 
             <!-- User Icon + Profile Dropdown -->
             <div class="icon-wrapper" id="userWrapper">

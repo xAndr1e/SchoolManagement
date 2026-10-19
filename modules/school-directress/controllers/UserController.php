@@ -1,7 +1,9 @@
 <?php
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
 ini_set('log_errors', '1');
-ini_set('display_errors', '0');
 error_reporting(E_ALL);
+
 ob_start();
 
 const UM_PER_PAGE      = 12;
@@ -21,13 +23,32 @@ function um_respond(array $payload, int $code = 200) {
 
 register_shutdown_function(function () {
     $err = error_get_last();
-    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+
+    if (
+        $err &&
+        in_array($err['type'], [
+            E_ERROR,
+            E_PARSE,
+            E_CORE_ERROR,
+            E_COMPILE_ERROR
+        ], true)
+    ) {
         if (ob_get_length()) {
             ob_clean();
         }
+
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['success' => false, 'message' => 'Server error.']);
+
+        echo json_encode([
+            'success' => false,
+            'message' => 'PHP Fatal Error',
+            'debug' => [
+                'message' => $err['message'],
+                'file' => $err['file'],
+                'line' => $err['line'],
+            ],
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     }
 });
 

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -21,6 +20,9 @@
     <!-- DataTables Bootstrap 5 JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Gsap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 
     <title><?php echo $pageTitle ?? 'School Management System'; ?></title>
 
@@ -29,18 +31,45 @@
 </head>
 
 <body>
-    <header>
+    <header class="d-flex justify-content-between align-items-center p-3 border-bottom small fw-bold text-secondary">
         <div class="hamburger">
             <span></span>
             <span></span>
             <span></span>
         </div>
+
+        <div class="header-status">
+
+            <span id="semesterLabel">
+                <?= $semester['name'] ?? ''; ?>
+            </span>
+
+
+            <span id="live-clock"></span>
+        </div>
     </header>
 
-  
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+
+            document.getElementById("live-clock").textContent =
+                now.toLocaleString('en-US', options);
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
 
     <script src="js/sidebar.js"></script>
-
-
-
-    

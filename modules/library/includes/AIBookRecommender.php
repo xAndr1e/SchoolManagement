@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// includes/AIBookRecommender.php
-// ============================================================
-
 class AIBookRecommender
 {
     private PDO $db;

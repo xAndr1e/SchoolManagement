@@ -7,8 +7,7 @@
     /*User Class*/
     $userClass = new User();
     $userInfo = $userClass->userSession();
-    $isDirectress = ($userInfo['role_id'] === 'School Directress')
-                    || (($userInfo['department_name'] ?? null) === 'School Directress');
+    $isDirectress = ($userInfo['role'] === 'School Directress');
 
     /*Approval Class*/
     $approvalClass = new Approval();
@@ -142,7 +141,9 @@
 
                     <div class="approval-form-group">
                         <label for="approval-attachment">Attachment (optional)</label>
-                        <input class="file-btn" type="file" id="approval-attachment" name="attachment">
+                        <input class="file-btn" type="file" id="approval-attachment" name="attachment"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                        <small class="muted">PDF, Word, Excel, JPG or PNG &middot; up to 10 MB</small>
                     </div>
 
                     <input type="hidden" id="approval-id" name="approval_id" value="">
@@ -175,7 +176,7 @@
         </div>
     </div>
 
-    <!-- PDF Viewer Modal -->
+    <!-- File Viewer Modal (generated PDF and attachments) -->
     <div class="approval-modal-overlay" id="approval-pdf-modal-overlay">
         <div class="approval-modal approval-modal-lg" role="dialog" aria-modal="true" aria-labelledby="approval-pdf-modal-title">
             <div class="approval-modal-header">
@@ -183,7 +184,7 @@
                 <button type="button" class="approval-modal-close" id="approval-pdf-modal-close" aria-label="Close">&times;</button>
             </div>
             <div class="approval-modal-body approval-pdf-body">
-                <iframe id="approval-pdf-frame" class="approval-pdf-frame" src="" title="Approval PDF"></iframe>
+                <iframe id="approval-pdf-frame" class="approval-pdf-frame" src="" title="Approval file"></iframe>
             </div>
         </div>
     </div>

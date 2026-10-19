@@ -1,4 +1,3 @@
-<!-- ====== DASHBOARD ====== -->
 <div class="tab-content active" id="tab-dashboard">
 
     <!-- ── Stat Cards ─────────────────────────────────────── -->
@@ -46,8 +45,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ── Alert strip ────────────────────────────────────── -->
     <div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
         <div class="alert-chip alert-chip-warning">
             <i class="fas fa-exclamation-circle"></i>
@@ -65,8 +62,6 @@
             <button class="btn btn-sm" style="padding:.3rem .75rem;font-size:.78rem;background:var(--gradient-primary)" onclick="app.ui.switchTab('ai')">AI Insights</button>
         </div>
     </div>
-
-    <!-- ── Collection availability bar ───────────────────── -->
     <div class="card" style="margin-bottom:1.5rem">
         <div class="card-header" style="margin-bottom:.75rem;padding-bottom:.75rem">
             <h3 class="card-title"><i class="fas fa-chart-bar"></i> Collection Availability</h3>
@@ -74,8 +69,6 @@
         </div>
         <div id="availabilityBar"><div class="spinner" style="width:22px;height:22px;border-width:2px;margin:.5rem 0"></div></div>
     </div>
-
-    <!-- ── Quick Actions ──────────────────────────────────── -->
     <div class="card" style="margin-bottom:1.5rem">
         <div class="card-header" style="margin-bottom:.75rem;padding-bottom:.75rem">
             <h3 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
@@ -88,8 +81,6 @@
             <button class="btn btn-outline" onclick="app.ui.switchTab('reports')">    <i class="fas fa-chart-bar"></i>  Reports</button>
         </div>
     </div>
-
-    <!-- ── Two column: borrow tracker + inventory ─────────── -->
     <div class="grid-2" style="margin-bottom:1.5rem">
 
         <!-- Active Borrow Tracker -->
@@ -105,11 +96,7 @@
             </div>
             <div id="borrowTracker"><div class="spinner"></div></div>
         </div>
-
-        <!-- Inventory Management Panel -->
         <div style="display:flex;flex-direction:column;gap:1.25rem">
-
-            <!-- Condition Health -->
             <div class="card" style="margin-bottom:0;flex:1">
                 <div class="card-header" style="margin-bottom:.75rem;padding-bottom:.75rem">
                     <h3 class="card-title"><i class="fas fa-heartbeat"></i> Inventory Health</h3>
@@ -117,8 +104,6 @@
                 </div>
                 <div id="inventoryHealth"><div class="spinner" style="width:20px;height:20px;border-width:2px;margin:.5rem 0"></div></div>
             </div>
-
-            <!-- Genre Inventory -->
             <div class="card" style="margin-bottom:0;flex:1">
                 <div class="card-header" style="margin-bottom:.75rem;padding-bottom:.75rem">
                     <h3 class="card-title"><i class="fas fa-layer-group"></i> Books by Genre</h3>
@@ -127,8 +112,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ── Recent books + activity ────────────────────────── -->
     <div class="grid-2">
         <div class="card">
             <div class="card-header">

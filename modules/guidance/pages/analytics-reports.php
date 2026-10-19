@@ -1,22 +1,22 @@
 <?php
 /**
  * analytics-reports.php
- * Module: Analytics & Reports
+ * Module: Analytics & Reports (Guidance)
  *
- * The 3 breakdown mini-charts render server-side directly (same pattern
- * as other modules' initial data). The report generator itself is
- * AJAX-driven via controllers/AnalyticsReportsController.php since the
- * report type + filters + results table are all interactive.
+ * The 3 breakdown mini-charts render server-side. The generator and the
+ * saved-report history are AJAX-driven via
+ * controller/AnalyticsReportsController.php. No <link>/<script> tags here.
  */
 
 include_once __DIR__ . '/../../../auth/session.php';
 include_once __DIR__ . '/../classes/Analytics.php';
+include_once __DIR__ . '/../classes/GuidanceReport.php';
 
 $analyticsClass = new Analytics();
 
-$casesByStatus       = $analyticsClass->getCasesByStatus();
+$casesByStatus        = $analyticsClass->getCasesByStatus();
 $appointmentsByStatus = $analyticsClass->getAppointmentsByStatus();
-$incidentsBySeverity = $analyticsClass->getIncidentsBySeverity();
+$incidentsBySeverity  = $analyticsClass->getIncidentsBySeverity();
 
 function rprt_max_count(array $rows): int
 {
@@ -33,6 +33,7 @@ function rprt_max_count(array $rows): int
 </div>
 
 <div class="module-content">
+<div class="rprt-page" data-page-key="analytics-reports">
 
     <!-- Breakdown mini-charts -->
     <div class="rprt-breakdown-grid">
@@ -87,60 +88,54 @@ function rprt_max_count(array $rows): int
         <div class="rprt-generator__header">
             <h3>Generate a Report</h3>
         </div>
+
         <div class="rprt-generator__controls">
             <select class="rprt-filter-select" id="rprtReportType">
-                <option value="student_counseling">Student Counseling Report</option>
-                <option value="referral">Referral Report</option>
-                <option value="appointment">Appointment Report</option>
-                <option value="incident">Incident Report</option>
-                <option value="monthly_guidance">Monthly Guidance Report</option>
-                <option value="yearly_guidance">Yearly Guidance Report</option>
-                <option value="counselor_workload">Counselor Workload Report</option>
-                <option value="student_risk">Student Risk Summary</option>
+                <?php foreach (GuidanceReport::TYPES as $key => $label): ?>
+                    <option value="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($label) ?></option>
+                <?php endforeach; ?>
             </select>
 
-            <!-- date_from/date_to: used by counseling/referral/appointment/incident/workload -->
-            <div class="rprt-filter-group" id="rprtDateRangeGroup">
+            <select class="rprt-filter-select" id="rprtPreset">
+                <option value="this_month">This month</option>
+                <option value="last_month">Last month</option>
+                <option value="last_30">Last 30 days</option>
+                <option value="this_year">This year</option>
+                <option value="custom">Custom range</option>
+            </select>
+
+            <div class="rprt-filter-group" id="rprtCustomGroup" hidden>
                 <input type="date" class="rprt-filter-date" id="rprtDateFrom">
                 <span class="rprt-filter-sep">to</span>
                 <input type="date" class="rprt-filter-date" id="rprtDateTo">
             </div>
 
-            <!-- month+year: used by monthly_guidance -->
-            <div class="rprt-filter-group" id="rprtMonthGroup" style="display:none;">
-                <select class="rprt-filter-select" id="rprtMonth">
-                    <?php for ($m = 1; $m <= 12; $m++): ?>
-                        <option value="<?= $m ?>" <?= $m == date('n') ? 'selected' : '' ?>><?= date('F', mktime(0,0,0,$m,1)) ?></option>
-                    <?php endfor; ?>
-                </select>
-                <select class="rprt-filter-select" id="rprtYearForMonth">
-                    <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
-                        <option value="<?= $y ?>"><?= $y ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-
-            <!-- year only: used by yearly_guidance -->
-            <div class="rprt-filter-group" id="rprtYearGroup" style="display:none;">
-                <select class="rprt-filter-select" id="rprtYear">
-                    <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
-                        <option value="<?= $y ?>"><?= $y ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-
             <button type="button" class="rprt-btn" id="rprtGenerateBtn">Generate</button>
         </div>
 
-        <div class="rprt-generator__actions" id="rprtExportActions" style="display:none;">
-            <button type="button" class="rprt-btn rprt-btn--ghost rprt-btn--sm" id="rprtExportPdfBtn">Export to PDF</button>
-            <button type="button" class="rprt-btn rprt-btn--ghost rprt-btn--sm" id="rprtExportExcelBtn">Export to Excel</button>
-            <button type="button" class="rprt-btn rprt-btn--ghost rprt-btn--sm" id="rprtPrintBtn">Print</button>
-        </div>
+        <div class="rprt-status" id="rprtStatus" hidden></div>
+    </div>
 
-        <div class="rprt-results-wrapper" id="rprtResultsWrapper">
-            <div class="rprt-empty">Select a report type and click Generate.</div>
+    <!-- Saved reports -->
+    <div class="rprt-generator">
+        <div class="rprt-generator__header">
+            <h3>Saved Reports</h3>
+        </div>
+        <div class="rprt-results-wrapper" id="rprtHistoryWrapper">
+            <div class="rprt-empty">Loading...</div>
         </div>
     </div>
 
+    <!-- In-modal PDF viewer -->
+    <div class="rprt-modal" id="rprtViewerModal" hidden>
+        <div class="rprt-modal__dialog">
+            <div class="rprt-modal__header">
+                <h3 id="rprtViewerTitle">Report</h3>
+                <button type="button" class="rprt-btn rprt-btn--sm" id="rprtViewerClose">Close</button>
+            </div>
+            <iframe class="rprt-modal__frame" id="rprtViewerFrame" title="Report viewer"></iframe>
+        </div>
+    </div>
+
+</div>
 </div>

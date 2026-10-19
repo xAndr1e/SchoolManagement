@@ -1,32 +1,3 @@
-/* Add at the end of concerns-issue-tracking.css */
-
-/* Ensure proper spacing with fixed sidebar */
-body {
-    margin: 0;
-    padding: 0;
-}
-
-.module-header,
-.module-content {
-    margin-left: 260px; /* Match your sidebar width */
-    transition: margin-left 0.3s ease;
-}
-
-/* Responsive adjustment for mobile */
-@media (max-width: 768px) {
-    .module-header,
-    .module-content {
-        margin-left: 0;
-    }
-}
-
-/* If you want to keep the inline styles approach, this CSS class can be used instead */
-.content-wrapper {
-    margin-left: 260px;
-    padding: 20px;
-    width: calc(100% - 260px);
-    box-sizing: border-box;
-}
 .concerns-controls {
     display: grid;
     gap: 18px;
@@ -170,7 +141,7 @@ select {
 
 .concerns-list-head h3 {
     margin: 0;
-    color: var(--color5);
+    color: var(--color2);
     font-size: 1.25rem;
 }
 

@@ -8,6 +8,14 @@
     font-weight:700;
     color:#6c757d;
     animation: float 3s ease-in-out infinite;
+    text-align: center;
+    padding: 1rem;
+    color: var(--color2);
+    margin-left: var(--sidebar-width);
+}
+
+section{
+    margin-left: var(--sidebar-width);
 }
 
 @keyframes float{
@@ -23,15 +31,17 @@
         <div class="d-flex flex-column justify-content-center align-items-center text-center  h-100">
 
             <div class="error-404">404</div>
-            <p class="fs-4 text-secondary mb-3">Page Not Found</p>
+            <section class="mb-4 lead">
+                <p class="fs-4 text-secondary mb-3">Page Not Found</p>
 
-            <p class="text-muted mb-3">
-                It looks like you found a glitch in the matrix...
-            </p>
+                <p class="text-muted mb-3">
+                    It looks like you found a glitch in the matrix...
+                </p>
 
-            <a href="<?= BASE_URL ?>" class="text-decoration-none">
-                ← Back to Dashboard
-            </a>
+                <a href="<?= BASE_URL ?>" class="text-decoration-none">
+                    ← Back to Dashboard
+                </a>
+            </section>
 
         </div>
     </div>

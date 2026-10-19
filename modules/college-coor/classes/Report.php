@@ -1,5 +1,6 @@
 <?php
     include_once __DIR__ . '/../../../database/db.php';
+    include_once __DIR__ . '/FileStorage.php';
 
     class Report {
         private $conn;
@@ -13,37 +14,12 @@
             }
         }
 
-        private function resolveTable(array $candidates) {
-            foreach ($candidates as $table) {
-                try {
-                    $stmt = $this->conn->query("SHOW TABLES LIKE '" . str_replace("'", "''", $table) . "'");
-                    if ($stmt && $stmt->fetch()) {
-                        return $table;
-                    }
-                } catch (Throwable $e) {
-                    // Ignore and continue to the next candidate.
-                }
-            }
-
-            return $candidates[0];
-        }
-
-        private function getDepartmentTable() {
-            return $this->resolveTable(['em_departments', 'sd_department']);
-        }
-
-        private function getEmployeeTable() {
-            return $this->resolveTable(['em_employees', 'sms_employee']);
-        }
-
         // ── LIST / READ ──────────────────────────────────────────────
         public function getReports($department_id = null, $status = null) {
-            $departmentTable = $this->getDepartmentTable();
-            $employeeTable = $this->getEmployeeTable();
-
             $sql = "SELECT
                         r.report_id, r.title, r.summary, r.findings, r.recommendations,
                         r.status, r.pdf_path, r.ai_summary,
+                        r.attachment_path, r.attachment_name,
                         r.submitted_at, r.reviewed_at, r.decided_at,
                         d.department_name,
                         CONCAT(e.first_name, ' ', e.last_name) AS submitted_by,
@@ -51,10 +27,10 @@
                         CONCAT(dc.first_name, ' ', dc.last_name) AS decided_by_name,
                         rt.report_type AS report_type
                     FROM `sd_reports` r
-                    LEFT JOIN `{$departmentTable}` d ON r.department_id = d.department_id
-                    LEFT JOIN `{$employeeTable}` e  ON r.submitted_by = e.employee_id
-                    LEFT JOIN `{$employeeTable}` rv ON r.reviewed_by = rv.employee_id
-                    LEFT JOIN `{$employeeTable}` dc ON r.decided_by = dc.employee_id
+                    LEFT JOIN `em_departments` d ON r.department_id = d.department_id
+                    LEFT JOIN `em_employees` e  ON r.submitted_by = e.employee_id
+                    LEFT JOIN `em_employees` rv ON r.reviewed_by = rv.employee_id
+                    LEFT JOIN `em_employees` dc ON r.decided_by = dc.employee_id
                     LEFT JOIN `sd_report_type` rt ON r.report_type = rt.type_id
                     WHERE 1=1";
 
@@ -75,9 +51,6 @@
         }
 
         public function getReportById($report_id) {
-            $departmentTable = $this->getDepartmentTable();
-            $employeeTable = $this->getEmployeeTable();
-
             $sql = "SELECT
                         r.*,
                         d.department_name,
@@ -86,10 +59,10 @@
                         CONCAT(dc.first_name, ' ', dc.last_name) AS decided_by_name,
                         rt.report_type AS report_type
                     FROM `sd_reports` r
-                    LEFT JOIN `{$departmentTable}` d ON r.department_id = d.department_id
-                    LEFT JOIN `{$employeeTable}` e  ON r.submitted_by = e.employee_id
-                    LEFT JOIN `{$employeeTable}` rv ON r.reviewed_by = rv.employee_id
-                    LEFT JOIN `{$employeeTable}` dc ON r.decided_by = dc.employee_id
+                    LEFT JOIN `em_departments` d ON r.department_id = d.department_id
+                    LEFT JOIN `em_employees` e  ON r.submitted_by = e.employee_id
+                    LEFT JOIN `em_employees` rv ON r.reviewed_by = rv.employee_id
+                    LEFT JOIN `em_employees` dc ON r.decided_by = dc.employee_id
                     LEFT JOIN `sd_report_type` rt ON r.report_type = rt.type_id
                     WHERE r.report_id = :report_id
                     LIMIT 1";
@@ -115,7 +88,7 @@
         // ── CREATE / SAVE ────────────────────────────────────────────
         // $data keys: title, report_type, summary, findings, recommendations
         public function saveDraft($data, $report_id = null) {
-            $submitted_by = $_SESSION['employee_id'];
+            $submitted_by  = $_SESSION['employee_id'];
             $department_id = $this->getEmployeeDepartment($submitted_by);
 
             if ($report_id) {
@@ -166,24 +139,32 @@
         }
 
         private function getEmployeeDepartment($employee_id) {
-            $employeeTable = $this->getEmployeeTable();
-            $departmentColumn = $this->columnExists($employeeTable, 'department_id') ? 'department_id' : 'department';
-
-            $stmt = $this->conn->prepare("SELECT {$departmentColumn} FROM {$employeeTable} WHERE employee_id = :employee_id");
+            $stmt = $this->conn->prepare("SELECT department_id FROM em_employees WHERE employee_id = :employee_id");
             $stmt->execute([':employee_id' => $employee_id]);
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $employee[$departmentColumn] ?? null;
+            return $employee['department_id'] ?? null;
         }
 
-        private function columnExists($tableName, $columnName) {
-            try {
-                $sql = "SHOW COLUMNS FROM `{$tableName}` LIKE :column_name";
-                $stmt = $this->conn->prepare($sql);
-                $stmt->execute([':column_name' => $columnName]);
-                return (bool) $stmt->fetch();
-            } catch (Throwable $e) {
-                return false;
-            }
+        // ── OPTIONAL ATTACHMENT ──────────────────────────────────────
+        // Only the person who created the report can attach, and only while it is a draft/submitted.
+        // $path is the RELATIVE storage path returned by FileStorage::store().
+        public function setAttachment($report_id, $path, $name, $mime, $size) {
+            $sql = "UPDATE `sd_reports` SET
+                        attachment_path = :path, attachment_name = :name,
+                        attachment_mime = :mime, attachment_size = :size
+                    WHERE report_id = :report_id
+                      AND submitted_by = :submitted_by
+                      AND status IN ('draft', 'submitted')";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                ':path'         => $path,
+                ':name'         => $name,
+                ':mime'         => $mime,
+                ':size'         => $size,
+                ':report_id'    => $report_id,
+                ':submitted_by' => $_SESSION['employee_id'],
+            ]);
+            return $stmt->rowCount() > 0;
         }
 
         // ── REVIEW / DECISION (School Directress) ────────────────────
@@ -219,9 +200,12 @@
 
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
         // composer require dompdf/dompdf
+        // Saves into FileStorage and stores a RELATIVE path (reports/pdf/...) in pdf_path.
         public function generatePdf($report_id) {
-            $autoload = __DIR__ . '/../vendor/autoload.php';
+            $autoload = __DIR__ . '/../../../vendor/autoload.php';
             if (!file_exists($autoload)) {
+                // Thrown as a normal Exception (not a fatal require error) so callers
+                // can catch it and still return a valid JSON response.
                 throw new \RuntimeException('PDF library not installed. Run: composer require dompdf/dompdf');
             }
             require_once $autoload;
@@ -238,14 +222,8 @@
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            $outputDir = __DIR__ . '/../../../uploads/reports/pdf/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            $fileName = 'report_' . $report_id . '_' . time() . '.pdf';
-            file_put_contents($outputDir . $fileName, $dompdf->output());
-
-            $relativePath = 'uploads/reports/pdf/' . $fileName;
+            $fileName     = 'report_' . $report_id . '_' . time() . '.pdf';
+            $relativePath = FileStorage::storeBytes($dompdf->output(), 'reports/pdf', $fileName);
 
             $stmt = $this->conn->prepare("UPDATE `sd_reports` SET pdf_path = :pdf_path WHERE report_id = :report_id");
             $stmt->execute([':pdf_path' => $relativePath, ':report_id' => $report_id]);

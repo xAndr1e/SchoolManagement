@@ -1,7 +1,5 @@
 'use strict';
-// ============================================================
-// TransactionsController — Enhanced with search, days-left, export
-// ============================================================
+
 class TransactionsController {
     #api; #ui;
     #pager      = new Paginator(10);
@@ -14,15 +12,12 @@ class TransactionsController {
         const status = document.getElementById('transStatusFilter')?.value || '';
         const search = this.#searchTerm;
         const data   = await this.#api.get({ action: 'get_transactions', status, search, page: this.#pager.page, limit: this.#pager.pageSize });
-
         this.#pager.total = data.total || 0;
-
-        // Update badge counts
         this.#updateBadges();
 
         const tbody = document.getElementById('transTableBody');
         if (!data.transactions?.length) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><p>No transactions found</p></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><p>No transactions found</p></td></tr>';
         } else {
             tbody.innerHTML = data.transactions.map(t => {
                 const daysLeft = t.return_date ? null : this.#daysLeft(t.due_date);
@@ -33,7 +28,6 @@ class TransactionsController {
                     else if (daysLeft <= 3)  daysHtml = `<span class="badge badge-warning">${daysLeft}d</span>`;
                     else                     daysHtml = `<span class="badge badge-info">${daysLeft}d</span>`;
                 }
-
                 return `
                 <tr class="${t.status === 'overdue' ? 'row-overdue' : ''}">
                     <td><div class="d-flex gap-1 align-center">${this.#ui.bookCoverHTML(t, 24)}<span class="fw-600 small">${this.#ui.escH(t.book_title)}</span></div></td>
@@ -43,7 +37,6 @@ class TransactionsController {
                     <td>${daysHtml}</td>
                     <td class="small">${t.return_date || '—'}</td>
                     <td><span class="badge ${this.#ui.badgeClass(t.status)}">${t.status}</span></td>
-                    <td>${t.fine > 0 ? `<span class="text-danger fw-600">₱${t.fine}</span>` : '<span class="text-muted">₱0.00</span>'}</td>
                 </tr>`;
             }).join('');
         }
@@ -73,63 +66,50 @@ class TransactionsController {
     }
 
     #daysLeft(dueDateStr) {
-        const due  = new Date(dueDateStr);
-        const now  = new Date();
-        now.setHours(0,0,0,0);
-        due.setHours(0,0,0,0);
+        const due = new Date(dueDateStr);
+        const now = new Date();
+        now.setHours(0,0,0,0); due.setHours(0,0,0,0);
         return Math.round((due - now) / 86400000);
     }
 
     async exportCSV() {
         const status = document.getElementById('transStatusFilter')?.value || '';
         const data   = await this.#api.get({ action: 'get_transactions', status, limit: 9999 });
-        if (!data.transactions?.length) { alert('No data to export.'); return; }
-
-        const headers = ['Book', 'Member', 'Member ID', 'Borrow Date', 'Due Date', 'Return Date', 'Status', 'Fine'];
+        if (!data.transactions?.length) { this.#ui.showNotif('No data to export.', 'info'); return; }
+        const headers = ['Book', 'Member', 'Member ID', 'Borrow Date', 'Due Date', 'Return Date', 'Status'];
         const rows    = data.transactions.map(t => [
-            `"${(t.book_title   || '').replace(/"/g,'""')}"`,
+            `"${(t.book_title    || '').replace(/"/g,'""')}"`,
             `"${(t.borrower_name || '').replace(/"/g,'""')}"`,
-            `"${(t.member_id    || '').replace(/"/g,'""')}"`,
-            t.borrow_date, t.due_date, t.return_date || '',
-            t.status,
-            t.fine ?? 0,
+            `"${(t.member_id     || '').replace(/"/g,'""')}"`,
+            t.borrow_date, t.due_date, t.return_date || '', t.status,
         ]);
-
         const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `transactions_${new Date().toISOString().slice(0,10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        a.href = url; a.download = `transactions_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click(); URL.revokeObjectURL(url);
     }
 }
 
-// ============================================================
-// ReportsController
-// ============================================================
 class ReportsController {
     #api; #ui;
-
     constructor(api, ui) { this.#api = api; this.#ui = ui; }
 
     async load() {
         const data = await this.#api.get({ action: 'get_report' });
         const { stats, genreBreakdown, overdueList, topBorrowed } = data;
-
         document.getElementById('reportsContent').innerHTML = `
         <div class="grid-3 mb-2">
-            ${this.#statBox(stats.total_books,       'Total Books',    'var(--primary)')}
-            ${this.#statBox(stats.available,         'Available',      'var(--success)')}
-            ${this.#statBox(stats.borrowed,          'Borrowed',       'var(--warning)')}
-            ${this.#statBox(stats.overdue,           'Overdue',        'var(--danger)')}
-            ${this.#statBox(stats.total_members,     'Members',        'var(--info)')}
-            ${this.#statBox('₱' + stats.total_fines, 'Pending Fines',  'var(--danger)')}
+            ${this.#statBox(stats.total_books,   'Total Books', 'var(--primary)')}
+            ${this.#statBox(stats.available,     'Available',   'var(--success)')}
+            ${this.#statBox(stats.borrowed,      'Borrowed',    'var(--warning)')}
+            ${this.#statBox(stats.overdue,       'Overdue',     'var(--danger)')}
+            ${this.#statBox(stats.total_members, 'Members',     'var(--info)')}
         </div>
         <div class="grid-2">
             <div>
-                <h4 class="mb-1"><i class="fas fa-tag" style="color:var(--primary)"></i> Books by Genre</h4>
+                <h4 class="mb-1"><i class="fas fa-tag" style="color:var(--primary)"></i> Books by Catalog</h4>
                 ${genreBreakdown.map(g => `
                 <div style="margin-bottom:.6rem">
                     <div class="d-flex gap-1 align-center" style="justify-content:space-between;margin-bottom:.2rem">
@@ -147,12 +127,11 @@ class ReportsController {
                     <div style="flex:1"><div class="fw-600 small">${this.#ui.escH(b.title)}</div><div class="text-muted small">${this.#ui.escH(b.author)}</div></div>
                     <span class="badge badge-info">${b.borrow_count}×</span>
                 </div>`).join('') : '<p class="text-muted">No data yet</p>'}
-
                 <h4 class="mt-2 mb-1"><i class="fas fa-clock" style="color:var(--danger)"></i> Overdue Books</h4>
                 ${overdueList.length ? overdueList.map(o => `
                 <div style="padding:.45rem 0;border-bottom:1px solid var(--border-color)">
                     <div class="fw-600 small">${this.#ui.escH(o.book_title)}</div>
-                    <div class="text-muted small">${this.#ui.escH(o.borrower_name)} · Due: ${o.due_date} · <span class="text-danger fw-600">₱${o.fine}</span></div>
+                    <div class="text-muted small">${this.#ui.escH(o.borrower_name)} · Due: ${o.due_date}</div>
                 </div>`).join('') : '<p class="text-muted">No overdue books 🎉</p>'}
             </div>
         </div>`;
@@ -166,31 +145,38 @@ class ReportsController {
     }
 }
 
-// ============================================================
-// SettingsController
-// ============================================================
 class SettingsController {
     #api; #ui;
-
     constructor(api, ui) { this.#api = api; this.#ui = ui; }
 
     async load() {
         const s = await this.#api.get({ action: 'get_settings' });
-        if (s.library_name)         document.getElementById('settingLibraryName').value   = s.library_name;
-        if (s.max_borrow_days)      document.getElementById('settingMaxBorrowDays').value  = s.max_borrow_days;
-        if (s.max_books_per_member) document.getElementById('settingMaxBooks').value       = s.max_books_per_member;
-        if (s.daily_fine_rate)      document.getElementById('settingFineRate').value       = s.daily_fine_rate;
+        if (s.library_name)         document.getElementById('settingLibraryName').value  = s.library_name;
+        if (s.max_borrow_days)      document.getElementById('settingMaxBorrowDays').value = s.max_borrow_days;
+        if (s.max_books_per_member) document.getElementById('settingMaxBooks').value      = s.max_books_per_member;
     }
 
     async save() {
+        const libraryNameEl = document.getElementById('settingLibraryName');
+        if (!libraryNameEl.value.trim()) {
+            this.#ui.showNotif('Library name is required.', 'error');
+            libraryNameEl.style.borderColor = 'var(--danger)'; libraryNameEl.focus(); return;
+        }
+        libraryNameEl.style.borderColor = '';
+
         const payload = {
-            library_name:         document.getElementById('settingLibraryName').value.trim(),
+            library_name:         libraryNameEl.value.trim(),
             max_borrow_days:      document.getElementById('settingMaxBorrowDays').value,
             max_books_per_member: document.getElementById('settingMaxBooks').value,
-            daily_fine_rate:      document.getElementById('settingFineRate').value,
         };
         const res = await this.#api.post('save_settings', payload);
         if (res.error) { this.#ui.showNotif(res.error, 'error'); return; }
         this.#ui.showNotif(res.message, 'success');
+
+        // Refresh dashboard
+        app.dashboard.load();
+
+        // Rebuild borrow days dropdown instantly — no page reload needed
+        app.ui.refreshBorrowDays();
     }
 }

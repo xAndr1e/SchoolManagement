@@ -613,7 +613,7 @@ $stats = [
             <h5 class="modal-title" id="sectionModalTitle">Add Section</h5>
             <button type="button" class="modal-close" onclick="closeSectionModal()">&times;</button>
         </div>
-        <form id="sectionForm">
+        <form id="sectionForm" data-custom-submit>
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Section Code <span class="required">*</span></label>

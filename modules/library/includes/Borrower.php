@@ -1,8 +1,4 @@
 <?php
-/**
- * Borrower
- * lbr_borrowers table — with rgr_students lookup integration.
- */
 class Borrower
 {
     private PDO $db;
@@ -12,9 +8,6 @@ class Borrower
         $this->db = Database::getInstance();
     }
 
-    // ------------------------------------------------------------------
-    // List borrowers (with live loan counts)
-    // ------------------------------------------------------------------
     public function list(
         string $search = '',
         string $type   = '',
@@ -61,9 +54,6 @@ class Borrower
         ];
     }
 
-    // ------------------------------------------------------------------
-    // Find single borrower by PK
-    // ------------------------------------------------------------------
     public function find(int $id): array|false
     {
         $stmt = $this->db->prepare('SELECT * FROM lbr_borrowers WHERE id = ?');
@@ -71,9 +61,6 @@ class Borrower
         return $stmt->fetch();
     }
 
-    // ------------------------------------------------------------------
-    // Check duplicate borrower_id
-    // ------------------------------------------------------------------
     public function idExists(string $borrowerId): bool
     {
         $stmt = $this->db->prepare('SELECT id FROM lbr_borrowers WHERE borrower_id = ?');
@@ -81,10 +68,6 @@ class Borrower
         return (bool)$stmt->fetch();
     }
 
-    // ------------------------------------------------------------------
-    // Search rgr_students — for the "import student" lookup
-    // Returns students NOT yet registered as library borrowers
-    // ------------------------------------------------------------------
     public function searchStudents(string $search = '', int $limit = 20): array
     {
         $params = [];
@@ -102,7 +85,6 @@ class Borrower
             $params = array_merge($params, [$s, $s, $s, $s, $s]);
         }
 
-        // Only show students not already in lbr_borrowers
         $where[] = "s.student_number NOT IN (
             SELECT CAST(br.borrower_id AS UNSIGNED)
             FROM lbr_borrowers br
@@ -138,9 +120,6 @@ class Borrower
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // ------------------------------------------------------------------
-    // Import a student from rgr_students into lbr_borrowers
-    // ------------------------------------------------------------------
     public function importFromStudent(int $studentNumber): array|false
     {
         // Fetch student
@@ -185,9 +164,6 @@ class Borrower
         ];
     }
 
-    // ------------------------------------------------------------------
-    // Mutations
-    // ------------------------------------------------------------------
     public function create(
         string  $name,
         string  $borrowerId,

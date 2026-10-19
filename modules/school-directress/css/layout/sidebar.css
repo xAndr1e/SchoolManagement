@@ -179,6 +179,16 @@
         display: none;
     }
 
+    /* Consistent icon alignment */
+    .sidebar-icon {
+        width: 20px;
+        min-width: 20px;
+        text-align: center;
+        font-size: 16px;
+    }
+
+
+
     @media (max-width: 768px) {
         :root {
             --sidebar-width: 0px;

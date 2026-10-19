@@ -8,6 +8,10 @@ const STATUS_LABELS = {
     rejected: 'Rejected',
 };
 
+// Attachment rules — keep in sync with FileStorage.php (the server re-checks everything).
+const RSM_MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const RSM_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initReportModule() {
     const page = document.querySelector('.rsm-page');
@@ -36,6 +40,7 @@ function initReportModule() {
     const openCreateModal = () => {
         reportForm?.reset();
         document.getElementById('report-id').value = '';
+        syncAttachmentLabel();
         modalOverlay?.classList.add('active');
     };
     const closeCreateModal = () => {
@@ -48,6 +53,28 @@ function initReportModule() {
     bindOnce(closeModalBtn, 'click', closeCreateModal);
     bindOnce(modalOverlay, 'click', (e) => {
         if (e.target === modalOverlay) closeCreateModal();
+    });
+
+    // --- Optional attachment picker ---
+    const attachmentInput = document.getElementById('report-attachment');
+    const attachmentClear = document.getElementById('rsm-file-clear');
+
+    bindOnce(attachmentInput, 'change', () => {
+        const file  = attachmentInput.files[0];
+        const error = file ? validateAttachmentFile(file) : null;
+        if (error) {
+            attachmentInput.value = '';
+            const formError = document.getElementById('report-form-error');
+            if (formError) {
+                formError.textContent   = error;
+                formError.style.display = 'block';
+            }
+        }
+        syncAttachmentLabel();
+    });
+    bindOnce(attachmentClear, 'click', () => {
+        if (attachmentInput) attachmentInput.value = '';
+        syncAttachmentLabel();
     });
 
     // --- View/PDF modal wiring ---
@@ -118,6 +145,48 @@ function initReportModule() {
 window.addEventListener('page:loaded', initReportModule);
 document.addEventListener('DOMContentLoaded', initReportModule);
 
+// ── ATTACHMENT PICKER HELPERS ─────────────────────────────────────────────────
+function validateAttachmentFile(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!RSM_ALLOWED_EXTENSIONS.includes(ext)) {
+        return 'This file type is not allowed. Use PDF, Word, Excel, JPG or PNG.';
+    }
+    if (file.size > RSM_MAX_ATTACHMENT_BYTES) {
+        return `That file is ${formatFileSize(file.size)}. The maximum is 10 MB.`;
+    }
+    return null;
+}
+
+// Updates the "No file chosen" text and the clear (×) button from the current input state.
+function syncAttachmentLabel() {
+    const input   = document.getElementById('report-attachment');
+    const label   = document.getElementById('rsm-file-name');
+    const clear   = document.getElementById('rsm-file-clear');
+    const file    = input?.files?.[0];
+
+    if (label) {
+        label.textContent = file ? `${file.name} (${formatFileSize(file.size)})` : 'No file chosen';
+        label.classList.toggle('rsm-file-name-set', !!file);
+    }
+    if (clear) clear.hidden = !file;
+}
+
+function formatFileSize(bytes) {
+    const n = Number(bytes) || 0;
+    if (n >= 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    if (n >= 1024)        return Math.round(n / 1024) + ' KB';
+    return n + ' B';
+}
+
+// ── FILE URLS ─────────────────────────────────────────────────────────────────
+// Files are never linked by their disk path. They are always requested through the
+// controller, which checks the session/role and streams the bytes.
+function fileUrl(reportId, kind, download = false) {
+    const params = new URLSearchParams({ action: 'file', report_id: reportId, kind });
+    if (download) params.set('download', '1');
+    return `${ReportController}?${params.toString()}`;
+}
+
 // ── SUBMIT / DRAFT ────────────────────────────────────────────────────────────
 async function submitReportForm(action) {
     const reportForm = document.getElementById('report-form');
@@ -131,6 +200,8 @@ async function submitReportForm(action) {
     const originalLabel = submitBtn.textContent;
     submitBtn.textContent = action === 'submit' ? 'Submitting…' : submitBtn.textContent;
 
+    // FormData includes the optional "attachment" file input automatically (multipart/form-data).
+    // Do NOT set a Content-Type header manually — the browser adds the multipart boundary.
     const formData = new FormData(reportForm);
     formData.set('action', action);
 
@@ -145,8 +216,9 @@ async function submitReportForm(action) {
 
         if (json.success) {
             document.getElementById('rsm-modal-overlay')?.classList.remove('active');
-            if (json.debug) console.error('PDF generation debug:', json.debug);
+            if (json.debug) console.error('Report debug:', json.debug);
             showToast(action === 'submit' ? 'Report submitted successfully!' : 'Draft saved.', 'success');
+            if (json.warning) showToast(json.warning, 'error');
             loadReports();
         } else {
             formError.textContent   = json.message;
@@ -268,9 +340,22 @@ function renderReportDetail(report) {
             </div>`;
     }
 
-    const pdfButton = report.pdf_path
-        ? `<button type="button" class="rsm-btn-view" id="rsm-open-pdf" data-pdf-path="${esc(report.pdf_path)}">View PDF</button>`
+    // The server no longer sends file paths — only has_pdf / has_attachment flags.
+    const pdfButton = report.has_pdf
+        ? `<button type="button" class="rsm-btn-view" id="rsm-open-pdf" data-report-id="${esc(report.report_id)}">View PDF</button>`
         : `<span class="rsm-muted">PDF not yet generated</span>`;
+
+    const attachmentRow = report.has_attachment
+        ? `<div class="rsm-detail-row rsm-attachment-row">
+                <span class="rsm-detail-label">Attachment</span>
+                <span class="rsm-attachment-info">
+                    <span class="rsm-attachment-name">${esc(report.attachment_name ?? 'Attachment')}${report.attachment_size ? ` (${esc(formatFileSize(report.attachment_size))})` : ''}</span>
+                    <button type="button" class="rsm-btn-view" id="rsm-open-attachment"
+                            data-report-id="${esc(report.report_id)}" data-mime="${esc(report.attachment_mime ?? '')}">View</button>
+                    <a class="rsm-btn-view rsm-link-btn" href="${esc(fileUrl(report.report_id, 'attachment', true))}">Download</a>
+                </span>
+           </div>`
+        : '';
 
     const aiSummaryBox = `
         <div class="rsm-ai-box">
@@ -289,6 +374,7 @@ function renderReportDetail(report) {
         <div class="rsm-detail-row"><span class="rsm-detail-label">Department</span><span>${esc(report.department_name ?? 'N/A')}</span></div>
         <div class="rsm-detail-row"><span class="rsm-detail-label">Submitted By</span><span>${esc(report.submitted_by_name ?? 'N/A')}</span></div>
         <div class="rsm-detail-row"><span class="rsm-detail-label">Status</span><span class="rsm-status rsm-status-${esc(report.status)}">${esc(statusLabel)}</span></div>
+        ${attachmentRow}
 
         <h4>Summary</h4>
         <p>${esc(report.summary)}</p>
@@ -307,7 +393,10 @@ function renderReportDetail(report) {
     `;
 
     document.getElementById('rsm-open-pdf')?.addEventListener('click', (e) => {
-        openPdfModal(e.currentTarget.dataset.pdfPath);
+        openFileModal(fileUrl(e.currentTarget.dataset.reportId, 'pdf'), 'Report PDF');
+    });
+    document.getElementById('rsm-open-attachment')?.addEventListener('click', (e) => {
+        openAttachment(e.currentTarget.dataset.reportId, e.currentTarget.dataset.mime);
     });
     document.getElementById('rsm-summarize-btn')?.addEventListener('click', (e) => {
         summarizeReport(e.currentTarget.dataset.reportId);
@@ -324,12 +413,25 @@ function renderReportDetail(report) {
     });
 }
 
-function openPdfModal(pdfPath) {
+// Opens any controller file URL in the in-modal viewer (PDFs and images render in the iframe).
+function openFileModal(url, title = 'Report PDF') {
     const overlay = document.getElementById('rsm-pdf-modal-overlay');
     const frame   = document.getElementById('rsm-pdf-frame');
-    if (!overlay || !frame || !pdfPath) return;
-    frame.src = `/../${pdfPath}`;
+    const heading = document.getElementById('rsm-pdf-modal-title');
+    if (!overlay || !frame || !url) return;
+    if (heading) heading.textContent = title;
+    frame.src = url;
     overlay.classList.add('active');
+}
+
+// PDFs and images preview in the modal; Word/Excel files can't, so they download instead.
+function openAttachment(reportId, mime) {
+    const previewable = mime === 'application/pdf' || String(mime).startsWith('image/');
+    if (previewable) {
+        openFileModal(fileUrl(reportId, 'attachment'), 'Attachment');
+    } else {
+        window.location.href = fileUrl(reportId, 'attachment', true);
+    }
 }
 
 async function reviewReport(reportId, notes) {
@@ -423,10 +525,14 @@ function applySearchFilter() {
 function showToast(message, type = 'info') {
     const bg = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8';
 
+    // Stack above any toast that is still visible (e.g. "submitted" + an attachment warning).
+    const bottom = 24 + document.querySelectorAll('.rsm-toast').length * 64;
+
     const toast = document.createElement('div');
+    toast.className = 'rsm-toast';
     toast.textContent = message;
     toast.style.cssText = `
-        position:fixed; bottom:24px; right:24px; z-index:9999;
+        position:fixed; bottom:${bottom}px; right:24px; z-index:9999;
         background:${bg}; color:#fff; padding:12px 20px;
         border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,.2);
         font-size:.9rem; max-width:320px;

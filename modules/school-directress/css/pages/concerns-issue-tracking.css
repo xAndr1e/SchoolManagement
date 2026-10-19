@@ -553,6 +553,24 @@ Matches Student Monitoring / User Management styling.
     border: none;
 }
 
+/* Attachment row in the concern detail modal.
+   Paste at the END of your concerns CSS file (concern- prefix, no global overrides). */
+.concern-attachment-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;            /* wraps on narrow screens instead of overflowing */
+    gap: 8px;
+    min-width: 0;
+}
+.concern-attachment-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.concern-link-btn {
+    display: inline-block;
+    text-decoration: none;
+}
+
 /* ── Responsive ───────────────────────────────────── */
 
 @media (max-width: 900px) {

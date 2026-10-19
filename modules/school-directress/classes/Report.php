@@ -1,5 +1,6 @@
 <?php
     include_once __DIR__ . '/../../../database/db.php';
+    include_once __DIR__ . '/FileStorage.php';
 
     class Report {
         private $conn;
@@ -18,6 +19,7 @@
             $sql = "SELECT
                         r.report_id, r.title, r.summary, r.findings, r.recommendations,
                         r.status, r.pdf_path, r.ai_summary,
+                        r.attachment_path, r.attachment_name,
                         r.submitted_at, r.reviewed_at, r.decided_at,
                         d.department_name,
                         CONCAT(e.first_name, ' ', e.last_name) AS submitted_by,
@@ -143,6 +145,28 @@
             return $employee['department_id'] ?? null;
         }
 
+        // ── OPTIONAL ATTACHMENT ──────────────────────────────────────
+        // Only the person who created the report can attach, and only while it is a draft/submitted.
+        // $path is the RELATIVE storage path returned by FileStorage::store().
+        public function setAttachment($report_id, $path, $name, $mime, $size) {
+            $sql = "UPDATE `sd_reports` SET
+                        attachment_path = :path, attachment_name = :name,
+                        attachment_mime = :mime, attachment_size = :size
+                    WHERE report_id = :report_id
+                      AND submitted_by = :submitted_by
+                      AND status IN ('draft', 'submitted')";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                ':path'         => $path,
+                ':name'         => $name,
+                ':mime'         => $mime,
+                ':size'         => $size,
+                ':report_id'    => $report_id,
+                ':submitted_by' => $_SESSION['employee_id'],
+            ]);
+            return $stmt->rowCount() > 0;
+        }
+
         // ── REVIEW / DECISION (School Directress) ────────────────────
         public function markReviewed($report_id, $reviewed_by, $notes = null) {
             $sql = "UPDATE `sd_reports` SET
@@ -176,8 +200,9 @@
 
         // ── PDF GENERATION (dompdf) ───────────────────────────────────
         // composer require dompdf/dompdf
+        // Saves into FileStorage and stores a RELATIVE path (reports/pdf/...) in pdf_path.
         public function generatePdf($report_id) {
-            $autoload = __DIR__ . '/../vendor/autoload.php';
+            $autoload = __DIR__ . '/../../../vendor/autoload.php';
             if (!file_exists($autoload)) {
                 // Thrown as a normal Exception (not a fatal require error) so callers
                 // can catch it and still return a valid JSON response.
@@ -197,14 +222,8 @@
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
-            $outputDir = __DIR__ . '/../../../uploads/reports/pdf/';
-            if (!is_dir($outputDir)) {
-                mkdir($outputDir, 0755, true);
-            }
-            $fileName = 'report_' . $report_id . '_' . time() . '.pdf';
-            file_put_contents($outputDir . $fileName, $dompdf->output());
-
-            $relativePath = 'uploads/reports/pdf/' . $fileName;
+            $fileName     = 'report_' . $report_id . '_' . time() . '.pdf';
+            $relativePath = FileStorage::storeBytes($dompdf->output(), 'reports/pdf', $fileName);
 
             $stmt = $this->conn->prepare("UPDATE `sd_reports` SET pdf_path = :pdf_path WHERE report_id = :report_id");
             $stmt->execute([':pdf_path' => $relativePath, ':report_id' => $report_id]);

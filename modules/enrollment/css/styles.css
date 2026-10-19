@@ -7,16 +7,16 @@
 @import url('layout/module-container.css');
 
 /*Pages CSS*/
-/*Pages CSS*/
-@import url('pages/admindashboard.css');
-@import url('pages/admin-reports.css');
-@import url('pages/admin-applications.css');
-@import url('pages/admin-convert.css'); 
-@import url('pages/approval-decision-support.css'); 
+@import url('pages/approval-decision-support.css');
 @import url('pages/concerns-issue-tracking.css');
-@import url('pages/report-submission-management.css');/* Add this line */
+@import url('pages/report-submission-management.css');
+
+
+/*Components CSS*/
+@import url('components/dropdown.css');
 
 /*Base CSS*/
 @import url('base/variables.css');
 @import url('base/reset.css');
 @import url('base/global.css');
+

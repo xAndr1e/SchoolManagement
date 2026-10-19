@@ -1,7 +1,4 @@
 'use strict';
-// ============================================================
-// LibraryApp — root application, wires all controllers together
-// ============================================================
 class LibraryApp {
     api;
     ui;
@@ -31,6 +28,7 @@ class LibraryApp {
 
     init() {
         this.dashboard.load();
+        this.gallery.bindEvents();
         setTimeout(() => this.gallery.loadGenreOptions(), 500);
     }
 
@@ -44,8 +42,5 @@ class LibraryApp {
     }
 }
 
-// ============================================================
-// Bootstrap
-// ============================================================
 const app = new LibraryApp();
 document.addEventListener('DOMContentLoaded', () => app.init());

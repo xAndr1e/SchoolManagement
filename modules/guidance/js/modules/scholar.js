@@ -19,7 +19,7 @@
 (function () {
     'use strict';
 
-    const API_URL = 'controller/ScholarshipController.php';
+    const API_URL = 'controllers/ScholarshipController.php';
     const PAGE_KEY = 'scholarship'; // must match the Page class's $_GET['page'] key
 
     /* ---------------------------------------------------------

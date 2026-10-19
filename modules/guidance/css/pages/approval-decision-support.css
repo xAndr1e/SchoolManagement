@@ -60,6 +60,7 @@ School Directress — Approval & Decision Support
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    margin-top: 0.8rem;
 }
 
 /* ── File Input ────────────────────────────────────────── */
@@ -362,7 +363,7 @@ School Directress — Approval & Decision Support
     background: var(--color3);
     color: var(--color2);
     font-size: 0.8rem;
-    font-family: inherit;
+    font-weight: 600;
     text-decoration: none;
     cursor: pointer;
 }
@@ -370,6 +371,24 @@ School Directress — Approval & Decision Support
 .approval-module .attachment-link:hover {
     border-color: var(--color1);
     color: var(--color1);
+}
+
+/* Attachment row in the approval detail modal.
+   Paste at the END of your approvals CSS file (approval- prefix, no global overrides). */
+.approval-attachment-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;            /* wraps on narrow screens instead of overflowing */
+    gap: 8px;
+    min-width: 0;
+}
+.approval-attachment-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.approval-link-btn {
+    display: inline-block;
+    text-decoration: none;
 }
 
 /* ── Misc ──────────────────────────────────────────────── */
@@ -398,7 +417,7 @@ School Directress — Approval & Decision Support
 .approval-modal {
     width: 480px;
     max-width: 92vw;
-    max-height: 88vh;
+    max-height: 82vh;
     overflow-y: auto;
     background: var(--color3);
     border: 1px solid var(--color9);

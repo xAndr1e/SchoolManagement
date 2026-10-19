@@ -1,4 +1,3 @@
-<!-- ====== SETTINGS ====== -->
 <div class="tab-content" id="tab-settings">
     <div class="card">
         <div class="card-header"><h3 class="card-title"><i class="fas fa-cog"></i> Library Settings</h3></div>
@@ -15,10 +14,6 @@
                 <div class="form-group">
                     <label>Max Books per Member</label>
                     <input type="number" id="settingMaxBooks" value="3" min="1" max="20">
-                </div>
-                <div class="form-group">
-                    <label>Daily Fine Rate (₱)</label>
-                    <input type="number" id="settingFineRate" value="0.50" min="0" step="0.10">
                 </div>
                 <button class="btn btn-success" onclick="app.settings.save()">
                     <i class="fas fa-save"></i> Save Settings

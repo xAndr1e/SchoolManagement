@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    const API_URL = 'controller/IncidentsController.php';
+    const API_URL = 'controllers/IncidentsController.php';
     // NOTE: the Page class's $_GET['page'] key is 'incident' (singular),
     // even though this file and the model/controller are named with a
     // trailing 's'. This must match pages/incident.php's routing key.

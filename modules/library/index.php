@@ -1,14 +1,11 @@
 <?php
-// ============================================================
-// index.php — Application Entry Point
-// ============================================================
-
-// 1. Start session
 if (session_status() === PHP_SESSION_NONE) session_start();
 
-// 2. Guard — redirect to login if not authenticated
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: login.php');
+    exit;
+}
 
-// 3. Load app
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/Database.php';
 require_once __DIR__ . '/includes/Settings.php';
@@ -29,11 +26,18 @@ class LibraryPageController
 
     public function render(): void
     {
+        /* ── CSRF token (persists for the session) ── */
+        if (empty($_SESSION['csrf'])) {
+            $_SESSION['csrf'] = bin2hex(random_bytes(32));
+        }
+        $csrfToken = $_SESSION['csrf'];
+
+        /* ── Page data ── */
         $libraryName  = $this->settings->get('library_name', 'BCP School Library');
-        $employeeName     = $_SESSION['first_name ']  ?? 'Librarian';
+        $userName     = $_SESSION['name']     ?? 'Librarian';
         $userRole     = $_SESSION['role']     ?? 'Staff';
         $userPosition = $_SESSION['position'] ?? $userRole;
-        $userInitial  = strtoupper(substr($employeeName, 0, 1));
+        $userInitial  = strtoupper(substr($userName, 0, 1));
 
         $currentDate  = date('D, M j Y');
         $currentYear  = date('Y');

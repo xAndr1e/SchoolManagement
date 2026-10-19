@@ -1,4 +1,5 @@
 <?php
+include_once __DIR__ . '/../../../database/db.php';
 
 class Department {
     private $conn;
@@ -30,15 +31,13 @@ class Department {
     }
 
     public function getAllDepartments() {
-        $table = $this->resolveTable(['em_departments', 'sd_department']);
-        $stmt = $this->conn->prepare("SELECT department_id, department_name FROM `{$table}` ORDER BY department_name ASC");
+        $stmt = $this->conn->prepare("SELECT department_id, department_name FROM em_departments");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function countDepartmentEmployees($department_id) {
-        $table = $this->resolveTable(['em_employees', 'sms_employee']);
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM `{$table}` WHERE department_id = :department_id OR department = :department_id");
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM em_employees WHERE department_id = :department_id");
         $stmt->execute([':department_id' => $department_id]);
         return $stmt->fetchColumn();
     }
@@ -52,11 +51,12 @@ class Department {
                     d.department_name,
                     CONCAT(e.first_name, ' ', e.last_name) AS department_head_name,
                     COUNT(emp.employee_id) AS employee_count
-                FROM `{$deptTable}` d
-                LEFT JOIN `{$employeeTable}` e 
+                    
+                FROM em_departments d
+                LEFT JOIN em_employees e 
                     ON d.department_head = e.employee_id
-                LEFT JOIN `{$employeeTable}` emp 
-                    ON emp.department_id = d.department_id OR emp.department = d.department_id
+                LEFT JOIN em_employees emp 
+                    ON emp.department_id = d.department_id
                 GROUP BY d.department_id, d.department_name, e.first_name, e.last_name";
 
         $stmt = $this->conn->prepare($sql);
@@ -65,8 +65,7 @@ class Department {
     }
 
     public function addDepartment($department_name) {
-        $table = $this->resolveTable(['em_departments', 'sd_department']);
-        $stmt = $this->conn->prepare("INSERT INTO `{$table}` (department_name) VALUES (:department_name)");
+        $stmt = $this->conn->prepare("INSERT INTO em_departments (department_name) VALUES (:department_name)");
         return $stmt->execute([':department_name' => $department_name]);
     }
 }

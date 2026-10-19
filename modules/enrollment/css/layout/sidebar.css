@@ -77,6 +77,12 @@
         font-weight: bold;
     }
 
+    .employee_position {
+        font-size: 14px;
+        color: var(--color3);
+        font-weight: bold;
+    }
+
     .sidebar h2 {
         color: var(--color3);
         font-size: 14px;
@@ -98,8 +104,6 @@
     .sidebar ul {
         list-style: none;
     }
-
-
 
     .sidebar .menu-link {
         display: flex;
@@ -174,6 +178,29 @@
     .sidebar::-webkit-scrollbar {
         display: none;
     }
+    /* ============================================================
+   Sign Out (sidebar bottom)
+   ============================================================ */
+.sidebar-logout-item {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logout-link {
+    color: #ff6b6b !important;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.sidebar-logout-link:hover {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    color: #fff !important;
+}
+
+.sidebar-logout-link i {
+    color: inherit;
+}
 
     @media (max-width: 768px) {
         :root {

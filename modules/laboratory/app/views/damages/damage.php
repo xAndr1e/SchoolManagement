@@ -6,7 +6,7 @@
 
 <main class="main-content">
     <div class="container-fluid px-4">
-        <h1 class="h3 mb-2 text-gray-800">Laboratory</h1>
+        <h1 class="h3 mb-2 text-gray-800">Physics Laboratory</h1>
         <p class="mb-4">Damage Equipment</p>
 
         <div class="card mb-4 card shadow-sm border-0 border-top border-4 border-secondary shadow-lg p-3">
@@ -20,15 +20,16 @@
             </div>
 
 
-              
-
             <div class="card-body">
                 <table id="damageTable" class="table table-striped table-bordered table-hover" style="width:100%">
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
-                            <th>Category</th>
-                            <th>Code</th>
+                            <th>Item Name</th>
+                            <th>Laboratory</th>
+                            <th>Issue</th>
+                            <th>Reported By</th>
+                            <th>Date Reported</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -37,10 +38,13 @@
                             <?php  foreach ($users as $user) { ?>
                         <tr>
                                     <td><?= $user['id'] ?></td>
-                                    <td><?= $user['category'] ?> </td>
-                                    <td><?= $user['code'] ?></td>
+                                    <td><?= $user['item_name'] ?> </td>
+                                    <td><?= $user['laboratory'] ?></td>
+                                    <td><?= $user['issue'] ?></td>
+                                    <td><?= $user['reported_by'] ?></td>
+                                    <td><?= $user['date_reported'] ?></td>
                             <td>
-                                    <span class="badge <?= $user['status'] === 'Fixed' ? 'bg-success' : 'bg-danger' ?>"><?= $user['status'] ?></span>
+                                    <span class="badge <?= $user['status'] === 'Working' ? 'bg-success' : 'bg-danger' ?>"><?= $user['status'] ?></span>
                             </td>
                             <td>
                                 <div class="dropdown">
@@ -79,4 +83,14 @@
 
 <script> const BASE_URL = "<?= BASE_URL ?>"; </script>
 <script src="<?= BASE_URL ?>/js/damage.js"></script>
+
 <?php include  __DIR__ .'/../includes/footer.php'; ?>
+
+<script>
+    $(document).ready(function() {
+        $('#damageTable').DataTable({
+            pageLength: 10,
+            lengthMenu: [10, 20, 30, 40],
+        });
+    });
+</script>

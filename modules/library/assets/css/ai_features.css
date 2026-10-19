@@ -1,10 +1,3 @@
-/* ============================================================
-   ai_features.css — Styles for AI Late Return & Recommendation panels
-   Add this to your assets/css/ folder and link in layout.php:
-     <link rel="stylesheet" href="assets/css/ai_features.css">
-   ============================================================ */
-
-/* ---- AI Card Header Accent ---- */
 .ai-card {
     position: relative;
     overflow: hidden;
@@ -24,18 +17,18 @@
     100% { background-position: 0% 50%; }
 }
 
-/* ---- Risk Score Bar Row Highlight ---- */
+/* ---- risk score bar row highlight ---- */
 tr.risk-high td   { background: rgba(239,68,68,.04); }
 tr.risk-medium td { background: rgba(245,158,11,.04); }
 
-/* ---- AI Badge ---- */
+/* ---- ai badge ---- */
 .badge-ai {
     background: linear-gradient(135deg, rgba(124,58,237,.15), rgba(37,99,235,.15));
     color: #7c3aed;
     border: 1px solid rgba(124,58,237,.2);
 }
 
-/* ---- Recommendation Cards ---- */
+/* ---- recommendation cards ---- */
 .ai-rec-card {
     transition: var(--transition);
     border: 2px solid transparent;
@@ -46,7 +39,7 @@ tr.risk-medium td { background: rgba(245,158,11,.04); }
     box-shadow: 0 12px 30px rgba(37,99,235,.15);
 }
 
-/* ---- Reading Profile Pills ---- */
+/* ---- reading profile pills ---- */
 #readingProfilePills .genre-pill {
     background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(14,165,233,.12));
     color: var(--primary);
@@ -61,17 +54,17 @@ tr.risk-medium td { background: rgba(245,158,11,.04); }
     transform: translateY(-2px);
 }
 
-/* ---- Threshold bar uses accent gradient ---- */
+/* ---- threshold bar uses accent gradient ---- */
 #aiThresholdFill {
     background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
 }
 
-/* ---- Reminder log items ---- */
+/* ---- reminder log items ---- */
 #reminderLogList .activity-item {
     padding: 1rem 0;
 }
 
-/* ---- No cover placeholder inside recs ---- */
+/* ---- no cover placeholder inside recs ---- */
 .ai-rec-card .no-cover {
     width: 100%;
     height: 270px;

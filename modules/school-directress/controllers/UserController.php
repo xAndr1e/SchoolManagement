@@ -207,6 +207,13 @@ try {
 } catch (AccountException $e) {
     um_respond(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors], $e->status);
 } catch (\Throwable $e) {
-    error_log('UserController: ' . $e->getMessage());
-    um_respond(['success' => false, 'message' => 'Something went wrong. Please try again.'], 500);
+    um_respond([
+        'success' => false,
+        'message' => $e->getMessage(),
+        'debug' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'type' => get_class($e),
+        ],
+    ], 500);
 }

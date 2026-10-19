@@ -241,18 +241,14 @@ async function umRequest(action, params, method) {
     }
     if (!res.ok || !json.success) {
         const debug = json && json.debug;
-        let message = (json && json.message) || 'Request failed.';
+        const details = debug
+            ? `\nFile: ${debug.file}\nLine: ${debug.line}\nType: ${debug.type}`
+            : '';
 
-        if (debug) {
-            message += '\n\n' + [
-                debug.type ? 'Type: ' + debug.type : '',
-                debug.file ? 'File: ' + debug.file : '',
-                debug.line ? 'Line: ' + debug.line : '',
-                debug.message ? 'Details: ' + debug.message : ''
-            ].filter(Boolean).join('\n');
-        }
+        const e = new Error(
+            ((json && json.message) || 'Request failed.') + details
+        );
 
-        const e = new Error(message);
         e.status = res.status;
         e.errors = (json && json.errors) || {};
         throw e;

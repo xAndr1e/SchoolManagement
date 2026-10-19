@@ -353,7 +353,7 @@ function loadSectionSemesters() {
     semesterSelect.innerHTML = '<option value="">Select Semester</option>';
     semesterSelect.disabled = true;
   }
-}
+
 
 function openAddSectionModal() {
   const form = document.getElementById("sectionForm");

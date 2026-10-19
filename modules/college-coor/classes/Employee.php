@@ -1,9 +1,7 @@
 <?php
-
 include_once __DIR__ . '/../../../database/db.php';
 
-class Employee
-{
+Class Employee {
     private $conn;
     private $employeeid;
     private $firstname;
@@ -11,10 +9,10 @@ class Employee
     private $middlename;
     private $department;
     private $position;
-    private $status;
+    private $status; 
 
-    public function __construct($pdo = null)
-    {
+
+    public function __construct($pdo = null) {
         if ($pdo instanceof PDO) {
             $this->conn = $pdo;
         } else {
@@ -148,15 +146,10 @@ class Employee
         return $_SESSION['employee_id'] ?? null;
     }
 
-    /**
-     * Get logged-in employee name
-     */
-    public function getEmployeeName()
-    {
+    public function getEmployeeName() {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-
         $employeeId = $_SESSION['employee_id'] ?? null;
 
         if ($employeeId) {
@@ -164,16 +157,12 @@ class Employee
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();
-
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($employee) {
-                return htmlspecialchars(
-                    $employee['first_name'] . ' ' . $employee['last_name']
-                );
+                return htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']);
             }
         }
-
         return 'Unknown User';
     }
 
@@ -204,7 +193,6 @@ class Employee
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-
         $employeeId = $_SESSION['employee_id'] ?? null;
 
         if ($employeeId) {
@@ -215,14 +203,12 @@ class Employee
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':employee_id', $employeeId);
             $stmt->execute();
-
             $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($employee) {
                 return htmlspecialchars($employee['position_name']);
             }
         }
-
         return 'Unknown Position';
     }
 }

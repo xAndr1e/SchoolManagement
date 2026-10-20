@@ -342,7 +342,6 @@ function loadSectionSemesters() {
     semesterSelect.disabled = true;
   }
 
-
 function openAddSectionModal() {
   const form = document.getElementById("sectionForm");
   if (!form) {

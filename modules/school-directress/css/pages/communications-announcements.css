@@ -4,12 +4,6 @@
    (.module-header is handled by the global stylesheet — not included here.)
    ============================================================ */
 
-.module-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.75rem;
-}
-
 .comm-form h3 {
     font-size: 0.95rem;
     font-weight: 700;

@@ -60,24 +60,39 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
     <!-- ── Summary ── -->
     <section class="um-stat-grid" aria-label="Account summary">
         <article class="um-stat-card">
-            <span class="um-stat-label">Total users</span>
-            <strong id="umStatTotal">—</strong>
-            <span class="um-stat-note">All registered accounts</span>
+            <span class="um-stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14c2.4.2 4 2 4 5"/></svg>
+            </span>
+            <div>
+                <strong id="umStatTotal">—</strong>
+                <span class="um-stat-label">Total users</span>
+                <span class="um-stat-note">All registered accounts</span>
+            </div>
         </article>
         <article class="um-stat-card">
-            <span class="um-stat-label">Active accounts</span>
-            <strong id="umStatActive">—</strong>
-            <span class="um-stat-note">Can access the system</span>
+            <span class="um-stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/></svg>
+            </span>
+            <div>
+                <strong id="umStatActive">—</strong>
+                <span class="um-stat-label">Active accounts</span>
+                <span class="um-stat-note">Can access the system</span>
+            </div>
         </article>
         <article class="um-stat-card">
-            <span class="um-stat-label">Deactivated accounts</span>
-            <strong id="umStatInactive">—</strong>
-            <span class="um-stat-note">Access disabled</span>
+            <span class="um-stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
+            </span>
+            <div>
+                <strong id="umStatInactive">—</strong>
+                <span class="um-stat-label">Deactivated accounts</span>
+                <span class="um-stat-note">Access disabled</span>
+            </div>
         </article>
     </section>
 
-    <!-- ── Directory ── -->
-     <div class="um-directory-header">
+    <!-- ── Actions + filters (one panel) ── -->
+    <section class="um-directory-panel um-control-panel" aria-label="Directory controls">
         <div class="um-directory-toolbar">
             <div>
                 <h2>Employee directory</h2>
@@ -88,11 +103,13 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
                     <button type="button" class="um-view-btn is-active" data-um-action="view-switch" data-view="cards" aria-pressed="true">Cards</button>
                     <button type="button" class="um-view-btn" data-um-action="view-switch" data-view="table" aria-pressed="false">Table</button>
                 </div>
+                <button type="button" class="um-btn um-btn-secondary" id="umExportBtn" data-um-action="export">Export CSV</button>
                 <button type="button" class="um-btn um-btn-primary" id="umAddBtn" data-um-action="open-create">
                     <span aria-hidden="true">＋</span> Add user
                 </button>
             </div>
         </div>
+
         <div class="um-filters">
             <label class="um-search">
                 <span class="um-sr-only">Search users</span>
@@ -121,7 +138,10 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
             </label>
             <button type="button" class="um-btn um-btn-quiet" data-um-action="clear-filters">Clear filters</button>
         </div>
-     </div>
+    </section>
+
+    <!-- ── Results: cards / table (separate from the controls) ── -->
+    <section class="um-results" aria-label="Employee directory results">
         <p class="um-empty-state" id="umEmpty" role="status" aria-live="polite">Loading users…</p>
 
         <!-- Cards and table rows are rendered by user_management.js -->
@@ -147,6 +167,7 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
             <span class="um-showing" id="umShowing"></span>
             <div class="um-page-nav" id="umPageNav"></div>
         </div>
+    </section>
 
     <!-- ══ Modal 1: Employee details ══ -->
     <div class="um-modal-backdrop" id="umDetailsModal" hidden>

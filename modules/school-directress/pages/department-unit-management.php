@@ -84,12 +84,6 @@ $h = function ($v) {
                 <div class="dm-toolbar-actions">
                     <button type="button" class="dm-btn dm-btn-outline" id="dmExportBtn" data-dm-action="export">Export CSV</button>
                     <?php if ($dmCanWrite): ?>
-                    <button type="button" class="dm-btn dm-btn-outline" data-dm-action="add-unit">
-                        <span aria-hidden="true">＋</span> Add unit
-                    </button>
-                    <button type="button" class="dm-btn dm-btn-primary" data-dm-action="add-dept">
-                        <span aria-hidden="true">＋</span> Add department
-                    </button>
                     <?php endif; ?>
                 </div>
             </div>

@@ -1,51 +1,99 @@
 <?php
-include_once __DIR__ . '/../../../auth/session.php';
-include_once __DIR__ . '/../classes/Announcement.php';
+ob_start();
 
-header('Content-Type: application/json');
+// Roles allowed to archive, restore and view the archive.
+// Keep in step with $annArchiveRoles in the view.
+const ANN_ARCHIVE_ROLES = ['School Directress'];
+const ANN_PER_PAGE      = 10;
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+function ann_respond(array $payload, int $code = 200) {
+    if (ob_get_length()) {
+        ob_clean(); // discard any stray warnings/notices before the JSON
+    }
+    http_response_code($code);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     exit;
 }
 
-$publishDate = trim($_POST['publish_date'] ?? '');
-$createdBy   = $_SESSION['employee_id']   ?? null;
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        if (ob_get_length()) {
+            ob_clean();
+        }
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => 'Server error.']);
+    }
+});
 
-if ($publishDate === '') {
-    echo json_encode(['success' => false, 'message' => 'Publish date is required.']);
-    exit;
-}
+try {
+    include_once __DIR__ . '/../../../auth/session.php';
+    require_once __DIR__ . '/../classes/Announcement.php';
 
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $publishDate)) {
-    echo json_encode(['success' => false, 'message' => 'Invalid publish date format.']);
-    exit;
-}
+    // Authorization on every request, not just in the view
+    if (!in_array((string) ($_SESSION['role_name'] ?? ''), ANN_ARCHIVE_ROLES, true)) {
+        ann_respond(['success' => false, 'message' => 'You are not authorized to manage the announcement archive.'], 403);
+    }
 
-if (!$createdBy) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized. Please log in again.']);
-    exit;
-}
+    $action = (string) ($_GET['action'] ?? '');
+    $model  = new Announcement();
 
-$imageFile = $_FILES['image'] ?? null;
+    switch ($action) {
 
-$announcement = new Announcement();
-$result       = $announcement->postAnnouncement(null, null, $publishDate, $createdBy, $imageFile);
+        case 'list_archived':
+            $search = mb_substr(trim((string) ($_GET['search'] ?? '')), 0, 100);
+            $page   = max(1, (int) ($_GET['page'] ?? 1));
+            $total  = $model->countArchived($search);
+            $pages  = max(1, (int) ceil($total / ANN_PER_PAGE));
+            if ($page > $pages) {
+                $page = $pages;
+            }
+            ann_respond([
+                'success' => true,
+                'data'    => [
+                    'rows'     => $model->getArchived($search, ANN_PER_PAGE, ($page - 1) * ANN_PER_PAGE),
+                    'total'    => $total,
+                    'page'     => $page,
+                    'pages'    => $pages,
+                    'per_page' => ANN_PER_PAGE,
+                ],
+            ]);
+            break;
 
-if (is_array($result) && isset($result['success']) && $result['success'] === false) {
-    echo json_encode($result);
-    exit;
-}
+        case 'archive':
+        case 'restore':
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+                ann_respond(['success' => false, 'message' => 'Method not allowed.'], 405);
+            }
 
-if ($result) {
-    echo json_encode([
-        'success'         => true,
-        'message'         => 'Announcement posted successfully.',
-        'announcement_id' => $result,
-    ]);
-} else {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Failed to post announcement. Please try again.']);
+            $expected = (string) ($_SESSION['ann_csrf'] ?? '');
+            $sent     = (string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+            if ($expected === '' || !hash_equals($expected, $sent)) {
+                ann_respond(['success' => false, 'message' => 'Security token expired. Please refresh the page and try again.'], 403);
+            }
+
+            $id = filter_var($_POST['announcement_id'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) {
+                ann_respond(['success' => false, 'message' => 'Invalid announcement.'], 422);
+            }
+
+            if ($action === 'archive') {
+                $model->archiveAnnouncement($id, (int) $_SESSION['employee_id']);
+                ann_respond(['success' => true, 'message' => 'Announcement archived.']);
+            }
+            $model->restoreAnnouncement($id);
+            ann_respond(['success' => true, 'message' => 'Announcement restored.']);
+            break;
+
+        default:
+            ann_respond(['success' => false, 'message' => 'Invalid or missing action.'], 400);
+    }
+
+} catch (AnnouncementException $e) {
+    ann_respond(['success' => false, 'message' => $e->getMessage()], $e->status);
+} catch (\Throwable $e) {
+    error_log('AnnouncementArchiveController: ' . $e->getMessage());
+    ann_respond(['success' => false, 'message' => 'Something went wrong. Please try again.'], 500);
 }

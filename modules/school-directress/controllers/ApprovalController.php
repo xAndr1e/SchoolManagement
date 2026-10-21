@@ -5,8 +5,23 @@ ob_start();
 ini_set('display_errors', '0'); // never leak raw PHP errors into the JSON response
 error_reporting(E_ALL);         // still log real errors — do NOT silently suppress them
 
-// NOTE: the JSON Content-Type header is now set inside approval_respond() instead of here,
-// because the "file" action streams a PDF/attachment and must send its own headers.
+// ── Module settings ────────────────────────────────────────────────────────
+// Set to true on a development machine only. When false, no file paths or stack details reach the browser.
+if (!defined('APPROVAL_DEBUG')) {
+    define('APPROVAL_DEBUG', false);
+}
+// A request must have an uploaded document before it can be submitted (drafts may be saved without one).
+if (!defined('APPROVAL_REQUIRE_ATTACHMENT')) {
+    define('APPROVAL_REQUIRE_ATTACHMENT', true);
+}
+// Only formats the browser can display inside the system. Older Word/Excel attachments still download.
+if (!defined('APPROVAL_UPLOAD_EXTENSIONS')) {
+    define('APPROVAL_UPLOAD_EXTENSIONS', ['pdf', 'jpg', 'jpeg', 'png']);
+}
+
+function approval_debug($message) {
+    return APPROVAL_DEBUG ? $message : null;
+}
 
 function approval_respond($payload) {
     if (ob_get_length() !== false) {
@@ -19,7 +34,7 @@ function approval_respond($payload) {
     exit;
 }
 
-// Used only by the "file" action (the response is opened inside an <iframe>/new tab, not parsed as JSON).
+// Used only by the "file" action (the response is opened inside an <iframe>/<img>/new tab, not parsed as JSON).
 function approval_file_error($httpCode, $message) {
     while (ob_get_level() > 0) {
         ob_end_clean();
@@ -32,8 +47,7 @@ function approval_file_error($httpCode, $message) {
     exit;
 }
 
-// Last-resort safety net for fatals that happen even outside try/catch
-// (e.g. a parse error while including a file, or memory exhaustion).
+// Last-resort safety net for fatals that happen even outside try/catch.
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
@@ -46,8 +60,7 @@ register_shutdown_function(function () {
         echo json_encode([
             'success' => false,
             'message' => 'A fatal server error occurred.',
-            // TEMP debug info — remove the "debug" key once things are stable.
-            'debug' => $error['message'] . ' in ' . $error['file'] . ':' . $error['line'],
+            'debug'   => approval_debug($error['message'] . ' in ' . $error['file'] . ':' . $error['line']),
         ]);
     }
 });
@@ -74,14 +87,43 @@ try {
 
     $approvalClass = new Approval();
     $isDirectress = (
-    ($_SESSION['role_name'] ?? $userInfo['role'] ?? '') === 'School Directress'
+        ($_SESSION['role_name'] ?? $userInfo['role'] ?? '') === 'School Directress'
     );
+
+    $viewer = [
+        'is_directress' => $isDirectress,
+        'employee_id'   => (int) ($userInfo['employee_id'] ?? $_SESSION['employee_id'] ?? 0),
+        'department_id' => (int) ($userInfo['department_id'] ?? $_SESSION['department_id'] ?? 0),
+    ];
 
     // ── Router ─────────────────────────────────────────────────────────────
     switch ($action) {
 
         // ------------------------------------------------------------------
-        // GET list (optionally filtered by department / status)
+        // GET summary counts + recent decisions (scoped to what the viewer may see)
+        // ------------------------------------------------------------------
+        case 'overview':
+            $departmentId = ($isDirectress && ctype_digit((string) ($_GET['department_id'] ?? '')))
+                ? (int) $_GET['department_id']
+                : null;
+            approval_respond(['success' => true, 'data' => $approvalClass->getOverview($viewer, $departmentId)]);
+            break;
+
+        // ------------------------------------------------------------------
+        // GET the filtered queue
+        // ------------------------------------------------------------------
+        case 'queue':
+            $filters = approval_read_filters($isDirectress);
+            $rows    = $approvalClass->getQueue($viewer, $filters);
+            $hasMore = count($rows) > 100;
+            if ($hasMore) {
+                $rows = array_slice($rows, 0, 100);
+            }
+            approval_respond(['success' => true, 'data' => $rows, 'has_more' => $hasMore]);
+            break;
+
+        // ------------------------------------------------------------------
+        // GET list (legacy; optionally filtered by department / status)
         // ------------------------------------------------------------------
         case 'list':
             $departmentId = isset($_GET['department_id']) && $_GET['department_id'] !== ''
@@ -91,20 +133,24 @@ try {
                 ? $_GET['status']
                 : null;
 
-            if ($isDirectress) {
-                // School Directress can view approvals across all departments.
-                $departmentId = null;
-            } elseif ($departmentId === null) {
-                // Other users default to their own department.
-                $departmentId = $userInfo['department_id'] ?? null;
+            if (!$isDirectress) {
+                // Other users are always limited to their own department.
+                $departmentId = $viewer['department_id'] ?: null;
             }
 
-            $approvals = $approvalClass->getApprovals($departmentId, $status);
-            approval_respond(['success' => true, 'data' => array_map('approval_public', $approvals)]);
+            // Drafts are private; this legacy endpoint never returns them.
+            // (The redesigned page uses the "queue" action, which includes the viewer's own drafts.)
+            $approvals = array_filter(
+                $approvalClass->getApprovals($departmentId, $status),
+                function ($row) {
+                    return $row['status'] !== 'draft';
+                }
+            );
+            approval_respond(['success' => true, 'data' => array_values(array_map('approval_public', $approvals))]);
             break;
 
         // ------------------------------------------------------------------
-        // GET single approval (for the detail/review modal)
+        // GET single approval (for the review workspace)
         // ------------------------------------------------------------------
         case 'get':
             $approvalId = (int) ($_GET['approval_id'] ?? 0);
@@ -122,14 +168,15 @@ try {
             break;
 
         // ------------------------------------------------------------------
-        // GET stream the generated PDF or the optional attachment.
-        //   ?action=file&approval_id=12&kind=pdf|attachment[&download=1]
+        // GET stream the uploaded document.
+        //   ?action=file&approval_id=12&kind=attachment[&download=1]
+        // kind=pdf only serves PDFs generated by the old system (legacy rows).
         // Files are never linked directly; every request passes the session
         // and department/role check here first.
         // ------------------------------------------------------------------
         case 'file':
             $approvalId = (int) ($_GET['approval_id'] ?? 0);
-            $kind       = ($_GET['kind'] ?? 'pdf') === 'attachment' ? 'attachment' : 'pdf';
+            $kind       = ($_GET['kind'] ?? 'attachment') === 'pdf' ? 'pdf' : 'attachment';
             $download   = ($_GET['download'] ?? '') === '1';
 
             $approval = $approvalId ? $approvalClass->getApprovalById($approvalId) : null;
@@ -151,7 +198,7 @@ try {
             }
 
             if (!$relative) {
-                approval_file_error(404, $kind === 'attachment' ? 'This request has no attachment.' : 'The PDF has not been generated yet.');
+                approval_file_error(404, 'This request has no document attached.');
             }
 
             $absolute = FileStorage::resolve($relative);
@@ -164,7 +211,7 @@ try {
             break;
 
         // ------------------------------------------------------------------
-        // POST save as draft (multipart/form-data, optional "attachment" file)
+        // POST save as draft (multipart/form-data, "attachment" file)
         // ------------------------------------------------------------------
         case 'save_draft':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -191,8 +238,8 @@ try {
             break;
 
         // ------------------------------------------------------------------
-        // POST submit an approval request — creates/promotes to 'submitted'
-        // and auto-generates the PDF. PDF failure never blocks submission.
+        // POST submit an approval request — creates/promotes to 'submitted'.
+        // The uploaded document is the request document; nothing is generated.
         // ------------------------------------------------------------------
         case 'submit':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -205,7 +252,12 @@ try {
 
             $approvalId = (int) ($_POST['approval_id'] ?? 0) ?: null;
             $prep       = approval_prepare_attachment($approvalClass, $approvalId, $userInfo); // responds on error
-            $fields     = array_merge($validated['fields'], $prep['extra']);
+
+            if (APPROVAL_REQUIRE_ATTACHMENT && !$prep['newPath'] && !$prep['oldPath']) {
+                approval_respond(['success' => false, 'message' => 'Upload the request document (PDF, JPG or PNG) before submitting.']);
+            }
+
+            $fields = array_merge($validated['fields'], $prep['extra']);
 
             try {
                 $newId = $approvalClass->submitApproval($fields, $approvalId);
@@ -215,24 +267,10 @@ try {
             }
             approval_discard_replaced_file($prep);
 
-            $pdfGenerated = false;
-            $warning      = null;
-            $debug        = null;
-            try {
-                $pdfGenerated = (bool) $approvalClass->generatePdf($newId);
-            } catch (\Throwable $e) {
-                error_log('[ApprovalController] PDF generation failed for approval ' . $newId . ': ' . $e->getMessage());
-                $warning = 'Request submitted, but the PDF could not be generated. Contact your administrator.';
-                // TEMP debug info — remove once things are stable.
-                $debug = $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
-            }
-
             approval_respond([
                 'success' => true,
                 'message' => 'Approval request submitted successfully.',
-                'warning' => $warning,
-                'debug'   => $debug,
-                'data'    => ['approval_id' => $newId, 'has_pdf' => $pdfGenerated],
+                'data'    => ['approval_id' => $newId],
             ]);
             break;
 
@@ -240,6 +278,9 @@ try {
         // POST Directress marks a submitted request as reviewed
         // ------------------------------------------------------------------
         case 'review':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                approval_respond(['success' => false, 'message' => 'Method not allowed.']);
+            }
             if (!$isDirectress) {
                 approval_respond(['success' => false, 'message' => 'Only the School Directress can review approval requests.']);
             }
@@ -248,14 +289,23 @@ try {
             if (!$approvalId) {
                 approval_respond(['success' => false, 'message' => 'Approval ID is required.']);
             }
-            $ok = $approvalClass->markReviewed($approvalId, $userInfo['employee_id'], $notes !== '' ? $notes : null);
-            approval_respond(['success' => $ok, 'message' => $ok ? 'Marked as reviewed.' : 'Unable to review this request.']);
+            if (mb_strlen($notes) > 2000) {
+                approval_respond(['success' => false, 'message' => 'Notes must be 2,000 characters or fewer.']);
+            }
+            $ok = $approvalClass->markReviewed($approvalId, $viewer['employee_id'], $notes !== '' ? $notes : null);
+            approval_respond([
+                'success' => $ok,
+                'message' => $ok ? 'Marked as reviewed.' : 'This request is no longer waiting for review. Refresh and try again.',
+            ]);
             break;
 
         // ------------------------------------------------------------------
         // POST Directress approves/rejects a reviewed request
         // ------------------------------------------------------------------
         case 'decide':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                approval_respond(['success' => false, 'message' => 'Method not allowed.']);
+            }
             if (!$isDirectress) {
                 approval_respond(['success' => false, 'message' => 'Only the School Directress can decide on approval requests.']);
             }
@@ -265,20 +315,32 @@ try {
             if (!$approvalId || !in_array($decision, ['approved', 'rejected'], true)) {
                 approval_respond(['success' => false, 'message' => 'A valid approval ID and decision are required.']);
             }
-            $ok = $approvalClass->decide($approvalId, $userInfo['employee_id'], $decision, $notes !== '' ? $notes : null);
-            approval_respond(['success' => $ok, 'message' => $ok ? "Request {$decision}." : 'Unable to decide on this request.']);
+            if ($decision === 'rejected' && $notes === '') {
+                approval_respond(['success' => false, 'message' => 'Enter a reason before rejecting this request.']);
+            }
+            if (mb_strlen($notes) > 2000) {
+                approval_respond(['success' => false, 'message' => 'Notes must be 2,000 characters or fewer.']);
+            }
+            $ok = $approvalClass->decide($approvalId, $viewer['employee_id'], $decision, $notes !== '' ? $notes : null);
+            approval_respond([
+                'success' => $ok,
+                'message' => $ok ? "Request {$decision}." : 'This request is no longer waiting for a decision. Refresh and try again.',
+            ]);
             break;
 
         // ------------------------------------------------------------------
-        // POST/GET generate an AI summary
+        // POST/GET generate an AI summary (now access-checked like every other read)
         // ------------------------------------------------------------------
         case 'summarize':
             $approvalId = (int) ($_REQUEST['approval_id'] ?? 0);
             if (!$approvalId) {
                 approval_respond(['success' => false, 'message' => 'Approval ID is required.']);
             }
-            $result = $approvalClass->generateAiSummary($approvalId);
-            approval_respond($result);
+            $approval = $approvalClass->getApprovalById($approvalId);
+            if (!$approval || !approval_can_access($approval, $userInfo, $isDirectress)) {
+                approval_respond(['success' => false, 'message' => 'You do not have access to this approval request.']);
+            }
+            approval_respond($approvalClass->generateAiSummary($approvalId));
             break;
 
         default:
@@ -293,8 +355,7 @@ try {
     approval_respond([
         'success' => false,
         'message' => 'An unexpected server error occurred.',
-        // TEMP debug info — remove the "debug" key once things are stable.
-        'debug'   => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(),
+        'debug'   => approval_debug($e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()),
     ]);
 }
 
@@ -310,6 +371,9 @@ function validateApprovalInput($post) {
     if ($description === '') {
         return ['valid' => false, 'message' => 'Description is required.'];
     }
+    if (mb_strlen($title) > 255) {
+        return ['valid' => false, 'message' => 'Title must be 255 characters or fewer.'];
+    }
 
     return [
         'valid'  => true,
@@ -321,32 +385,92 @@ function validateApprovalInput($post) {
     ];
 }
 
-// Same visibility rule as the "list" action: Directress sees everything; everyone else sees
-// approvals submitted from their own department (and anything they submitted themselves).
-function approval_can_access($approval, $userInfo, $isDirectress) {
-    if ($isDirectress) {
-        return true;
+function approval_valid_date($value) {
+    if (!is_string($value) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) {
+        return null;
     }
+    return checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? $value : null;
+}
+
+// Reads and validates queue filters. Unknown values fall back to safe defaults.
+function approval_read_filters($isDirectress) {
+    $allowed = ['pending', 'all', 'draft', 'submitted', 'reviewed', 'approved', 'rejected'];
+    $status  = $_GET['status'] ?? '';
+    if (!in_array($status, $allowed, true)) {
+        $status = $isDirectress ? 'pending' : 'all';
+    }
+
+    $dept = ($isDirectress && ctype_digit((string) ($_GET['department_id'] ?? '')))
+        ? (int) $_GET['department_id']
+        : null;
+
+    return [
+        'status'        => $status,
+        'department_id' => $dept,
+        'date_from'     => approval_valid_date($_GET['date_from'] ?? ''),
+        'date_to'       => approval_valid_date($_GET['date_to'] ?? ''),
+        'search'        => mb_substr(trim((string) ($_GET['search'] ?? '')), 0, 100),
+    ];
+}
+
+// Visibility rule shared by get / file / summarize (and mirrored by Approval::scopeClause):
+//  - A draft is visible only to the person who created it.
+//  - The Directress sees every submitted request in every department.
+//  - Everyone else sees requests from their own department and anything they submitted.
+function approval_can_access($approval, $userInfo, $isDirectress) {
     $myDept = (int) ($userInfo['department_id'] ?? $_SESSION['department_id'] ?? 0);
     $myId   = (int) ($userInfo['employee_id'] ?? $_SESSION['employee_id'] ?? 0);
+    $isOwner = $myId && (int) ($approval['submit_by'] ?? 0) === $myId;
 
-    if ($myId && (int) ($approval['submit_by'] ?? 0) === $myId) {
+    if (($approval['status'] ?? '') === 'draft') {
+        return $isOwner;
+    }
+    if ($isDirectress || $isOwner) {
         return true;
     }
     $approvalDept = (int) ($approval['submitter_department_id'] ?? $approval['department'] ?? 0);
     return $myDept && $approvalDept === $myDept;
 }
 
+// The decision history is built from what the sd_approvals row actually records:
+// creation, submission, review (who/when/notes) and the final decision (who/when/note).
+function approval_history($a) {
+    $history = [];
+    if (!empty($a['created_at'])) {
+        $history[] = ['event' => 'created', 'label' => 'Request created', 'at' => $a['created_at'], 'by' => $a['submit_by_name'] ?? null, 'note' => null];
+    }
+    if (!empty($a['submitted_on'])) {
+        $history[] = ['event' => 'submitted', 'label' => 'Submitted for approval', 'at' => $a['submitted_on'], 'by' => $a['submit_by_name'] ?? null, 'note' => null];
+    }
+    if (!empty($a['reviewed_at'])) {
+        $history[] = ['event' => 'reviewed', 'label' => 'Marked as reviewed', 'at' => $a['reviewed_at'], 'by' => $a['reviewed_by_name'] ?? null, 'note' => $a['review_notes'] ?? null];
+    }
+    if (!empty($a['approved_at']) && in_array($a['status'] ?? '', ['approved', 'rejected'], true)) {
+        $history[] = [
+            'event' => $a['status'],
+            'label' => $a['status'] === 'approved' ? 'Approved' : 'Rejected',
+            'at'    => $a['approved_at'],
+            'by'    => $a['decided_by_name'] ?? null,
+            'note'  => $a['remarks'] ?? null,
+        ];
+    }
+    return $history;
+}
+
 // Never send server file paths to the browser — only flags and display metadata.
 // Files are fetched through ?action=file.
 function approval_public($approval) {
-    $approval['has_pdf']        = !empty($approval['pdf_path']);
+    $approval['has_pdf']        = !empty($approval['pdf_path']);       // legacy generated PDFs only
     $approval['has_attachment'] = !empty($approval['file_path']);
 
     if ($approval['has_attachment']) {
         $approval['attachment_name'] = !empty($approval['file_name']) ? $approval['file_name'] : basename($approval['file_path']);
         $approval['attachment_mime'] = FileStorage::mimeFor($approval['file_path']);
         $approval['attachment_size'] = $approval['file_size'] ?? null;
+    }
+
+    if (isset($approval['approval_id']) && array_key_exists('created_at', $approval)) {
+        $approval['history'] = approval_history($approval);
     }
 
     unset($approval['pdf_path'], $approval['file_path']);
@@ -356,7 +480,6 @@ function approval_public($approval) {
 // Validates the optional upload and moves it into storage BEFORE the database write.
 // Also refuses to edit anything that is not the current user's own draft, so a rejected
 // edit can never replace (or delete) another request's attachment.
-// Responds with JSON and exits on any validation problem.
 // Returns ['extra' => fields to merge, 'newPath' => ?string, 'oldPath' => ?string]
 function approval_prepare_attachment($approvalClass, $approvalId, $userInfo) {
     $result = ['extra' => [], 'newPath' => null, 'oldPath' => null];
@@ -377,10 +500,10 @@ function approval_prepare_attachment($approvalClass, $approvalId, $userInfo) {
 
     $file = $_FILES['attachment'] ?? null;
     if (!FileStorage::hasUpload($file)) {
-        return $result; // attachment is optional
+        return $result; // required-ness is checked by the caller (submit only)
     }
 
-    $error = FileStorage::validateUpload($file);
+    $error = FileStorage::validateUpload($file, APPROVAL_UPLOAD_EXTENSIONS);
     if ($error) {
         approval_respond(['success' => false, 'message' => $error]);
     }
@@ -391,9 +514,8 @@ function approval_prepare_attachment($approvalClass, $approvalId, $userInfo) {
         error_log('[ApprovalController] Attachment store failed: ' . $e->getMessage());
         approval_respond([
             'success' => false,
-            'message' => 'The attachment could not be saved on the server.',
-            // TEMP debug info — remove once things are stable.
-            'debug'   => $e->getMessage(),
+            'message' => 'The document could not be saved on the server.',
+            'debug'   => approval_debug($e->getMessage()),
         ]);
     }
 

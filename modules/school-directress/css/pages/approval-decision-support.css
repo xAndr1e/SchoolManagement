@@ -1,632 +1,977 @@
 /* ============================================================
-School Directress — Approval & Decision Support
-============================================================ */
+   School Directress — Approval & Decision Support
+   Decision Command Center. Every class is prefixed sd-approval-.
+   Uses the shared theme variables (--color1 … --color10) with fallbacks.
+   ============================================================ */
 
-.approval-module {
+.sd-approval-module {
+    --sd-purple: var(--color1, #200082);
+    --sd-purple-hover: var(--color7, #3a1db0);
+    --sd-ink: var(--color2, #1f2330);
+    --sd-surface: var(--color3, #ffffff);
+    --sd-muted: var(--color5, #6b7280);
+    --sd-line: var(--color9, #e3e5ec);
+    --sd-danger: var(--color10, #b42318);
+    --sd-amber: #b8860b;
+    --sd-green: #16a34a;
+    --sd-tint: rgba(32, 0, 130, 0.04);
+
     width: 100%;
+    color: var(--sd-ink);
 }
 
-/* ── Form ──────────────────────────────────────────────── */
-
-.approval-module .approval-form-group {
-    margin-bottom: 1rem;
-}
-
-.approval-module .approval-form-group:last-child {
-    margin-bottom: 0;
-}
-
-.approval-module .approval-form-group label {
-    display: block;
-    margin-bottom: 0.4rem;
-    color: var(--color2);
-    font-size: 0.78rem;
-    font-weight: 600;
-}
-
-.approval-module .approval-form-group input[type="text"],
-.approval-module .approval-form-group textarea {
-    width: 100%;
+.sd-approval-module *,
+.sd-approval-module *::after {
     box-sizing: border-box;
-    padding: 0.6rem 0.85rem;
-    border: 1px solid var(--color9);
-    border-radius: 7px;
-    background: var(--color3);
-    color: var(--color2);
-    font-family: inherit;
-    font-size: 0.85rem;
 }
 
-.approval-module .approval-form-group textarea {
-    resize: vertical;
-    min-height: 70px;
+.sd-approval-module :focus-visible {
+    outline: 2px solid var(--sd-purple);
+    outline-offset: 2px;
 }
 
-.approval-module .approval-form-group input[type="text"]:focus,
-.approval-module .approval-form-group textarea:focus {
-    outline: none;
-    border-color: var(--color1);
-    box-shadow: 0 0 0 3px rgba(32, 0, 130, 0.08);
+body.sd-approval-lock {
+    overflow: hidden;
 }
 
-.approval-module .approval-error {
-    color: #dc3545;
-    font-size: 0.78rem;
-    margin-top: -0.4rem;
-    margin-bottom: 0.6rem;
-}
-
-.approval-module .approval-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 0.8rem;
-}
-
-/* ── File Input ────────────────────────────────────────── */
-
-.approval-module .file-btn {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0.55rem 0.65rem;
-    border: 1px solid var(--color9);
-    border-radius: 7px;
-    background: var(--color3);
-    color: var(--color5);
-    font-family: inherit;
+.sd-approval-muted {
+    color: var(--sd-muted);
     font-size: 0.82rem;
 }
 
-.approval-module .file-btn::file-selector-button {
-    margin-right: 0.5rem;
-    padding: 0.55rem 0.9rem;
-    border: none;
-    border-radius: 7px;
-    background: var(--color1);
-    color: var(--color3);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-}
+/* ── Header ───────────────────────────────────────────── */
 
-.approval-module .file-btn::file-selector-button:hover {
-    background: var(--color7);
-}
-
-/* ── Submit / Draft Buttons ────────────────────────────── */
-
-.approval-module .approval-submit-btn,
-.approval-module .approval-draft-btn {
-    padding: 0.65rem 1.3rem;
-    border-radius: 7px;
-    font-family: inherit;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.approval-module .approval-submit-btn {
-    border: none;
-    background: var(--color1);
-    color: var(--color3);
-}
-
-.approval-module .approval-submit-btn:hover {
-    background: var(--color7);
-}
-
-.approval-module .approval-draft-btn {
-    border: 1px solid var(--color9);
-    background: var(--color3);
-    color: var(--color5);
-}
-
-.approval-module .approval-draft-btn:hover {
-    border-color: var(--color5);
-    color: var(--color2);
-}
-
-.approval-module .approval-submit-btn:disabled,
-.approval-module .approval-draft-btn:disabled {
-    background: var(--color9);
-    color: var(--color5);
-    cursor: not-allowed;
-}
-
-/* ── Approval Queue Card ──────────────────────────────── */
-
-.approval-module .approval-queue-section {
-    border: 1px solid var(--color9);
-    border-radius: 10px;
-}
-
-/* ── Queue Header ─────────────────────────────────────── */
-
-.approval-module .approval-section-header {
+.sd-approval-head {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: center;
     gap: 1rem;
-    background: var(--color3);
-    padding: 1.1rem 1.6rem;
-    border-radius: 10px;
-    margin-bottom: 1.75rem;
 }
 
-.approval-module .approval-section-header h3 {
-    margin: 0;
-    color: var(--color2);
-    font-size: 0.95rem;
-    font-weight: 700;
-}
+/* ── Buttons & inputs ─────────────────────────────────── */
 
-/* ── Header Actions & Trigger ─────────────────────────── */
-
-.approval-module .approval-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.approval-module .approval-add-btn {
-    padding: 0.6rem 1.1rem;
-    border: none;
-    border-radius: 7px;
-    background: var(--color1);
-    color: var(--color3);
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.approval-module .approval-add-btn:hover {
-    background: var(--color7);
-}
-
-/* ── Filters ───────────────────────────────────────────── */
-
-.approval-module .approval-filter {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.approval-module .ads-select {
-    width: 200px;
-    flex: 0 0 auto;
-    box-sizing: border-box;
-    padding: 0.6rem 0.85rem;
-    border: 1px solid var(--color9);
-    border-radius: 7px;
-    background: var(--color3);
-    color: var(--color2);
-    font-family: inherit;
-    font-size: 0.82rem;
-    cursor: pointer;
-}
-
-.approval-module .ads-select:focus {
-    outline: none;
-    border-color: var(--color1);
-    box-shadow: 0 0 0 3px rgba(32, 0, 130, 0.08);
-}
-
-/* ── Queue ─────────────────────────────────────────────── */
-
-.approval-module .ads-queue {
-    width: 100%;
-}
-
-.approval-module .ads-queue .table-responsive {
-    width: 100%;
-    border: 1px solid var(--color9);
-    border-radius: 8px;
-    overflow-x: auto;
-}
-
-/* ── Table ─────────────────────────────────────────────── */
-
-.approval-module .ads-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--color3);
-}
-
-.approval-module .ads-table th,
-.approval-module .ads-table td {
-    padding: 0.85rem 1.1rem;
-    border-bottom: 1px solid var(--color9);
-    text-align: left;
-    vertical-align: middle;
-}
-
-.approval-module .ads-table thead th {
-    color: var(--color5);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.approval-module .ads-table tbody td {
-    color: var(--color2);
-    font-size: 0.85rem;
-}
-
-.approval-module .ads-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.approval-module .ads-table tbody tr:hover {
-    background: rgba(32, 0, 130, 0.02);
-}
-
-.approval-module .ads-table tbody td[colspan] {
-    padding: 1.5rem;
-    text-align: center;
-}
-
-/* ── Actions ───────────────────────────────────────────── */
-
-.approval-module .ads-table th.actions-header,
-.approval-module .ads-table td.actions-cell {
-    text-align: center;
-}
-
-.approval-module .actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-}
-
-.approval-module .btn-approve,
-.approval-module .btn-reject {
+.sd-approval-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.65rem 1.2rem;
-    border: none;
+    gap: 0.4rem;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid var(--sd-line);
     border-radius: 7px;
-    font-family: inherit;
+    background: var(--sd-surface);
+    color: var(--sd-ink);
+    font: inherit;
     font-size: 0.82rem;
     font-weight: 600;
-    text-align: center;
+    line-height: 1.2;
+    text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
 }
 
-.approval-module .btn-approve {
-    background: var(--color1);
-    color: var(--color3);
+.sd-approval-btn:hover {
+    border-color: var(--sd-purple);
+    color: var(--sd-purple);
 }
 
-.approval-module .btn-reject {
-    background: var(--color10);
-    color: var(--color3);
+.sd-approval-btn--primary {
+    border-color: var(--sd-purple);
+    background: var(--sd-purple);
+    color: #fff;
 }
 
-.approval-module .btn-approve:hover,
-.approval-module .btn-reject:hover {
+.sd-approval-btn--primary:hover {
+    border-color: var(--sd-purple-hover);
+    background: var(--sd-purple-hover);
+    color: #fff;
+}
+
+.sd-approval-btn--danger {
+    border-color: var(--sd-danger);
+    background: var(--sd-danger);
+    color: #fff;
+}
+
+.sd-approval-btn--danger:hover {
+    border-color: var(--sd-danger);
+    background: var(--sd-danger);
+    color: #fff;
     opacity: 0.9;
 }
 
-/* ── Decision Badge ───────────────────────────────────── */
+.sd-approval-btn--danger-outline {
+    border-color: var(--sd-danger);
+    color: var(--sd-danger);
+}
 
-.approval-module .badge {
-    display: inline-block;
-    padding: 0.3rem 0.65rem;
-    border: 1px solid var(--color9);
-    border-radius: 999px;
+.sd-approval-btn--danger-outline:hover {
+    border-color: var(--sd-danger);
+    background: var(--sd-danger);
+    color: #fff;
+}
+
+.sd-approval-btn--ghost {
+    border-color: transparent;
     background: transparent;
-    color: var(--color5);
+    color: var(--sd-muted);
+}
+
+.sd-approval-btn--small {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.78rem;
+}
+
+.sd-approval-btn:disabled {
+    border-color: var(--sd-line);
+    background: var(--sd-line);
+    color: var(--sd-muted);
+    cursor: not-allowed;
+}
+
+.sd-approval-input {
+    width: 100%;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--sd-line);
+    border-radius: 7px;
+    background: var(--sd-surface);
+    color: var(--sd-ink);
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.sd-approval-input:focus {
+    outline: none;
+    border-color: var(--sd-purple);
+    box-shadow: 0 0 0 3px rgba(32, 0, 130, 0.1);
+}
+
+textarea.sd-approval-input {
+    min-height: 70px;
+    resize: vertical;
+}
+
+.sd-approval-file::file-selector-button {
+    margin-right: 0.6rem;
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--sd-purple);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sd-approval-error {
+    margin: 0.5rem 0;
+    color: var(--sd-danger);
+    font-size: 0.8rem;
+}
+
+.sd-approval-error[hidden] {
+    display: none;
+}
+
+.sd-approval-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+}
+
+/* ── Summary strip ────────────────────────────────────── */
+
+.sd-approval-pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 1.25rem 0;
+    border: 1px solid var(--sd-line);
+    border-radius: 10px;
+    background: var(--sd-surface);
+    overflow: hidden;
+}
+
+.sd-approval-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 1.1rem 1.3rem 1rem;
+    border: 0;
+    border-left: 1px solid var(--sd-line);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sd-approval-stage:first-child {
+    border-left: 0;
+}
+
+.sd-approval-stage--submitted { --sd-stage: var(--sd-purple); }
+.sd-approval-stage--reviewed  { --sd-stage: var(--sd-amber); }
+.sd-approval-stage--approved  { --sd-stage: var(--sd-green); }
+.sd-approval-stage--rejected  { --sd-stage: var(--sd-danger); }
+
+.sd-approval-stage:hover,
+.sd-approval-stage.is-active {
+    background: var(--sd-tint);
+}
+
+.sd-approval-stage-count {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.sd-approval-stage-label {
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.sd-approval-stage-hint {
+    color: var(--sd-muted);
+    font-size: 0.78rem;
+}
+
+/* ── Main layout ──────────────────────────────────────── */
+
+.sd-approval-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.sd-approval-panel {
+    border: 1px solid var(--sd-line);
+    border-radius: 10px;
+    background: var(--sd-surface);
+    overflow: hidden;
+}
+
+.sd-approval-panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.05rem 1.3rem;
+    border-bottom: 1px solid var(--sd-line);
+}
+
+.sd-approval-panel-head h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sd-approval-count {
+    color: var(--sd-muted);
+    font-size: 0.8rem;
+}
+
+/* ── Filters ──────────────────────────────────────────── */
+
+.sd-approval-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.3rem;
+    border-bottom: 1px solid var(--sd-line);
+    background: var(--color3);
+}
+
+.sd-approval-filters .sd-approval-input {
+    width: auto;
+}
+
+.sd-approval-input--search {
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.sd-approval-datefield {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--sd-muted);
+    font-size: 0.78rem;
+}
+
+/* ── Queue ────────────────────────────────────────────── */
+
+.sd-approval-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.3rem 1rem 1.55rem;
+    border-bottom: 1px solid var(--sd-line);
+}
+
+.sd-approval-item:last-child {
+    border-bottom: 0;
+}
+
+.sd-approval-item--submitted::before { background: var(--sd-purple); }
+.sd-approval-item--reviewed::before  { background: var(--sd-amber); }
+.sd-approval-item--approved::before  { background: var(--sd-green); }
+.sd-approval-item--rejected::before  { background: var(--sd-danger); }
+
+.sd-approval-item:hover {
+    background: var(--sd-tint);
+}
+
+.sd-approval-item-top {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.sd-approval-id {
+    flex: none;
+    color: var(--sd-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.sd-approval-item-title {
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sd-approval-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 1.4rem;
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+}
+
+.sd-approval-meta dt,
+.sd-approval-meta dd {
+    display: inline;
+    margin: 0;
+}
+
+.sd-approval-meta dt {
+    color: var(--sd-muted);
+}
+
+.sd-approval-meta dd {
+    margin-left: 0.3rem;
+}
+
+.sd-approval-item-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+}
+
+.sd-approval-waiting {
+    color: var(--sd-muted);
+    font-size: 0.75rem;
+}
+
+/* ── Badges ───────────────────────────────────────────── */
+
+.sd-approval-badge {
+    display: inline-block;
+    padding: 0.28rem 0.65rem;
+    border: 1px solid var(--sd-line);
+    border-radius: 999px;
+    color: var(--sd-muted);
     font-size: 0.72rem;
     font-weight: 600;
     white-space: nowrap;
 }
 
-.approval-module .badge-draft {
-    color: var(--color5);
-    border-color: var(--color9);
-}
+.sd-approval-badge--submitted { border-color: var(--sd-purple); background: var(--sd-purple); color: #fff; }
+.sd-approval-badge--reviewed  { border-color: var(--sd-amber);  background: var(--sd-amber);  color: #fff; }
+.sd-approval-badge--approved  { border-color: var(--sd-green);  background: var(--sd-green);  color: #fff; }
+.sd-approval-badge--rejected  { border-color: var(--sd-danger); background: var(--sd-danger); color: #fff; }
 
-.approval-module .badge-submitted {
-    color: var(--color3);
-    background: var(--color1);
-}
+/* ── Recent decisions ─────────────────────────────────── */
 
-.approval-module .badge-reviewed {
-    background: #b8860b;
-    color: var(--color3);
-}
-
-.approval-module .badge-approved {
-    background: #16a34a;
-    color: var(--color3);
-}
-
-.approval-module .badge-rejected {
-    background: var(--color10);
-    color: var(--color3);
-}
-
-/* ── Attachment / inline text links ───────────────────── */
-
-.approval-module .attachment-link {
-    display: inline-block;
-    padding: 0.35rem 0.65rem;
-    border: 1px solid var(--color9);
-    border-radius: 6px;
-    background: var(--color3);
-    color: var(--color2);
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-decoration: none;
+.sd-approval-recent-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 100%;
+    padding: 0.85rem 1.3rem;
+    border: 0;
+    border-bottom: 1px solid var(--sd-line);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
 }
 
-.approval-module .attachment-link:hover {
-    border-color: var(--color1);
-    color: var(--color1);
+.sd-approval-recent-item:last-child {
+    border-bottom: 0;
 }
 
-/* Attachment row in the approval detail modal.
-   Paste at the END of your approvals CSS file (approval- prefix, no global overrides). */
-.approval-attachment-info {
+.sd-approval-recent-item:hover {
+    background: var(--sd-tint);
+}
+
+.sd-approval-recent-title {
+    overflow: hidden;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sd-approval-recent-line {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.8rem;
+    font-size: 0.78rem;
+}
+
+.sd-approval-result {
+    font-weight: 700;
+}
+
+.sd-approval-result--approved { color: var(--sd-green); }
+.sd-approval-result--rejected { color: var(--sd-danger); }
+
+/* ── Empty / loading / error blocks ───────────────────── */
+
+.sd-approval-state {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    flex-wrap: wrap;            /* wraps on narrow screens instead of overflowing */
-    gap: 8px;
-    min-width: 0;
-}
-.approval-attachment-name {
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-.approval-link-btn {
-    display: inline-block;
-    text-decoration: none;
+    gap: 0.4rem;
+    padding: 2.2rem 1.3rem;
+    color: var(--sd-muted);
+    font-size: 0.85rem;
+    text-align: center;
 }
 
-/* ── Misc ──────────────────────────────────────────────── */
-
-.approval-module .muted {
-    color: var(--color5);
-    font-size: 0.82rem;
+.sd-approval-state strong {
+    color: var(--sd-ink);
+    font-size: 0.92rem;
 }
 
-/* ── Modal ─────────────────────────────────────────────── */
+.sd-approval-state .sd-approval-btn {
+    margin-top: 0.4rem;
+}
 
-.approval-modal-overlay {
+/* ── Overlays ─────────────────────────────────────────── */
+
+.sd-approval-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
     z-index: 1000;
+    background: rgba(20, 10, 50, 0.5);
+}
+
+.sd-approval-overlay.is-open {
+    display: flex;
+}
+
+.sd-approval-overlay--center {
     align-items: center;
     justify-content: center;
 }
 
-.approval-modal-overlay.active {
-    display: flex;
+.sd-approval-overlay--confirm {
+    z-index: 1100;
 }
 
-.approval-modal {
+.sd-approval-overlay--drawer {
+    justify-content: flex-end;
+}
+
+.sd-approval-modal {
     width: 480px;
     max-width: 92vw;
-    max-height: 82vh;
+    max-height: 88vh;
     overflow-y: auto;
-    background: var(--color3);
-    border: 1px solid var(--color9);
+    border: 1px solid var(--sd-line);
     border-radius: 10px;
+    background: var(--sd-surface);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
-.approval-modal-lg {
-    width: 720px;
+.sd-approval-modal--small {
+    width: 400px;
 }
 
-.approval-modal-header {
+.sd-approval-modal-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.2rem 1.6rem;
-    border-bottom: 1px solid var(--color9);
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--sd-line);
 }
 
-.approval-modal-header h3 {
+.sd-approval-modal-head h2,
+.sd-approval-modal-body h2 {
     margin: 0;
-    color: var(--color2);
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
 }
 
-.approval-modal-close {
-    border: none;
-    background: transparent;
-    font-size: 1.4rem;
-    line-height: 1;
-    color: var(--color5);
-    cursor: pointer;
+.sd-approval-modal-body {
+    padding: 1.5rem;
 }
 
-.approval-modal-close:hover {
-    color: var(--color2);
-}
-
-.approval-modal-body {
-    padding: 1.6rem;
-}
-
-.approval-modal-body h4 {
-    margin: 1.1rem 0 0.4rem;
-    color: var(--color2);
-    font-size: 0.82rem;
-    font-weight: 700;
-}
-
-.approval-modal-body p {
-    margin: 0;
-    color: var(--color2);
-    font-size: 0.85rem;
+.sd-approval-modal-body > h2 + p {
+    margin: 0.5rem 0 0;
+    color: var(--sd-muted);
+    font-size: 0.86rem;
     line-height: 1.5;
 }
 
-/* ── Detail rows ───────────────────────────────────────── */
-
-.approval-detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--color9);
-    font-size: 0.85rem;
+.sd-approval-field {
+    margin-bottom: 1rem;
 }
 
-.approval-detail-row:last-of-type {
-    border-bottom: none;
-}
-
-.approval-detail-label {
-    color: var(--color5);
-    font-weight: 600;
-}
-
-/* ── AI summary box ────────────────────────────────────── */
-
-.approval-ai-box {
-    margin-top: 1.2rem;
-    padding: 1rem 1.1rem;
-    border: 1px dashed var(--color9);
-    border-radius: 8px;
-    background: rgba(32, 0, 130, 0.02);
-}
-
-.approval-ai-box-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-}
-
-.approval-ai-box-header strong {
-    color: var(--color2);
-    font-size: 0.82rem;
-}
-
-/* ── Review / decision box ─────────────────────────────── */
-
-.approval-review-box {
-    margin-top: 1.2rem;
-    padding: 1rem 1.1rem;
-    border-radius: 8px;
-    background: var(--color3);
-    border: 1px solid var(--color9);
-}
-
-.approval-review-box label {
+.sd-approval-field > label {
     display: block;
-    margin-bottom: 0.4rem;
-    color: var(--color2);
-    font-size: 0.78rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
     font-weight: 600;
 }
 
-.approval-review-box textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0.6rem 0.85rem;
-    border: 1px solid var(--color9);
-    border-radius: 7px;
-    background: var(--color3);
-    color: var(--color2);
+.sd-approval-close {
+    border: 0;
+    background: transparent;
+    color: var(--sd-muted);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sd-approval-close:hover {
+    color: var(--sd-ink);
+}
+
+/* ── Review workspace (slide-over) ────────────────────── */
+
+.sd-approval-drawer {
+    display: flex;
+    flex-direction: column;
+    width: min(1180px, 100vw);
+    height: 100%;
+    background: var(--sd-surface);
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.22);
+    animation: sd-approval-slide 0.2s ease-out;
+}
+
+@keyframes sd-approval-slide {
+    from { transform: translateX(32px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sd-approval-drawer { animation: none; }
+}
+
+.sd-approval-drawer-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--sd-line);
+}
+
+.sd-approval-drawer-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.sd-approval-drawer-id {
+    margin: 0 0 0.15rem;
+    color: var(--sd-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.sd-approval-drawer-heading h2 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sd-approval-drawer-body {
+    display: grid;
+    grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+    flex: 1;
+    min-height: 0;
+}
+
+.sd-approval-drawer-body > .sd-approval-state {
+    grid-column: 1 / -1;
+}
+
+.sd-approval-brief {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid var(--sd-line);
+}
+
+.sd-approval-brief-scroll {
+    flex: 1;
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+}
+
+.sd-approval-brief h3 {
+    margin: 1.4rem 0 0.4rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.sd-approval-brief h3:first-of-type {
+    margin-top: 1.2rem;
+}
+
+.sd-approval-facts {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+}
+
+.sd-approval-facts div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--sd-line);
     font-size: 0.85rem;
-    font-family: inherit;
-    resize: vertical;
 }
 
-/* ── PDF viewer ────────────────────────────────────────── */
-
-.approval-pdf-body {
-    padding: 0;
-    height: 78vh;
+.sd-approval-facts dt {
+    color: var(--sd-muted);
+    font-weight: 600;
 }
 
-.approval-pdf-frame {
+.sd-approval-facts dd {
+    margin: 0;
+    text-align: right;
+}
+
+.sd-approval-prose {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Timeline */
+
+.sd-approval-timeline {
+    margin: 0.3rem 0 0 0.35rem;
+    padding: 0 0 0 1.15rem;
+    border-left: 2px solid var(--sd-line);
+    list-style: none;
+}
+
+.sd-approval-tl {
+    position: relative;
+    padding-bottom: 1rem;
+    font-size: 0.84rem;
+}
+
+.sd-approval-tl:last-child {
+    padding-bottom: 0;
+}
+
+.sd-approval-tl::before {
+    content: "";
+    position: absolute;
+    top: 0.3rem;
+    left: calc(-1.15rem - 6px);
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--sd-surface);
+    border-radius: 50%;
+    background: var(--sd-tl, var(--sd-muted));
+}
+
+.sd-approval-tl--submitted { --sd-tl: var(--sd-purple); }
+.sd-approval-tl--reviewed  { --sd-tl: var(--sd-amber); }
+.sd-approval-tl--approved  { --sd-tl: var(--sd-green); }
+.sd-approval-tl--rejected  { --sd-tl: var(--sd-danger); }
+
+.sd-approval-tl-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.2rem 0.8rem;
+}
+
+.sd-approval-tl-head time {
+    color: var(--sd-muted);
+    font-size: 0.78rem;
+}
+
+.sd-approval-tl-note {
+    margin: 0.4rem 0 0;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--sd-line);
+    background: var(--sd-tint);
+    border-radius: 0 6px 6px 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* AI summary */
+
+.sd-approval-ai {
+    margin-top: 1.4rem;
+    padding: 0.9rem 1rem;
+    border: 1px dashed var(--sd-line);
+    border-radius: 8px;
+    background: var(--sd-tint);
+}
+
+.sd-approval-ai-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.84rem;
+}
+
+/* Decision panel */
+
+.sd-approval-decision {
+    padding: 1rem 1.5rem 1.2rem;
+    border-top: 1px solid var(--sd-line);
+    background: var(--sd-surface);
+    box-shadow: 0 -6px 14px rgba(32, 0, 130, 0.05);
+}
+
+.sd-approval-decision--static {
+    box-shadow: none;
+}
+
+.sd-approval-decision h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.92rem;
+}
+
+.sd-approval-decision label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.sd-approval-decision p {
+    margin: 0.6rem 0 0;
+}
+
+.sd-approval-decision--static p {
+    margin: 0;
+}
+
+/* Document pane */
+
+.sd-approval-doc {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: #f1f1f6;
+}
+
+.sd-approval-doc-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem 1rem;
+    padding: 0.75rem 1.2rem;
+    border-bottom: 1px solid var(--sd-line);
+    background: var(--sd-surface);
+}
+
+.sd-approval-doc-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 0.84rem;
+}
+
+.sd-approval-doc-name span {
+    overflow: hidden;
+    color: var(--sd-muted);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sd-approval-doc-tools {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sd-approval-doc-stage {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.sd-approval-doc-frame {
+    flex: 1;
     width: 100%;
     height: 100%;
-    border: none;
+    border: 0;
+    background: #fff;
 }
+
+.sd-approval-doc-image {
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    object-fit: contain;
+}
+
+.sd-approval-doc-empty {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 2rem;
+    color: var(--sd-muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.sd-approval-doc-empty strong {
+    color: var(--sd-ink);
+    font-size: 0.92rem;
+}
+
+/* ── Toasts ───────────────────────────────────────────── */
+
+.sd-approval-toasts {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sd-approval-toast {
+    max-width: 340px;
+    padding: 0.75rem 1.1rem;
+    border-radius: 7px;
+    background: #17a2b8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    color: #fff;
+    font-size: 0.88rem;
+}
+
+.sd-approval-toast--success { background: var(--sd-green); }
+.sd-approval-toast--error   { background: var(--sd-danger); }
 
 /* ── Responsive ───────────────────────────────────────── */
 
+@media (max-width: 1100px) {
+    .sd-approval-main {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 @media (max-width: 900px) {
-    .approval-module .approval-queue-section {
-        padding: 1rem;
+    .sd-approval-pipeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .approval-module .approval-section-header {
-        gap: 0.75rem;
+    .sd-approval-stage:nth-child(3) {
+        border-left: 0;
     }
 
-    .approval-module .ads-select {
-        width: 180px;
+    .sd-approval-stage:nth-child(n + 3) {
+        border-top: 1px solid var(--sd-line);
     }
 
-    .approval-module .ads-queue .table-responsive {
-        overflow-x: auto;
+    /* Workspace: stack details above the document and scroll as one page. */
+    .sd-approval-drawer-body {
+        display: block;
+        overflow-y: auto;
     }
 
-    .approval-module .ads-table {
-        min-width: 900px;
+    .sd-approval-brief {
+        border-right: 0;
+        border-bottom: 1px solid var(--sd-line);
     }
 
-    .approval-module .ads-table th,
-    .approval-module .ads-table td {
-        padding: 0.75rem 0.9rem;
+    .sd-approval-brief-scroll {
+        overflow: visible;
+    }
+
+    .sd-approval-doc-stage {
+        height: 70vh;
     }
 }
 
 @media (max-width: 600px) {
-    .approval-module .approval-queue-section {
-        padding: 1rem;
-    }
-
-    .approval-module .approval-section-header {
+    .sd-approval-head {
         flex-direction: column;
-        align-items: stretch;
     }
 
-    .approval-module .approval-header-actions {
-        flex-direction: column;
-        align-items: stretch;
+    .sd-approval-item {
+        grid-template-columns: minmax(0, 1fr);
     }
 
-    .approval-module .approval-filter {
-        flex-direction: column;
-        align-items: stretch;
+    .sd-approval-item-side {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
     }
 
-    .approval-module .ads-select {
+    .sd-approval-item-title {
+        white-space: normal;
+    }
+
+    .sd-approval-filters .sd-approval-input,
+    .sd-approval-datefield {
+        flex: 1 1 100%;
         width: 100%;
     }
 
-    .approval-module .actions,
-    .approval-module .approval-actions {
+    .sd-approval-datefield .sd-approval-input {
+        flex: 1;
+    }
+
+    .sd-approval-actions {
         flex-direction: column;
-        align-items: stretch;
     }
 
-    .approval-modal,
-    .approval-modal-lg {
-        width: 94vw;
-    }
-
-    .approval-pdf-body {
-        height: 65vh;
+    .sd-approval-actions .sd-approval-btn {
+        width: 100%;
     }
 }

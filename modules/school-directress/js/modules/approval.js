@@ -11,7 +11,795 @@ const APPROVAL_STATUS_LABELS = {
 // Attachment rules — keep in sync with FileStorage.php (the server re-checks everything).
 const APPROVAL_MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png'];
+/* ============================================================
+   School Directress — Approval & Decision Support
+   Decision Command Center (all selectors/classes prefixed sd-approval-)
+   ============================================================ */
+(function () {
+    'use strict';
 
+    // Scripts may be injected again on page navigation. One copy is enough: it re-initialises
+    // itself on every 'page:loaded' for whatever DOM is currently on screen.
+    if (window.sdApprovalLoaded) return;
+    window.sdApprovalLoaded = true;
+
+    const CONTROLLER = 'controllers/ApprovalController.php';
+
+    const STATUS_LABELS = {
+        draft: 'Draft',
+        submitted: 'Submitted',
+        reviewed: 'Reviewed',
+        approved: 'Approved',
+        rejected: 'Rejected',
+    };
+
+    // Keep in sync with APPROVAL_UPLOAD_EXTENSIONS in the controller (the server re-checks everything).
+    const MAX_BYTES = 10 * 1024 * 1024;
+    const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png'];
+
+    const state = {
+        root: null,
+        isDirectress: false,
+        currentId: null,
+        lastTrigger: null,
+        searchTimer: null,
+        queueSeq: 0,
+        workspaceSeq: 0,
+        confirmCancel: null,
+    };
+
+    // ── Small helpers ────────────────────────────────────────────────────────
+    const $ = (id) => document.getElementById(id);
+
+    function esc(value) {
+        const d = document.createElement('div');
+        d.textContent = String(value ?? '');
+        return d.innerHTML;
+    }
+
+    function fmtDate(value, withTime) {
+        if (!value) return '';
+        const d = new Date(String(value).replace(' ', 'T'));
+        if (isNaN(d.getTime())) return String(value);
+        const opts = { year: 'numeric', month: 'short', day: 'numeric' };
+        if (withTime) { opts.hour = 'numeric'; opts.minute = '2-digit'; }
+        return d.toLocaleString(undefined, opts);
+    }
+
+    function fmtSize(bytes) {
+        const n = Number(bytes) || 0;
+        if (n >= 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + ' MB';
+        if (n >= 1024) return Math.round(n / 1024) + ' KB';
+        return n + ' B';
+    }
+
+    function badge(status) {
+        const label = STATUS_LABELS[status] ?? status ?? '';
+        return `<span class="sd-approval-badge sd-approval-badge--${esc(status)}">${esc(label)}</span>`;
+    }
+
+    // Files are never linked by disk path. Every request goes through the controller,
+    // which checks the session/role and streams the bytes.
+    function fileUrl(approvalId, kind, download) {
+        const params = new URLSearchParams({ action: 'file', approval_id: approvalId, kind });
+        if (download) params.set('download', '1');
+        return `${CONTROLLER}?${params.toString()}`;
+    }
+
+    function bindOnce(el, event, handler) {
+        if (!el || el.dataset['sdBound' + event] === '1') return;
+        el.addEventListener(event, handler);
+        el.dataset['sdBound' + event] = '1';
+    }
+
+    // ── Network ──────────────────────────────────────────────────────────────
+    async function parseResponse(res) {
+        let json;
+        try {
+            json = await res.json();
+        } catch (e) {
+            throw new Error('The server sent an unexpected response.');
+        }
+        if (json.debug) console.error('Approval debug:', json.debug);
+        if (!json.success && /session expired/i.test(json.message || '')) {
+            setTimeout(() => { window.location.href = '/sms/index.php'; }, 1500);
+        }
+        return json;
+    }
+
+    async function getJson(params) {
+        const res = await fetch(`${CONTROLLER}?${new URLSearchParams(params).toString()}`, { credentials: 'same-origin' });
+        return parseResponse(res);
+    }
+
+    async function postForm(formData) {
+        const res = await fetch(CONTROLLER, { method: 'POST', body: formData, credentials: 'same-origin' });
+        return parseResponse(res);
+    }
+
+    // ── Toasts & confirmation ────────────────────────────────────────────────
+    function toast(message, type) {
+        const host = $('sd-approval-toasts');
+        if (!host) return;
+        const el = document.createElement('div');
+        el.className = `sd-approval-toast sd-approval-toast--${type || 'info'}`;
+        el.textContent = message;
+        host.appendChild(el);
+        setTimeout(() => el.remove(), 4200);
+    }
+
+    function confirmAction({ title, message, confirmLabel, danger }) {
+        return new Promise((resolve) => {
+            const overlay = $('sd-approval-confirm-overlay');
+            const ok = $('sd-approval-confirm-ok');
+            const cancel = $('sd-approval-confirm-cancel');
+
+            $('sd-approval-confirm-title').textContent = title;
+            $('sd-approval-confirm-message').textContent = message;
+            ok.textContent = confirmLabel || 'Confirm';
+            ok.classList.toggle('sd-approval-btn--danger', !!danger);
+            ok.classList.toggle('sd-approval-btn--primary', !danger);
+
+            const finish = (result) => {
+                overlay.classList.remove('is-open');
+                ok.removeEventListener('click', onOk);
+                cancel.removeEventListener('click', onCancel);
+                overlay.removeEventListener('click', onBackground);
+                state.confirmCancel = null;
+                resolve(result);
+            };
+            const onOk = () => finish(true);
+            const onCancel = () => finish(false);
+            const onBackground = (e) => { if (e.target === overlay) finish(false); };
+
+            state.confirmCancel = onCancel;
+            ok.addEventListener('click', onOk);
+            cancel.addEventListener('click', onCancel);
+            overlay.addEventListener('click', onBackground);
+            overlay.classList.add('is-open');
+            (danger ? cancel : ok).focus();
+        });
+    }
+
+    async function withBusy(buttons, task) {
+        const list = buttons.filter(Boolean);
+        list.forEach((b) => { b.disabled = true; });
+        try {
+            return await task();
+        } finally {
+            list.forEach((b) => { b.disabled = false; });
+        }
+    }
+
+    // ── Reusable state blocks (empty / error) ────────────────────────────────
+    function stateHtml(title, text, buttonLabel, buttonAction) {
+        return `<div class="sd-approval-state">
+            <strong>${esc(title)}</strong>
+            ${text ? `<span>${esc(text)}</span>` : ''}
+            ${buttonLabel ? `<button type="button" class="sd-approval-btn sd-approval-btn--small" data-action="${esc(buttonAction)}">${esc(buttonLabel)}</button>` : ''}
+        </div>`;
+    }
+
+    // ── Filters ──────────────────────────────────────────────────────────────
+    function defaultStatus() {
+        return state.isDirectress ? 'pending' : 'all';
+    }
+
+    function readFilters() {
+        return {
+            search: ($('sd-approval-search')?.value || '').trim(),
+            department_id: $('sd-approval-department')?.value || '',
+            status: $('sd-approval-status')?.value || defaultStatus(),
+            date_from: $('sd-approval-date-from')?.value || '',
+            date_to: $('sd-approval-date-to')?.value || '',
+        };
+    }
+
+    function hasActiveFilters(f) {
+        return !!(f.search || f.department_id || f.date_from || f.date_to || f.status !== defaultStatus());
+    }
+
+    function clearFilters() {
+        if ($('sd-approval-search')) $('sd-approval-search').value = '';
+        if ($('sd-approval-department')) $('sd-approval-department').value = '';
+        if ($('sd-approval-status')) $('sd-approval-status').value = defaultStatus();
+        if ($('sd-approval-date-from')) $('sd-approval-date-from').value = '';
+        if ($('sd-approval-date-to')) $('sd-approval-date-to').value = '';
+        loadQueue();
+        loadOverview();
+    }
+
+    function syncChrome(filters) {
+        const title = $('sd-approval-queue-title');
+        if (title) {
+            title.textContent = !state.isDirectress ? 'Department requests'
+                : (filters.status === 'pending' ? 'Needs your decision' : 'Requests');
+        }
+        state.root.querySelectorAll('.sd-approval-stage').forEach((stage) => {
+            stage.setAttribute('aria-pressed', stage.dataset.status === filters.status ? 'true' : 'false');
+            stage.classList.toggle('is-active', stage.dataset.status === filters.status);
+        });
+    }
+
+    // ── Overview: summary counts + recent decisions ──────────────────────────
+    function renderCounts(counts) {
+        ['submitted', 'reviewed', 'approved', 'rejected'].forEach((key) => {
+            const el = state.root.querySelector(`[data-count="${key}"]`);
+            if (el) el.textContent = counts ? String(counts[key] ?? 0) : '–';
+        });
+    }
+
+    function renderRecent(rows) {
+        const host = $('sd-approval-recent-list');
+        if (!rows || !rows.length) {
+            host.innerHTML = stateHtml('No decisions yet', 'Approved and rejected requests will appear here.');
+            return;
+        }
+        host.innerHTML = rows.map((r) => {
+            const approved = r.status === 'approved';
+            const by = r.decided_by_name && r.decided_by_name.trim() ? `by ${r.decided_by_name}` : '';
+            return `<button type="button" class="sd-approval-recent-item" data-action="review" data-id="${esc(r.approval_id)}">
+                <span class="sd-approval-recent-title">${esc(r.title || 'Untitled request')}</span>
+                <span class="sd-approval-recent-line">
+                    <span class="sd-approval-result sd-approval-result--${approved ? 'approved' : 'rejected'}">${approved ? 'Approved' : 'Rejected'}</span>
+                    <span>${esc(fmtDate(r.decided_at))}</span>
+                </span>
+                <span class="sd-approval-recent-line sd-approval-muted">
+                    <span>${esc(r.department_name || 'No department')}</span>
+                    ${by ? `<span>${esc(by)}</span>` : ''}
+                </span>
+            </button>`;
+        }).join('');
+    }
+
+    async function loadOverview() {
+        const host = $('sd-approval-recent-list');
+        if (!host) return;
+        host.setAttribute('aria-busy', 'true');
+        try {
+            const json = await getJson({ action: 'overview', department_id: $('sd-approval-department')?.value || '' });
+            if (!json.success) throw new Error(json.message || 'Request failed');
+            renderCounts(json.data.counts);
+            renderRecent(json.data.recent);
+        } catch (err) {
+            console.error('loadOverview error:', err);
+            renderCounts(null);
+            host.innerHTML = stateHtml('Could not load recent decisions', 'Check your connection, then try again.', 'Try again', 'retry-overview');
+        } finally {
+            host.setAttribute('aria-busy', 'false');
+        }
+    }
+
+    // ── Queue ────────────────────────────────────────────────────────────────
+    function waitingText(row) {
+        if (row.waiting_days === null || row.waiting_days === undefined || row.waiting_days === '') return '';
+        const n = Number(row.waiting_days);
+        if (n <= 0) return 'Submitted today';
+        return n === 1 ? 'Waiting 1 day' : `Waiting ${n} days`;
+    }
+
+    function queueItemHtml(row) {
+        const actionable = state.isDirectress && (row.status === 'submitted' || row.status === 'reviewed');
+        const waiting = waitingText(row);
+        const submitted = row.submitted_on ? fmtDate(row.submitted_on) : 'Not submitted yet';
+        return `<article class="sd-approval-item sd-approval-item--${esc(row.status)}">
+            <div class="sd-approval-item-main">
+                <div class="sd-approval-item-top">
+                    <span class="sd-approval-id">#${esc(row.approval_id)}</span>
+                    <h3 class="sd-approval-item-title">${esc(row.title || 'Untitled request')}</h3>
+                </div>
+                <dl class="sd-approval-meta">
+                    <div><dt>Department</dt><dd>${esc(row.department_name || 'N/A')}</dd></div>
+                    <div><dt>Submitted by</dt><dd>${esc(row.submit_by || 'N/A')}</dd></div>
+                    <div><dt>Submitted</dt><dd>${esc(submitted)}</dd></div>
+                </dl>
+            </div>
+            <div class="sd-approval-item-side">
+                ${badge(row.status)}
+                ${waiting ? `<span class="sd-approval-waiting">${esc(waiting)}</span>` : ''}
+                <button type="button" class="sd-approval-btn ${actionable ? 'sd-approval-btn--primary' : ''} sd-approval-btn--small"
+                        data-action="review" data-id="${esc(row.approval_id)}">${actionable ? 'Review request' : 'View request'}</button>
+            </div>
+        </article>`;
+    }
+
+    async function loadQueue() {
+        const host = $('sd-approval-queue-list');
+        if (!host) return;
+
+        const filters = readFilters();
+        syncChrome(filters);
+
+        const seq = ++state.queueSeq;
+        host.setAttribute('aria-busy', 'true');
+        host.innerHTML = '<div class="sd-approval-state">Loading requests…</div>';
+        $('sd-approval-queue-count').textContent = '';
+
+        const params = { action: 'queue' };
+        Object.entries(filters).forEach(([k, v]) => { if (v !== '') params[k] = v; });
+
+        try {
+            const json = await getJson(params);
+            if (seq !== state.queueSeq) return; // a newer request replaced this one
+            if (!json.success) throw new Error(json.message || 'Request failed');
+
+            if (!json.data.length) {
+                host.innerHTML = hasActiveFilters(filters)
+                    ? stateHtml('No requests match these filters', 'Clear a filter or change your search.', 'Clear filters', 'clear-filters')
+                    : stateHtml(
+                        state.isDirectress ? 'Nothing is waiting for your decision' : 'No requests yet',
+                        state.isDirectress ? 'New requests appear here as soon as a department submits them.' : 'Requests from your department appear here.'
+                    );
+                return;
+            }
+
+            host.innerHTML = json.data.map(queueItemHtml).join('');
+            const n = json.data.length;
+            $('sd-approval-queue-count').textContent = json.has_more
+                ? 'Showing the first 100 requests'
+                : `${n} ${n === 1 ? 'request' : 'requests'}`;
+        } catch (err) {
+            if (seq !== state.queueSeq) return;
+            console.error('loadQueue error:', err);
+            host.innerHTML = stateHtml('Could not load requests', 'Check your connection, then try again.', 'Try again', 'retry-queue');
+        } finally {
+            if (seq === state.queueSeq) host.setAttribute('aria-busy', 'false');
+        }
+    }
+
+    function refreshAll() {
+        loadQueue();
+        loadOverview();
+    }
+
+    // ── Review workspace ─────────────────────────────────────────────────────
+    function historyHtml(history) {
+        if (!history || !history.length) {
+            return '<p class="sd-approval-muted">No activity has been recorded for this request.</p>';
+        }
+        return `<ol class="sd-approval-timeline">${history.map((h) => `
+            <li class="sd-approval-tl sd-approval-tl--${esc(h.event)}">
+                <div class="sd-approval-tl-head"><strong>${esc(h.label)}</strong><time>${esc(fmtDate(h.at, true))}</time></div>
+                ${h.by && String(h.by).trim() ? `<div class="sd-approval-muted">${esc(h.by)}</div>` : ''}
+                ${h.note ? `<blockquote class="sd-approval-tl-note">${esc(h.note)}</blockquote>` : ''}
+            </li>`).join('')}</ol>`;
+    }
+
+    function documentHtml(a) {
+        let kind = 'attachment', name = '', mime = '', size = null, legacy = false;
+        if (a.has_attachment) {
+            name = a.attachment_name || 'Document';
+            mime = a.attachment_mime || '';
+            size = a.attachment_size;
+        } else if (a.has_pdf) {
+            kind = 'pdf'; name = `approval_${a.approval_id}.pdf`; mime = 'application/pdf'; legacy = true;
+        } else {
+            return `<div class="sd-approval-doc-empty">
+                <strong>No document attached</strong>
+                <span>This request was submitted without a supporting file.</span>
+            </div>`;
+        }
+
+        const viewUrl = fileUrl(a.approval_id, kind, false);
+        const downloadUrl = fileUrl(a.approval_id, kind, true);
+
+        let stage;
+        if (mime === 'application/pdf') {
+            stage = `<iframe class="sd-approval-doc-frame" src="${esc(viewUrl)}" title="Document for request #${esc(a.approval_id)}"></iframe>`;
+        } else if (mime.startsWith('image/')) {
+            stage = `<img class="sd-approval-doc-image" src="${esc(viewUrl)}" alt="Document for request #${esc(a.approval_id)}">`;
+        } else {
+            stage = `<div class="sd-approval-doc-empty">
+                <strong>This file type can't be previewed here</strong>
+                <span>Download it to read it in Word or Excel.</span>
+            </div>`;
+        }
+
+        return `<div class="sd-approval-doc-bar">
+                <div class="sd-approval-doc-name">
+                    <strong>${legacy ? 'Generated PDF (earlier version of the system)' : 'Supporting document'}</strong>
+                    <span>${esc(name)}${size ? ` (${esc(fmtSize(size))})` : ''}</span>
+                </div>
+                <div class="sd-approval-doc-tools">
+                    <a class="sd-approval-btn sd-approval-btn--small" href="${esc(viewUrl)}" target="_blank" rel="noopener">Open in new tab</a>
+                    <a class="sd-approval-btn sd-approval-btn--small" href="${esc(downloadUrl)}">Download</a>
+                </div>
+            </div>
+            <div class="sd-approval-doc-stage">${stage}</div>`;
+    }
+
+    function decisionHtml(a) {
+        const id = esc(a.approval_id);
+
+        if (state.isDirectress && a.status === 'submitted') {
+            return `<div class="sd-approval-decision">
+                <h3>Your review</h3>
+                <label for="sd-approval-note">Review notes <span class="sd-approval-muted">(optional)</span></label>
+                <textarea id="sd-approval-note" class="sd-approval-input" rows="3" maxlength="2000"
+                          placeholder="Anything the decision should take into account"></textarea>
+                <div class="sd-approval-actions">
+                    <button type="button" class="sd-approval-btn sd-approval-btn--primary" data-action="mark-reviewed" data-id="${id}">Mark as reviewed</button>
+                </div>
+                <p class="sd-approval-muted">Reviewing moves this request to the decision step.</p>
+            </div>`;
+        }
+
+        if (state.isDirectress && a.status === 'reviewed') {
+            return `<div class="sd-approval-decision">
+                <h3>Your decision</h3>
+                <label for="sd-approval-note">Decision note <span class="sd-approval-muted">(required to reject)</span></label>
+                <textarea id="sd-approval-note" class="sd-approval-input" rows="3" maxlength="2000"
+                          placeholder="Explain the reason for your decision"></textarea>
+                <div id="sd-approval-note-error" class="sd-approval-error" role="alert" hidden></div>
+                <div class="sd-approval-actions">
+                    <button type="button" class="sd-approval-btn sd-approval-btn--primary" data-action="decide" data-decision="approved" data-id="${id}">Approve</button>
+                    <button type="button" class="sd-approval-btn sd-approval-btn--danger-outline" data-action="decide" data-decision="rejected" data-id="${id}">Reject</button>
+                </div>
+            </div>`;
+        }
+
+        let message = 'Only the School Directress can review and decide on requests.';
+        if (a.status === 'draft') message = 'This is a draft. It has not been submitted for approval.';
+        else if (a.status === 'approved' || a.status === 'rejected') message = `This request was ${a.status}. The decision is recorded in the history.`;
+        else if (state.isDirectress) message = 'No action is needed on this request.';
+        return `<div class="sd-approval-decision sd-approval-decision--static"><p class="sd-approval-muted">${esc(message)}</p></div>`;
+    }
+
+    function renderWorkspace(a) {
+        $('sd-approval-drawer-id').textContent = `Request #${a.approval_id}`;
+        $('sd-approval-drawer-title').textContent = a.title || 'Untitled request';
+        $('sd-approval-drawer-status').innerHTML = badge(a.status);
+
+        const summary = a.ai_summary ? esc(a.ai_summary) : 'No summary yet.';
+
+        $('sd-approval-drawer-body').innerHTML = `
+            <section class="sd-approval-brief">
+                <div class="sd-approval-brief-scroll">
+                    <dl class="sd-approval-facts">
+                        <div><dt>Submitted by</dt><dd>${esc(a.submit_by_name || 'N/A')}</dd></div>
+                        <div><dt>Department</dt><dd>${esc(a.department_name || 'N/A')}</dd></div>
+                        <div><dt>Submitted</dt><dd>${esc(a.submitted_on ? fmtDate(a.submitted_on, true) : 'Not submitted yet')}</dd></div>
+                    </dl>
+
+                    <h3>Description</h3>
+                    <p class="sd-approval-prose">${esc(a.description) || '<span class="sd-approval-muted">None provided.</span>'}</p>
+
+                    <h3>Justification</h3>
+                    <p class="sd-approval-prose">${esc(a.justification) || '<span class="sd-approval-muted">None provided.</span>'}</p>
+
+                    <h3>Decision history and comments</h3>
+                    ${historyHtml(a.history)}
+
+                    <div class="sd-approval-ai">
+                        <div class="sd-approval-ai-head">
+                            <strong>AI summary</strong>
+                            <button type="button" class="sd-approval-btn sd-approval-btn--small" id="sd-approval-summarize" data-action="summarize" data-id="${esc(a.approval_id)}">
+                                ${a.ai_summary ? 'Regenerate' : 'Generate summary'}
+                            </button>
+                        </div>
+                        <p id="sd-approval-ai-text" class="sd-approval-prose ${a.ai_summary ? '' : 'sd-approval-muted'}">${summary}</p>
+                    </div>
+                </div>
+                ${decisionHtml(a)}
+            </section>
+            <section class="sd-approval-doc">${documentHtml(a)}</section>`;
+
+        const img = $('sd-approval-drawer-body').querySelector('.sd-approval-doc-image');
+        if (img) {
+            img.addEventListener('error', () => {
+                const stage = img.closest('.sd-approval-doc-stage');
+                if (stage) stage.innerHTML = '<div class="sd-approval-doc-empty"><strong>The document could not be loaded</strong><span>The file may be missing on the server.</span></div>';
+            });
+        }
+    }
+
+    async function loadWorkspace(id) {
+        const body = $('sd-approval-drawer-body');
+        const seq = ++state.workspaceSeq;
+        try {
+            const json = await getJson({ action: 'get', approval_id: id });
+            if (seq !== state.workspaceSeq) return;
+            if (!json.success) {
+                body.innerHTML = stateHtml('This request could not be opened', json.message || '', 'Try again', 'retry-workspace');
+                return;
+            }
+            renderWorkspace(json.data);
+        } catch (err) {
+            if (seq !== state.workspaceSeq) return;
+            console.error('loadWorkspace error:', err);
+            body.innerHTML = stateHtml('This request could not be opened', 'Check your connection, then try again.', 'Try again', 'retry-workspace');
+        }
+    }
+
+    function openWorkspace(id, trigger) {
+        state.currentId = id;
+        state.lastTrigger = trigger || document.activeElement;
+
+        $('sd-approval-drawer-id').textContent = `Request #${id}`;
+        $('sd-approval-drawer-title').textContent = 'Loading request…';
+        $('sd-approval-drawer-status').innerHTML = '';
+        $('sd-approval-drawer-body').innerHTML = '<div class="sd-approval-state">Loading request…</div>';
+
+        $('sd-approval-drawer-overlay').classList.add('is-open');
+        document.body.classList.add('sd-approval-lock');
+        state.root.querySelector('.sd-approval-drawer .sd-approval-close')?.focus();
+
+        return loadWorkspace(id);
+    }
+
+    function closeWorkspace() {
+        const overlay = $('sd-approval-drawer-overlay');
+        if (!overlay || !overlay.classList.contains('is-open')) return;
+        overlay.classList.remove('is-open');
+        document.body.classList.remove('sd-approval-lock');
+        $('sd-approval-drawer-body').innerHTML = ''; // also unloads the PDF viewer
+        state.currentId = null;
+        state.workspaceSeq++;
+        if (state.lastTrigger && document.contains(state.lastTrigger)) state.lastTrigger.focus();
+    }
+
+    // ── Decisions (all consequential actions are confirmed, then saved by the server) ──
+    async function markReviewed(id, button) {
+        const notes = $('sd-approval-note')?.value ?? '';
+        const ok = await confirmAction({
+            title: 'Mark as reviewed?',
+            message: `Request #${id} moves to the decision step. Your notes are saved with it.`,
+            confirmLabel: 'Mark as reviewed',
+        });
+        if (!ok) return;
+
+        await withBusy([button], async () => {
+            try {
+                const fd = new FormData();
+                fd.append('action', 'review');
+                fd.append('approval_id', id);
+                fd.append('notes', notes);
+                const json = await postForm(fd);
+                toast(json.message, json.success ? 'success' : 'error');
+                if (json.success) {
+                    await loadWorkspace(id);
+                    refreshAll();
+                }
+            } catch (err) {
+                console.error('markReviewed error:', err);
+                toast('A network error occurred. Nothing was saved.', 'error');
+            }
+        });
+    }
+
+    async function decide(id, decision, button) {
+        const noteEl = $('sd-approval-note');
+        const errEl = $('sd-approval-note-error');
+        const note = (noteEl?.value || '').trim();
+        if (errEl) errEl.hidden = true;
+
+        if (decision === 'rejected' && !note) {
+            if (errEl) {
+                errEl.textContent = 'Enter a reason before rejecting this request.';
+                errEl.hidden = false;
+            }
+            noteEl?.focus();
+            return;
+        }
+
+        const approving = decision === 'approved';
+        const ok = await confirmAction({
+            title: approving ? 'Approve this request?' : 'Reject this request?',
+            message: `Request #${id} will be ${approving ? 'approved' : 'rejected'}. The decision cannot be changed from this page.`,
+            confirmLabel: approving ? 'Approve request' : 'Reject request',
+            danger: !approving,
+        });
+        if (!ok) return;
+
+        await withBusy([button, ...(button ? button.parentElement.querySelectorAll('button') : [])], async () => {
+            try {
+                const fd = new FormData();
+                fd.append('action', 'decide');
+                fd.append('approval_id', id);
+                fd.append('decision', decision);
+                fd.append('notes', note);
+                const json = await postForm(fd);
+                toast(json.message, json.success ? 'success' : 'error');
+                if (json.success) {
+                    await loadWorkspace(id);
+                    refreshAll();
+                }
+            } catch (err) {
+                console.error('decide error:', err);
+                toast('A network error occurred. Nothing was saved.', 'error');
+            }
+        });
+    }
+
+    async function summarize(id, button) {
+        const text = $('sd-approval-ai-text');
+        const original = button ? button.textContent.trim() : '';
+        if (button) button.textContent = 'Summarizing…';
+        await withBusy([button], async () => {
+            try {
+                const json = await getJson({ action: 'summarize', approval_id: id });
+                if (json.success) {
+                    if (text) { text.textContent = json.summary; text.classList.remove('sd-approval-muted'); }
+                    if (button) button.textContent = 'Regenerate';
+                } else {
+                    toast(json.message, 'error');
+                    if (button) button.textContent = original;
+                }
+            } catch (err) {
+                console.error('summarize error:', err);
+                toast('A network error occurred.', 'error');
+                if (button) button.textContent = original;
+            }
+        });
+    }
+
+    // ── Submit for Approval modal ────────────────────────────────────────────
+    function showFormError(message) {
+        const el = $('sd-approval-form-error');
+        if (!el) return;
+        el.textContent = message;
+        el.hidden = !message;
+    }
+
+    function openCreate() {
+        $('sd-approval-form')?.reset();
+        $('sd-approval-id').value = '';
+        showFormError('');
+        $('sd-approval-create-overlay').classList.add('is-open');
+        $('sd-approval-title')?.focus();
+    }
+
+    function closeCreate() {
+        $('sd-approval-create-overlay')?.classList.remove('is-open');
+        showFormError('');
+    }
+
+    function validateFile(file) {
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (!ALLOWED_EXTENSIONS.includes(ext)) return 'This file type is not allowed. Use PDF, JPG or PNG.';
+        if (file.size > MAX_BYTES) return `That file is ${fmtSize(file.size)}. The maximum is 10 MB.`;
+        return null;
+    }
+
+    async function submitForm(action) {
+        const form = $('sd-approval-form');
+        const submitBtn = $('sd-approval-submit-btn');
+        const draftBtn = $('sd-approval-draft-btn');
+        if (!form) return;
+
+        showFormError('');
+        const fd = new FormData(form);
+        const file = $('sd-approval-attachment')?.files[0];
+
+        if (!String(fd.get('title') || '').trim()) return showFormError('Enter a title for the request.');
+        if (!String(fd.get('description') || '').trim()) return showFormError('Describe what is being requested.');
+        if (action === 'submit' && !file) return showFormError('Upload the request document (PDF, JPG or PNG) before submitting.');
+        if (file) {
+            const fileError = validateFile(file);
+            if (fileError) return showFormError(fileError);
+        }
+
+        fd.set('action', action);
+        const original = submitBtn.textContent;
+        if (action === 'submit') submitBtn.textContent = 'Submitting…';
+
+        await withBusy([submitBtn, draftBtn], async () => {
+            try {
+                const json = await postForm(fd);
+                if (json.success) {
+                    closeCreate();
+                    toast(action === 'submit' ? 'Approval request submitted.' : 'Draft saved.', 'success');
+                    refreshAll();
+                } else {
+                    showFormError(json.message || 'The request could not be saved.');
+                }
+            } catch (err) {
+                console.error('submitForm error:', err);
+                showFormError('A network error occurred. Please try again.');
+            } finally {
+                submitBtn.textContent = original;
+            }
+        });
+    }
+
+    // ── Event wiring ─────────────────────────────────────────────────────────
+    function onRootClick(e) {
+        const target = e.target;
+
+        // Click on a dimmed backdrop closes that layer (the confirm dialog handles its own).
+        if (target.classList && target.classList.contains('sd-approval-overlay') && !target.classList.contains('sd-approval-overlay--confirm')) {
+            if (target.id === 'sd-approval-drawer-overlay') closeWorkspace();
+            else closeCreate();
+            return;
+        }
+
+        const el = target.closest('[data-action]');
+        if (!el || !state.root.contains(el)) return;
+
+        switch (el.dataset.action) {
+            case 'open-create': openCreate(); break;
+            case 'close-create': closeCreate(); break;
+            case 'save-draft': submitForm('save_draft'); break;
+            case 'close-drawer': closeWorkspace(); break;
+            case 'review': openWorkspace(el.dataset.id, el); break;
+            case 'retry-workspace': openWorkspace(state.currentId, state.lastTrigger); break;
+            case 'retry-queue': loadQueue(); break;
+            case 'retry-overview': loadOverview(); break;
+            case 'clear-filters': clearFilters(); break;
+            case 'filter-status': {
+                const status = el.dataset.status;
+                const select = $('sd-approval-status');
+                if (!select) break;
+                select.value = select.value === status ? defaultStatus() : status;
+                loadQueue();
+                break;
+            }
+            case 'mark-reviewed': markReviewed(el.dataset.id, el); break;
+            case 'decide': decide(el.dataset.id, el.dataset.decision, el); break;
+            case 'summarize': summarize(el.dataset.id, el); break;
+        }
+    }
+
+    function onRootChange(e) {
+        const id = e.target.id;
+        if (id === 'sd-approval-department') { loadQueue(); loadOverview(); }
+        else if (id === 'sd-approval-status' || id === 'sd-approval-date-from' || id === 'sd-approval-date-to') loadQueue();
+        else if (id === 'sd-approval-attachment') {
+            const file = e.target.files[0];
+            const error = file ? validateFile(file) : null;
+            if (error) {
+                e.target.value = '';
+                showFormError(error);
+            } else {
+                showFormError('');
+            }
+        }
+    }
+
+    function onRootInput(e) {
+        if (e.target.id !== 'sd-approval-search') return;
+        clearTimeout(state.searchTimer);
+        state.searchTimer = setTimeout(loadQueue, 300);
+    }
+
+    function onRootSubmit(e) {
+        if (e.target.id !== 'sd-approval-form') return;
+        e.preventDefault();
+        submitForm('submit');
+    }
+
+    function init() {
+        const root = document.querySelector('.sd-approval-module');
+        if (!root || root.dataset.sdApprovalInit === '1') return;
+        root.dataset.sdApprovalInit = '1';
+
+        state.root = root;
+        state.isDirectress = root.dataset.isDirectress === '1';
+        document.body.classList.remove('sd-approval-lock'); // in case the drawer was open when the user navigated away
+
+        bindOnce(root, 'click', onRootClick);
+        bindOnce(root, 'change', onRootChange);
+        bindOnce(root, 'input', onRootInput);
+        bindOnce(root, 'submit', onRootSubmit);
+
+        refreshAll();
+    }
+
+    if (!window.sdApprovalEscBound) {
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !state.root || !document.contains(state.root)) return;
+            if (state.confirmCancel) { state.confirmCancel(); return; }
+            if ($('sd-approval-drawer-overlay')?.classList.contains('is-open')) { closeWorkspace(); return; }
+            closeCreate();
+        });
+        window.sdApprovalEscBound = true;
+    }
+
+    // Handles both hard refresh and sidebar navigation.
+    window.addEventListener('page:loaded', init);
+    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState !== 'loading') init();
+})();
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initApprovalModule() {
     const moduleRoot = document.querySelector('.approval-module');

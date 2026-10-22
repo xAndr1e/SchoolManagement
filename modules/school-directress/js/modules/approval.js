@@ -522,7 +522,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
 
         $('sd-approval-drawer-overlay').classList.add('is-open');
         document.body.classList.add('sd-approval-lock');
-        state.root.querySelector('.sd-approval-drawer .sd-approval-close')?.focus();
+        document.querySelector('.sd-approval-drawer .sd-approval-close')?.focus();
 
         return loadWorkspace(id);
     }
@@ -714,7 +714,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         }
 
         const el = target.closest('[data-action]');
-        if (!el || !state.root.contains(el)) return;
+        if (!el || !(state.root.contains(el) || (state.layers && state.layers.contains(el)))) return;
 
         switch (el.dataset.action) {
             case 'open-create': openCreate(); break;
@@ -768,12 +768,19 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         submitForm('submit');
     }
 
-    function init() {
+        function init() {
         const root = document.querySelector('.sd-approval-module');
         if (!root || root.dataset.sdApprovalInit === '1') return;
         root.dataset.sdApprovalInit = '1';
 
+        // Remove layers left in <body> by an earlier visit, then move this page's layers to <body>
+        // so the sidebar / top bar can never be drawn over the drawer and modals.
+        document.querySelectorAll('body > .sd-approval-layers').forEach((el) => el.remove());
+        const layers = root.querySelector('.sd-approval-layers');
+        if (layers) document.body.appendChild(layers);
+
         state.root = root;
+        state.layers = layers;
         state.isDirectress = root.dataset.isDirectress === '1';
         document.body.classList.remove('sd-approval-lock'); // in case the drawer was open when the user navigated away
 
@@ -781,6 +788,14 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         bindOnce(root, 'change', onRootChange);
         bindOnce(root, 'input', onRootInput);
         bindOnce(root, 'submit', onRootSubmit);
+
+        // The drawer and modals now live outside root, so they need the same handlers.
+        if (layers) {
+            bindOnce(layers, 'click', onRootClick);
+            bindOnce(layers, 'change', onRootChange);
+            bindOnce(layers, 'input', onRootInput);
+            bindOnce(layers, 'submit', onRootSubmit);
+        }
 
         refreshAll();
     }
@@ -794,6 +809,12 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         });
         window.sdApprovalEscBound = true;
     }
+
+        window.addEventListener('page:loaded', () => {
+        if (document.querySelector('.sd-approval-module')) return;
+        document.querySelectorAll('body > .sd-approval-layers').forEach((el) => el.remove());
+        document.body.classList.remove('sd-approval-lock');
+    });
 
     // Handles both hard refresh and sidebar navigation.
     window.addEventListener('page:loaded', init);

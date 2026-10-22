@@ -4,7 +4,8 @@
    Uses the shared theme variables (--color1 … --color10) with fallbacks.
    ============================================================ */
 
-.sd-approval-module {
+.sd-approval-module,
+.sd-approval-layers {
     --sd-purple: var(--color1, #200082);
     --sd-purple-hover: var(--color7, #3a1db0);
     --sd-ink: var(--color2, #1f2330);
@@ -16,16 +17,29 @@
     --sd-green: #16a34a;
     --sd-tint: rgba(32, 0, 130, 0.04);
 
+    /* Layer order for the full-screen layers (drawer, modals, confirm, toasts).
+       These live in .sd-approval-layers, which the script moves to <body> so they
+       are never trapped under the sidebar or top bar. */
+    --sd-z-overlay: 10000;
+
     width: 100%;
     color: var(--sd-ink);
 }
 
 .sd-approval-module *,
-.sd-approval-module *::after {
+.sd-approval-module *::after,
+.sd-approval-layers *,
+.sd-approval-layers *::after {
     box-sizing: border-box;
 }
 
-.sd-approval-module :focus-visible {
+.sd-approval-layers {
+    width: 0;
+    height: 0;
+}
+
+.sd-approval-module :focus-visible,
+.sd-approval-layers :focus-visible {
     outline: 2px solid var(--sd-purple);
     outline-offset: 2px;
 }
@@ -37,15 +51,6 @@ body.sd-approval-lock {
 .sd-approval-muted {
     color: var(--sd-muted);
     font-size: 0.82rem;
-}
-
-/* ── Header ───────────────────────────────────────────── */
-
-.sd-approval-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
 }
 
 /* ── Buttons & inputs ─────────────────────────────────── */
@@ -183,57 +188,50 @@ textarea.sd-approval-input {
 .sd-approval-pipeline {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
     margin: 1.25rem 0;
-    border: 1px solid var(--sd-line);
-    border-radius: 10px;
-    background: var(--sd-surface);
-    overflow: hidden;
 }
 
 .sd-approval-stage {
-    position: relative;
+    display: flex;
+    align-items: center; /* Centers the inner div vertically */
+    min-width: 0;
+    padding: 18px;
+    background: var(--color3);
+    border-radius: 14px;
+}
+
+/* The inner div wrapper */
+.sd-approval-stage > div {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    padding: 1.1rem 1.3rem 1rem;
-    border: 0;
-    border-left: 1px solid var(--sd-line);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.sd-approval-stage:first-child {
-    border-left: 0;
-}
-
-.sd-approval-stage--submitted { --sd-stage: var(--sd-purple); }
-.sd-approval-stage--reviewed  { --sd-stage: var(--sd-amber); }
-.sd-approval-stage--approved  { --sd-stage: var(--sd-green); }
-.sd-approval-stage--rejected  { --sd-stage: var(--sd-danger); }
-
-.sd-approval-stage:hover,
-.sd-approval-stage.is-active {
-    background: var(--sd-tint);
+    align-items: flex-start;
+    width: 100%;
 }
 
 .sd-approval-stage-count {
-    font-size: 1.9rem;
+    display: block;
+    color: var(--color2);
+    font-size: 1.7rem;
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1.15;
+    margin-bottom: 2px;
     font-variant-numeric: tabular-nums;
 }
 
 .sd-approval-stage-label {
-    font-size: 0.88rem;
-    font-weight: 700;
+    display: block;
+    color: var(--color5);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 .sd-approval-stage-hint {
-    color: var(--sd-muted);
+    display: block;
+    color: var(--color5);
     font-size: 0.78rem;
+    line-height: 1.4;
 }
 
 /* ── Main layout ──────────────────────────────────────── */
@@ -316,11 +314,6 @@ textarea.sd-approval-input {
 .sd-approval-item:last-child {
     border-bottom: 0;
 }
-
-.sd-approval-item--submitted::before { background: var(--sd-purple); }
-.sd-approval-item--reviewed::before  { background: var(--sd-amber); }
-.sd-approval-item--approved::before  { background: var(--sd-green); }
-.sd-approval-item--rejected::before  { background: var(--sd-danger); }
 
 .sd-approval-item:hover {
     background: var(--sd-tint);
@@ -477,7 +470,8 @@ textarea.sd-approval-input {
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 1000;
+    /* Above the fixed sidebar and top bar, so the drawer/modals are never covered. */
+    z-index: var(--sd-z-overlay);
     background: rgba(20, 10, 50, 0.5);
 }
 
@@ -491,17 +485,19 @@ textarea.sd-approval-input {
 }
 
 .sd-approval-overlay--confirm {
-    z-index: 1100;
+    z-index: calc(var(--sd-z-overlay) + 100);
 }
 
 .sd-approval-overlay--drawer {
     justify-content: flex-end;
+    overflow: hidden;
 }
 
 .sd-approval-modal {
     width: 480px;
     max-width: 92vw;
     max-height: 88vh;
+    max-height: 88dvh;
     overflow-y: auto;
     border: 1px solid var(--sd-line);
     border-radius: 10px;
@@ -569,7 +565,14 @@ textarea.sd-approval-input {
     display: flex;
     flex-direction: column;
     width: min(1180px, 100vw);
-    height: 100%;
+    /* Exactly one screen tall. dvh keeps the bottom visible on mobile browsers
+       whose address bar changes the viewport height; vh is the fallback. */
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
     background: var(--sd-surface);
     box-shadow: -12px 0 40px rgba(0, 0, 0, 0.22);
     animation: sd-approval-slide 0.2s ease-out;
@@ -585,6 +588,7 @@ textarea.sd-approval-input {
 }
 
 .sd-approval-drawer-head {
+    flex: none; /* the title and close button never get squeezed out */
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -616,8 +620,13 @@ textarea.sd-approval-input {
 .sd-approval-drawer-body {
     display: grid;
     grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+    /* One row that is exactly as tall as the space left under the header.
+       Without this the row grows to fit the tall details column and pushes
+       the review box off the bottom of the screen. */
+    grid-template-rows: minmax(0, 1fr);
     flex: 1;
     min-height: 0;
+    overflow: hidden;
 }
 
 .sd-approval-drawer-body > .sd-approval-state {
@@ -627,14 +636,18 @@ textarea.sd-approval-input {
 .sd-approval-brief {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     min-height: 0;
+    overflow: hidden;
     border-right: 1px solid var(--sd-line);
 }
 
 .sd-approval-brief-scroll {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     padding: 1.25rem 1.5rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .sd-approval-brief h3 {
@@ -699,18 +712,6 @@ textarea.sd-approval-input {
     padding-bottom: 0;
 }
 
-.sd-approval-tl::before {
-    content: "";
-    position: absolute;
-    top: 0.3rem;
-    left: calc(-1.15rem - 6px);
-    width: 10px;
-    height: 10px;
-    border: 2px solid var(--sd-surface);
-    border-radius: 50%;
-    background: var(--sd-tl, var(--sd-muted));
-}
-
 .sd-approval-tl--submitted { --sd-tl: var(--sd-purple); }
 .sd-approval-tl--reviewed  { --sd-tl: var(--sd-amber); }
 .sd-approval-tl--approved  { --sd-tl: var(--sd-green); }
@@ -758,9 +759,10 @@ textarea.sd-approval-input {
     font-size: 0.84rem;
 }
 
-/* Decision panel */
+/* Decision panel (pinned to the bottom of the details column, always visible) */
 
 .sd-approval-decision {
+    flex: none;
     padding: 1rem 1.5rem 1.2rem;
     border-top: 1px solid var(--sd-line);
     background: var(--sd-surface);
@@ -798,10 +800,12 @@ textarea.sd-approval-input {
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    overflow: hidden;
     background: #f1f1f6;
 }
 
 .sd-approval-doc-bar {
+    flex: none;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -878,7 +882,7 @@ textarea.sd-approval-input {
     position: fixed;
     right: 1.25rem;
     bottom: 1.25rem;
-    z-index: 1200;
+    z-index: calc(var(--sd-z-overlay) + 200);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -905,26 +909,44 @@ textarea.sd-approval-input {
     }
 }
 
+/* Short screens (laptops, landscape phones): tighten the drawer so the
+   review box leaves more room for the details above it. */
+@media (max-height: 800px) {
+    .sd-approval-drawer-head {
+        padding: 0.7rem 1.25rem;
+    }
+
+    .sd-approval-brief-scroll {
+        padding: 1rem 1.25rem;
+    }
+
+    .sd-approval-decision {
+        padding: 0.75rem 1.25rem 0.9rem;
+    }
+
+    .sd-approval-decision textarea.sd-approval-input {
+        min-height: 56px;
+    }
+
+    .sd-approval-decision .sd-approval-actions {
+        margin-top: 0.6rem;
+    }
+}
+
 @media (max-width: 900px) {
     .sd-approval-pipeline {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .sd-approval-stage:nth-child(3) {
-        border-left: 0;
-    }
-
-    .sd-approval-stage:nth-child(n + 3) {
-        border-top: 1px solid var(--sd-line);
     }
 
     /* Workspace: stack details above the document and scroll as one page. */
     .sd-approval-drawer-body {
         display: block;
         overflow-y: auto;
+        overscroll-behavior: contain;
     }
 
     .sd-approval-brief {
+        overflow: visible;
         border-right: 0;
         border-bottom: 1px solid var(--sd-line);
     }
@@ -933,12 +955,27 @@ textarea.sd-approval-input {
         overflow: visible;
     }
 
+    .sd-approval-doc {
+        overflow: visible;
+    }
+
     .sd-approval-doc-stage {
         height: 70vh;
+        height: 70dvh;
     }
 }
 
 @media (max-width: 600px) {
+    .sd-approval-pipeline {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+
+    .sd-approval-stage {
+        padding: 1rem 1.15rem;
+    }
+
+
     .sd-approval-head {
         flex-direction: column;
     }

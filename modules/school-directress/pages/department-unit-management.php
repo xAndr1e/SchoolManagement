@@ -43,9 +43,6 @@ $h = function ($v) {
 
         <section class="dm-stat-grid" aria-label="Organization summary">
             <article class="dm-stat-card">
-                <span class="dm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/></svg>
-                </span>
                 <div>
                     <strong id="dmStatDepts">—</strong>
                     <span class="dm-stat-label">Total departments</span>
@@ -53,9 +50,6 @@ $h = function ($v) {
                 </div>
             </article>
             <article class="dm-stat-card">
-                <span class="dm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                </span>
                 <div>
                     <strong id="dmStatUnits">—</strong>
                     <span class="dm-stat-label">Total units</span>
@@ -63,9 +57,6 @@ $h = function ($v) {
                 </div>
             </article>
             <article class="dm-stat-card">
-                <span class="dm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14c2.4.2 4 2 4 5"/></svg>
-                </span>
                 <div>
                     <strong id="dmStatEmployees">—</strong>
                     <span class="dm-stat-label">Total employees</span>

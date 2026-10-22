@@ -39,9 +39,6 @@
         <!-- ── Summary cards (counts come from the database) ── -->
         <section class="rsm-stat-grid" aria-label="Report summary">
             <article class="rsm-stat-card">
-                <span class="rsm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
-                </span>
                 <div>
                     <strong id="rsm-stat-total">—</strong>
                     <span class="rsm-stat-label">Total reports</span>
@@ -49,9 +46,6 @@
                 </div>
             </article>
             <article class="rsm-stat-card">
-                <span class="rsm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                </span>
                 <div>
                     <strong id="rsm-stat-pending">—</strong>
                     <span class="rsm-stat-label">Pending review</span>
@@ -59,9 +53,6 @@
                 </div>
             </article>
             <article class="rsm-stat-card">
-                <span class="rsm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/></svg>
-                </span>
                 <div>
                     <strong id="rsm-stat-approved">—</strong>
                     <span class="rsm-stat-label">Approved</span>
@@ -69,9 +60,6 @@
                 </div>
             </article>
             <article class="rsm-stat-card">
-                <span class="rsm-stat-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg>
-                </span>
                 <div>
                     <strong id="rsm-stat-rejected">—</strong>
                     <span class="rsm-stat-label">Rejected</span>

@@ -6,13 +6,15 @@
     /*User Class*/
     $userClass = new User();
     $userInfo = $userClass->userSession();
-    $isDirectress = ($userInfo['role'] === 'School Directress');
+    $isDirectress = Issues::isDirectress($userInfo);
+
+    // The Create button is shown only when the server would actually accept a new concern
+    // (validateConcernInput requires a department on the user's account).
+    $canCreate = !empty($userInfo['department_id']);
 
     /*Issues Class*/
     $issuesClass = new Issues();
-    $myDepartmentId = $isDirectress ? null : ($userInfo['department_id'] ?? null);
-    $concerns = $issuesClass->getConcerns($myDepartmentId);
-    $departments = $issuesClass->getDepartments();
+    $departments = $isDirectress ? $issuesClass->getDepartments() : [];
 
     $statusLabels = [
         'draft'     => 'Draft',
@@ -23,19 +25,100 @@
     ];
 ?>
 
-<div class="module-header">
-    <h1>Concerns & Issue Tracking</h1>
-    <p>Log, review, and resolve concerns directly within the system.</p>
+<div class="module-header sd-issue-header">
+    <div class="sd-issue-header-text">
+        <h1>Concerns &amp; Issue Tracking</h1>
+        <p>Monitor departmental concerns, coordinate follow-ups, and track resolutions.</p>
+    </div>
 </div>
 
-<div class="module-content" data-is-directress="<?= $isDirectress ? '1' : '0' ?>">
-    <div class="concerns-list-head">
-        <h3>Issue List</h3>
+<div class="module-content sd-issue-page" data-is-directress="<?= $isDirectress ? '1' : '0' ?>">
 
-        <div class="concerns-header-actions">
-            <div class="concerns-filters">
+    <!-- Summary cards -->
+    <section class="sd-issue-summary" aria-label="Concern totals">
+        <div class="sd-issue-card sd-issue-card-total">
+            <strong class="sd-issue-card-value" id="sd-issue-count-total">–</strong>
+            <span class="sd-issue-card-label">Total Concerns</span>
+            <span class="sd-issue-card-note" id="sd-issue-note-total">Submitted concerns</span>
+        </div>
+        <div class="sd-issue-card sd-issue-card-submitted">
+            <strong class="sd-issue-card-value" id="sd-issue-count-submitted">–</strong>
+            <span class="sd-issue-card-label">Open Concerns</span>
+            <span class="sd-issue-card-note">Submitted, awaiting review</span>
+        </div>
+        <div class="sd-issue-card sd-issue-card-reviewed">
+            <strong class="sd-issue-card-value" id="sd-issue-count-reviewed">–</strong>
+            <span class="sd-issue-card-label">In Progress</span>
+            <span class="sd-issue-card-note">Reviewed, awaiting resolution</span>
+        </div>
+        <div class="sd-issue-card sd-issue-card-resolved">
+            <strong class="sd-issue-card-value" id="sd-issue-count-reviewed">–</strong>
+            <span class="sd-issue-card-label">Resolved</span>
+            <span class="sd-issue-card-note">Closed as resolved</span>
+        </div>
+    </section>
+
+    <div class="sd-issue-overview">
+        <!-- Needs attention -->
+        <section class="sd-issue-panel" aria-labelledby="sd-issue-attn-title">
+            <div class="sd-issue-panel-head">
+                <div>
+                    <h2 class="sd-issue-panel-title" id="sd-issue-attn-title">Needs Attention</h2>
+                    <p class="sd-issue-panel-sub">Unresolved concerns, longest-waiting first.</p>
+                </div>
+
+                <?php if ($canCreate) : ?>
+                    <button type="button" id="sd-issue-create" class="sd-issue-btn sd-issue-btn-primary">+ Create Concern</button>
+                <?php endif; ?>
+            </div>
+
+            <ul class="sd-issue-attn-list" id="sd-issue-attn-list">
+                <li class="sd-issue-state">Loading…</li>
+            </ul>
+
+            <p class="sd-issue-panel-foot" id="sd-issue-attn-foot"></p>
+        </section>
+
+        <!-- Workflow -->
+        <section class="sd-issue-panel" aria-labelledby="sd-issue-flow-title">
+            <div class="sd-issue-panel-head">
+                <div>
+                    <h2 class="sd-issue-panel-title" id="sd-issue-flow-title">Case Workflow</h2>
+                    <p class="sd-issue-panel-sub">Select a stage to filter the list.</p>
+                </div>
+            </div>
+            <ol class="sd-issue-flow" id="sd-issue-flow">
+                <li><button type="button" class="sd-issue-stage sd-issue-stage-submitted" data-status="submitted">
+                    <span class="sd-issue-stage-count" data-count="submitted">–</span>
+                    <span class="sd-issue-stage-text"><strong>Submitted</strong><small>Waiting for the Directress to review</small></span>
+                </button></li>
+                <li><button type="button" class="sd-issue-stage sd-issue-stage-reviewed" data-status="reviewed">
+                    <span class="sd-issue-stage-count" data-count="reviewed">–</span>
+                    <span class="sd-issue-stage-text"><strong>Reviewed</strong><small>Waiting for an outcome</small></span>
+                </button></li>
+                <li><button type="button" class="sd-issue-stage sd-issue-stage-resolved" data-status="resolved">
+                    <span class="sd-issue-stage-count" data-count="resolved">–</span>
+                    <span class="sd-issue-stage-text"><strong>Resolved</strong><small>Closed with a resolution summary</small></span>
+                </button></li>
+                <li><button type="button" class="sd-issue-stage sd-issue-stage-dismissed" data-status="dismissed">
+                    <span class="sd-issue-stage-count" data-count="dismissed">–</span>
+                    <span class="sd-issue-stage-text"><strong>Dismissed</strong><small>Closed without a resolution</small></span>
+                </button></li>
+            </ol>
+        </section>
+    </div>
+
+    <!-- Issue list -->
+    <section class="sd-issue-panel sd-issue-list-panel" aria-labelledby="sd-issue-list-title">
+        <div class="sd-issue-panel-head sd-issue-list-head">
+            <h2 class="sd-issue-panel-title" id="sd-issue-list-title">All Concerns</h2>
+
+            <div class="sd-issue-toolbar">
+                <input class="sd-issue-input sd-issue-search" id="sd-issue-search" type="search"
+                       placeholder="Search title, ID or submitter" aria-label="Search concerns">
+
                 <?php if ($isDirectress) : ?>
-                    <select id="concern-department-filter">
+                    <select class="sd-issue-input" id="sd-issue-dept" aria-label="Filter by department">
                         <option value="">All Departments</option>
                         <?php foreach ($departments as $dept) : ?>
                             <option value="<?= htmlspecialchars($dept['department_id']) ?>">
@@ -45,148 +128,105 @@
                     </select>
                 <?php endif; ?>
 
-                <select id="concern-filter">
+                <select class="sd-issue-input" id="sd-issue-status" aria-label="Filter by status">
                     <option value="">All Statuses</option>
                     <?php foreach ($statusLabels as $value => $label) : ?>
                         <option value="<?= htmlspecialchars($value) ?>"><?= htmlspecialchars($label) ?></option>
                     <?php endforeach; ?>
                 </select>
-
-                <input
-                    class="concern-search"
-                    id="concern-search"
-                    type="search"
-                    placeholder="Search by title or submitter"
-                >
             </div>
-
-            <button type="button" id="concern-open-modal" class="concern-add-btn">+ Log Concern</button>
         </div>
-    </div>
 
-    <div class="concerns-list">
-        <div class="concern-table-wrapper">
-            <table class="concern-table">
+        <div class="sd-issue-table-wrap">
+            <table class="sd-issue-table">
                 <thead>
                     <tr>
-                        <th>Concern ID</th>
-                        <th>Title</th>
+                        <th>ID</th>
+                        <th>Concern</th>
                         <th>Department</th>
                         <th>Submitted By</th>
+                        <th>Reported</th>
                         <th>Status</th>
-                        <th>Submitted On</th>
+                        <th>Last Updated</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-
-                <tbody>
-                    <?php if (!empty($concerns)) : ?>
-                        <?php foreach ($concerns as $concern) : ?>
-                            <tr data-issue-id="<?= htmlspecialchars($concern['issue_id']) ?>">
-                                <td><?= htmlspecialchars($concern['issue_id']) ?></td>
-                                <td><?= htmlspecialchars($concern['title'] ?? 'N/A') ?></td>
-                                <td><?= htmlspecialchars($concern['department_name'] ?? 'N/A') ?></td>
-                                <td><?= htmlspecialchars($concern['submitted_by'] ?? 'N/A') ?></td>
-                                <td>
-                                    <span class="badge badge-<?= htmlspecialchars($concern['status']) ?>">
-                                        <?= htmlspecialchars($statusLabels[$concern['status']] ?? $concern['status']) ?>
-                                    </span>
-                                </td>
-                                <td><?= htmlspecialchars($concern['submitted_on'] ?? 'N/A') ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <button type="button" class="btn-view concern-view-btn" data-issue-id="<?= htmlspecialchars($concern['issue_id']) ?>">View</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <tr>
-                            <td colspan="7" class="muted">No concerns found.</td>
-                        </tr>
-                    <?php endif; ?>
+                <tbody id="sd-issue-tbody">
+                    <tr><td colspan="8" class="sd-issue-state">Loading…</td></tr>
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
 
-    <!-- Log Concern Modal -->
-    <div class="concern-modal-overlay" id="concern-modal-overlay">
-        <div class="concern-modal" role="dialog" aria-modal="true" aria-labelledby="concern-modal-title">
-            <div class="concern-modal-header">
-                <h3 id="concern-modal-title">Log Concern</h3>
-                <button type="button" class="concern-modal-close" id="concern-modal-close" aria-label="Close">&times;</button>
+    <?php if ($canCreate) : ?>
+    <!-- Create / edit draft modal -->
+    <div class="sd-issue-overlay" id="sd-issue-modal-overlay">
+        <div class="sd-issue-modal" role="dialog" aria-modal="true" aria-labelledby="sd-issue-modal-title">
+            <div class="sd-issue-modal-head">
+                <h3 id="sd-issue-modal-title">Create Concern</h3>
+                <button type="button" class="sd-issue-close" id="sd-issue-modal-close" aria-label="Close">&times;</button>
             </div>
-
-            <div class="concern-modal-body">
-                <form id="concern-log-form" enctype="multipart/form-data" data-skip>
-
-                    <div class="form-group">
-                        <label for="concern-title">Title</label>
-                        <input type="text" id="concern-title" name="title" required>
+            <div class="sd-issue-modal-body">
+                <form id="sd-issue-form" enctype="multipart/form-data" data-skip novalidate>
+                    <div class="sd-issue-field-group">
+                        <label for="sd-issue-title">Title</label>
+                        <input class="sd-issue-input" type="text" id="sd-issue-title" name="title" maxlength="255" required>
                     </div>
 
-                    <div class="form-group">
-                        <label for="concern-details">Details</label>
-                        <textarea id="concern-details" name="details" rows="4" placeholder="Describe the concern" required></textarea>
+                    <div class="sd-issue-field-group">
+                        <label for="sd-issue-details">Details</label>
+                        <textarea class="sd-issue-input" id="sd-issue-details" name="details" rows="4" placeholder="Describe the concern" required></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="concern-desired-resolution">Desired Resolution <span style="font-weight:400; color:var(--color5);">(optional)</span></label>
-                        <textarea id="concern-desired-resolution" name="desired_resolution" rows="3" placeholder="What outcome are you hoping for"></textarea>
+                    <div class="sd-issue-field-group">
+                        <label for="sd-issue-desired">Desired Resolution <span class="sd-issue-optional">(optional)</span></label>
+                        <textarea class="sd-issue-input" id="sd-issue-desired" name="desired_resolution" rows="3" placeholder="What outcome are you hoping for"></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="concern-file">
-                            Attachment
-                            <span style="font-weight:400; color:var(--color5);">(optional)</span>
-                        </label>
-
-                        <input
-                            class="file-btn"
-                            id="concern-file"
-                            name="file"
-                            type="file"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                        >
-                        <small class="muted">PDF, Word, Excel, JPG or PNG &middot; up to 10 MB</small>
+                    <div class="sd-issue-field-group">
+                        <label for="sd-issue-file">Attachment <span class="sd-issue-optional">(optional)</span></label>
+                        <input class="sd-issue-input sd-issue-file" id="sd-issue-file" name="file" type="file"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
+                        <small class="sd-issue-hint" id="sd-issue-file-hint">PDF, Word, Excel, JPG or PNG &middot; up to 10 MB</small>
                     </div>
 
-                    <input type="hidden" id="concern-issue-id" name="issue_id" value="">
+                    <input type="hidden" id="sd-issue-id-field" name="issue_id" value="">
 
-                    <div id="concern-form-error" style="display:none; color:red; font-size:0.85rem; margin-bottom:0.6rem;"></div>
+                    <div class="sd-issue-form-error" id="sd-issue-form-error" role="alert" hidden></div>
 
-                    <div class="form-actions">
-                        <button type="submit" class="btn-log" id="concern-submit-btn">Log Concern</button>
-                        <button type="button" class="btn-cancel" id="concern-draft-btn">Save as Draft</button>
+                    <div class="sd-issue-btn-row">
+                        <button type="submit" class="sd-issue-btn sd-issue-btn-primary" id="sd-issue-submit">Submit Concern</button>
+                        <button type="button" class="sd-issue-btn" id="sd-issue-draft">Save as Draft</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
-    <!-- Detail / Review Modal -->
-    <div class="concern-modal-overlay" id="concern-view-modal-overlay">
-        <div class="concern-modal concern-modal-lg" role="dialog" aria-modal="true" aria-labelledby="concern-view-modal-title">
-            <div class="concern-modal-header">
-                <h3 id="concern-view-modal-title">Concern Details</h3>
-                <button type="button" class="concern-modal-close" id="concern-view-modal-close" aria-label="Close">&times;</button>
+    <!-- Case workspace (slide-over) -->
+    <div class="sd-issue-drawer-overlay" id="sd-issue-drawer-overlay">
+        <aside class="sd-issue-drawer" role="dialog" aria-modal="true" aria-labelledby="sd-issue-drawer-title">
+            <div class="sd-issue-drawer-head">
+                <div class="sd-issue-drawer-heading">
+                    <span class="sd-issue-id" id="sd-issue-drawer-id"></span>
+                    <h3 id="sd-issue-drawer-title">Concern</h3>
+                </div>
+                <button type="button" class="sd-issue-close" id="sd-issue-drawer-close" aria-label="Close case">&times;</button>
             </div>
-            <div class="concern-modal-body" id="concern-view-modal-body">
-                <!-- populated by JS -->
-            </div>
-        </div>
+            <div class="sd-issue-drawer-body" id="sd-issue-drawer-body"></div>
+        </aside>
     </div>
 
-    <!-- File Viewer Modal (generated PDF and attachments) -->
-    <div class="concern-modal-overlay" id="concern-pdf-modal-overlay">
-        <div class="concern-modal concern-modal-lg" role="dialog" aria-modal="true" aria-labelledby="concern-pdf-modal-title">
-            <div class="concern-modal-header">
-                <h3 id="concern-pdf-modal-title">Concern PDF</h3>
-                <button type="button" class="concern-modal-close" id="concern-pdf-modal-close" aria-label="Close">&times;</button>
+    <!-- Attachment viewer -->
+    <div class="sd-issue-overlay sd-issue-overlay-top" id="sd-issue-viewer-overlay">
+        <div class="sd-issue-modal sd-issue-modal-lg" role="dialog" aria-modal="true" aria-labelledby="sd-issue-viewer-title">
+            <div class="sd-issue-modal-head">
+                <h3 id="sd-issue-viewer-title">Attachment</h3>
+                <button type="button" class="sd-issue-close" id="sd-issue-viewer-close" aria-label="Close">&times;</button>
             </div>
-            <div class="concern-modal-body concern-pdf-body">
-                <iframe id="concern-pdf-frame" class="concern-pdf-frame" src="" title="Concern file"></iframe>
+            <div class="sd-issue-viewer-body">
+                <iframe id="sd-issue-viewer-frame" class="sd-issue-frame" src="" title="Attachment"></iframe>
             </div>
         </div>
     </div>

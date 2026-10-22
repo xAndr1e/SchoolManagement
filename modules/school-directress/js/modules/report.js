@@ -787,7 +787,7 @@ function renderReportDetail(report) {
                 <span class="rsm-attachment-info">
                     <span class="rsm-attachment-name">${esc(report.attachment_name ?? 'Report file')}${report.attachment_size ? ` (${esc(formatFileSize(report.attachment_size))})` : ''}</span>
                     <button type="button" class="rsm-btn-view" id="rsm-open-attachment"
-                            data-report-id="${esc(report.report_id)}" data-mime="${esc(mime)}">${previewable ? 'View' : 'Open'}</button>
+                            data-report-id="${esc(report.report_id)}" data-mime="${esc(mime)}">${previewable ? 'Full screen' : 'Open'}</button>
                     <a class="rsm-btn-view rsm-link-btn" href="${esc(fileUrl(report.report_id, 'attachment', true))}">Download</a>
                 </span>
            </div>`
@@ -804,6 +804,21 @@ function renderReportDetail(report) {
         : '';
 
     const section = (title, key) => has(key) ? `<h4>${title}</h4><p>${esc(report[key])}</p>` : '';
+
+    // The report itself is shown right inside the details window (no extra click needed).
+    // PDFs and images preview inline; other file types can still be opened or downloaded above.
+    let previewBlock = '';
+    if (report.has_attachment && previewable) {
+        previewBlock = `<div class="rsm-preview">
+                <iframe class="rsm-preview-frame" src="${esc(fileUrl(report.report_id, 'attachment'))}" title="Report file preview"></iframe>
+            </div>`;
+    } else if (!report.has_attachment && report.has_pdf) {
+        previewBlock = `<div class="rsm-preview">
+                <iframe class="rsm-preview-frame" src="${esc(fileUrl(report.report_id, 'pdf'))}" title="Report PDF preview"></iframe>
+            </div>`;
+    } else if (report.has_attachment) {
+        previewBlock = `<p class="rsm-muted rsm-preview-note">This file type can't be previewed here. Use Open or Download above.</p>`;
+    }
 
     const aiSummaryBox = hasText ? `
         <div class="rsm-ai-box">
@@ -825,6 +840,7 @@ function renderReportDetail(report) {
         <div class="rsm-detail-row"><span class="rsm-detail-label">Status</span><span class="rsm-status rsm-status-${esc(report.status)}">${esc(statusLabel)}</span></div>
         ${fileRow}
         ${legacyPdfRow}
+        ${previewBlock}
 
         ${section('Description', 'description')}
         ${section('Summary', 'summary')}

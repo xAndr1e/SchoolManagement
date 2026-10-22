@@ -60,9 +60,6 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
     <!-- ── Summary ── -->
     <section class="um-stat-grid" aria-label="Account summary">
         <article class="um-stat-card">
-            <span class="um-stat-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14c2.4.2 4 2 4 5"/></svg>
-            </span>
             <div>
                 <strong id="umStatTotal">—</strong>
                 <span class="um-stat-label">Total users</span>
@@ -70,9 +67,6 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
             </div>
         </article>
         <article class="um-stat-card">
-            <span class="um-stat-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/></svg>
-            </span>
             <div>
                 <strong id="umStatActive">—</strong>
                 <span class="um-stat-label">Active accounts</span>
@@ -80,9 +74,6 @@ $umUnitOptions = function (string $placeholder) use ($umOpts, $h) {
             </div>
         </article>
         <article class="um-stat-card">
-            <span class="um-stat-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
-            </span>
             <div>
                 <strong id="umStatInactive">—</strong>
                 <span class="um-stat-label">Deactivated accounts</span>

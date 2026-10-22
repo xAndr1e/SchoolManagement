@@ -829,6 +829,27 @@
     resize: vertical;
 }
 
+/* ── Inline file preview inside the details window ── */
+.rsm-preview {
+    margin-top: 1rem;
+    border: 1px solid var(--color9);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.rsm-preview-frame {
+    display: block;
+    width: 100%;
+    height: 60vh;
+    min-height: 320px;
+    border: 0;
+}
+
+.rsm-preview-note {
+    margin-top: 1rem;
+}
+
 /* ── File viewer ───────────────────────────────── */
 .rsm-pdf-body {
     padding: 0;
@@ -966,6 +987,11 @@
 
     .rsm-pdf-body {
         height: 65vh;
+    }
+
+    .rsm-preview-frame {
+        height: 50vh;
+        min-height: 260px;
     }
 
     .rsm-toast-stack {

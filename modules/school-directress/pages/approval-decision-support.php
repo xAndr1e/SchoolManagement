@@ -143,83 +143,86 @@
         </div>
     </div>
 
-    <!--
-        Full-screen layers: drawer, modals, confirm dialog and toasts.
-        approval-decision-support.js moves this container to <body> when the page loads,
-        so the sidebar and top bar can never be drawn on top of them.
-    -->
-    <div class="sd-approval-layers" id="sd-approval-layers">
-
-        <!-- D. Decision Review Workspace (slide-over: details on the left, document on the right) -->
-        <div class="sd-approval-overlay sd-approval-overlay--drawer" id="sd-approval-drawer-overlay">
-            <aside class="sd-approval-drawer" role="dialog" aria-modal="true" aria-labelledby="sd-approval-drawer-title">
-                <header class="sd-approval-drawer-head">
-                    <div class="sd-approval-drawer-heading">
-                        <p class="sd-approval-drawer-id" id="sd-approval-drawer-id"></p>
-                        <h2 id="sd-approval-drawer-title">Request details</h2>
-                    </div>
-                    <span id="sd-approval-drawer-status"></span>
-                    <button type="button" class="sd-approval-close" data-action="close-drawer" aria-label="Close review workspace">&times;</button>
-                </header>
-                <div class="sd-approval-drawer-body" id="sd-approval-drawer-body"></div>
-            </aside>
-        </div>
-
-        <!-- Submit for Approval modal -->
-        <div class="sd-approval-overlay sd-approval-overlay--center" id="sd-approval-create-overlay">
-            <div class="sd-approval-modal" role="dialog" aria-modal="true" aria-labelledby="sd-approval-create-title">
-                <div class="sd-approval-modal-head">
-                    <h2 id="sd-approval-create-title">Submit for Approval</h2>
-                    <button type="button" class="sd-approval-close" data-action="close-create" aria-label="Close">&times;</button>
-                </div>
-                <div class="sd-approval-modal-body">
-                    <form id="sd-approval-form" enctype="multipart/form-data" data-skip novalidate>
-                        <div class="sd-approval-field">
-                            <label for="sd-approval-title">Title</label>
-                            <input type="text" id="sd-approval-title" name="title" class="sd-approval-input" placeholder="Enter request title" maxlength="255" required>
-                        </div>
-                        <div class="sd-approval-field">
-                            <label for="sd-approval-description">Description</label>
-                            <textarea id="sd-approval-description" name="description" class="sd-approval-input" rows="3" placeholder="What is being requested" required></textarea>
-                        </div>
-                        <div class="sd-approval-field">
-                            <label for="sd-approval-justification">Justification</label>
-                            <textarea id="sd-approval-justification" name="justification" class="sd-approval-input" rows="3" placeholder="Why is this needed"></textarea>
-                        </div>
-                        <div class="sd-approval-field">
-                            <label for="sd-approval-attachment">Request document</label>
-                            <input type="file" id="sd-approval-attachment" name="attachment" class="sd-approval-input sd-approval-file"
-                                   accept=".pdf,.jpg,.jpeg,.png">
-                            <small class="sd-approval-muted">Required to submit. PDF, JPG or PNG, up to 10 MB. The School Directress views it here in the system.</small>
-                        </div>
-
-                        <input type="hidden" id="sd-approval-id" name="approval_id" value="">
-                        <div id="sd-approval-form-error" class="sd-approval-error" role="alert" hidden></div>
-
-                        <div class="sd-approval-actions">
-                            <button type="submit" class="sd-approval-btn sd-approval-btn--primary" id="sd-approval-submit-btn">Submit for Approval</button>
-                            <button type="button" class="sd-approval-btn" id="sd-approval-draft-btn" data-action="save-draft">Save as Draft</button>
-                        </div>
-                    </form>
-                </div>
+    <!-- D. Request details modal (same layout as the report details modal) -->
+    <div class="sd-approval-overlay" id="sd-approval-view-overlay">
+        <div class="sd-approval-modal sd-approval-modal--lg" role="dialog" aria-modal="true" aria-labelledby="sd-approval-view-title">
+            <div class="sd-approval-modal-head">
+                <h2 id="sd-approval-view-title">Request Details</h2>
+                <button type="button" class="sd-approval-close" data-action="close-view" aria-label="Close">&times;</button>
+            </div>
+            <div class="sd-approval-modal-body sd-approval-view-body" id="sd-approval-view-body">
+                <!-- populated by JS -->
             </div>
         </div>
-
-        <!-- Confirmation dialog for consequential actions -->
-        <div class="sd-approval-overlay sd-approval-overlay--center sd-approval-overlay--confirm" id="sd-approval-confirm-overlay">
-            <div class="sd-approval-modal sd-approval-modal--small" role="alertdialog" aria-modal="true"
-                 aria-labelledby="sd-approval-confirm-title" aria-describedby="sd-approval-confirm-message">
-                <div class="sd-approval-modal-body">
-                    <h2 id="sd-approval-confirm-title"></h2>
-                    <p id="sd-approval-confirm-message"></p>
-                    <div class="sd-approval-actions">
-                        <button type="button" class="sd-approval-btn" id="sd-approval-confirm-cancel">Cancel</button>
-                        <button type="button" class="sd-approval-btn sd-approval-btn--primary" id="sd-approval-confirm-ok">Confirm</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="sd-approval-toasts" id="sd-approval-toasts" aria-live="polite"></div>
     </div>
+
+    <!-- File viewer modal (Full screen) -->
+    <div class="sd-approval-overlay sd-approval-overlay--file" id="sd-approval-file-overlay">
+        <div class="sd-approval-modal sd-approval-modal--lg" role="dialog" aria-modal="true" aria-labelledby="sd-approval-file-title">
+            <div class="sd-approval-modal-head">
+                <h2 id="sd-approval-file-title">Request document</h2>
+                <button type="button" class="sd-approval-close" data-action="close-file" aria-label="Close">&times;</button>
+            </div>
+            <div class="sd-approval-modal-body sd-approval-file-body">
+                <iframe id="sd-approval-file-frame" class="sd-approval-file-frame" src="" title="Request document"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit for Approval modal -->
+    <div class="sd-approval-overlay" id="sd-approval-create-overlay">
+        <div class="sd-approval-modal" role="dialog" aria-modal="true" aria-labelledby="sd-approval-create-title">
+            <div class="sd-approval-modal-head">
+                <h2 id="sd-approval-create-title">Submit for Approval</h2>
+                <button type="button" class="sd-approval-close" data-action="close-create" aria-label="Close">&times;</button>
+            </div>
+            <div class="sd-approval-modal-body">
+                <form id="sd-approval-form" enctype="multipart/form-data" data-skip novalidate>
+                    <div class="sd-approval-field">
+                        <label for="sd-approval-title">Title</label>
+                        <input type="text" id="sd-approval-title" name="title" class="sd-approval-input" placeholder="Enter request title" maxlength="255" required>
+                    </div>
+                    <div class="sd-approval-field">
+                        <label for="sd-approval-description">Description</label>
+                        <textarea id="sd-approval-description" name="description" class="sd-approval-input" rows="3" placeholder="What is being requested" required></textarea>
+                    </div>
+                    <div class="sd-approval-field">
+                        <label for="sd-approval-justification">Justification</label>
+                        <textarea id="sd-approval-justification" name="justification" class="sd-approval-input" rows="3" placeholder="Why is this needed"></textarea>
+                    </div>
+                    <div class="sd-approval-field">
+                        <label for="sd-approval-attachment">Request document</label>
+                        <input type="file" id="sd-approval-attachment" name="attachment" class="sd-approval-input sd-approval-file"
+                               accept=".pdf,.jpg,.jpeg,.png">
+                        <small class="sd-approval-muted">Required to submit. PDF, JPG or PNG, up to 10 MB. The School Directress views it here in the system.</small>
+                    </div>
+
+                    <input type="hidden" id="sd-approval-id" name="approval_id" value="">
+                    <div id="sd-approval-form-error" class="sd-approval-error" role="alert" hidden></div>
+
+                    <div class="sd-approval-actions">
+                        <button type="submit" class="sd-approval-btn sd-approval-btn--primary" id="sd-approval-submit-btn">Submit for Approval</button>
+                        <button type="button" class="sd-approval-btn" id="sd-approval-draft-btn" data-action="save-draft">Save as Draft</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation dialog for consequential actions -->
+    <div class="sd-approval-overlay sd-approval-overlay--confirm" id="sd-approval-confirm-overlay">
+        <div class="sd-approval-modal sd-approval-modal--small" role="alertdialog" aria-modal="true"
+             aria-labelledby="sd-approval-confirm-title" aria-describedby="sd-approval-confirm-message">
+            <div class="sd-approval-modal-body">
+                <h2 id="sd-approval-confirm-title"></h2>
+                <p id="sd-approval-confirm-message"></p>
+                <div class="sd-approval-actions">
+                    <button type="button" class="sd-approval-btn" id="sd-approval-confirm-cancel">Cancel</button>
+                    <button type="button" class="sd-approval-btn sd-approval-btn--primary" id="sd-approval-confirm-ok">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sd-approval-toasts" id="sd-approval-toasts" aria-live="polite"></div>
 </div>

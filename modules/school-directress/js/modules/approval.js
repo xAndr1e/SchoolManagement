@@ -44,7 +44,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         lastTrigger: null,
         searchTimer: null,
         queueSeq: 0,
-        workspaceSeq: 0,
+        requestSeq: 0,
         confirmCancel: null,
     };
 
@@ -352,7 +352,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         loadOverview();
     }
 
-    // ── Review workspace ─────────────────────────────────────────────────────
+    // ── Request details modal (same layout as the report details modal) ──────
     function historyHtml(history) {
         if (!history || !history.length) {
             return '<p class="sd-approval-muted">No activity has been recorded for this request.</p>';
@@ -365,55 +365,11 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
             </li>`).join('')}</ol>`;
     }
 
-    function documentHtml(a) {
-        let kind = 'attachment', name = '', mime = '', size = null, legacy = false;
-        if (a.has_attachment) {
-            name = a.attachment_name || 'Document';
-            mime = a.attachment_mime || '';
-            size = a.attachment_size;
-        } else if (a.has_pdf) {
-            kind = 'pdf'; name = `approval_${a.approval_id}.pdf`; mime = 'application/pdf'; legacy = true;
-        } else {
-            return `<div class="sd-approval-doc-empty">
-                <strong>No document attached</strong>
-                <span>This request was submitted without a supporting file.</span>
-            </div>`;
-        }
-
-        const viewUrl = fileUrl(a.approval_id, kind, false);
-        const downloadUrl = fileUrl(a.approval_id, kind, true);
-
-        let stage;
-        if (mime === 'application/pdf') {
-            stage = `<iframe class="sd-approval-doc-frame" src="${esc(viewUrl)}" title="Document for request #${esc(a.approval_id)}"></iframe>`;
-        } else if (mime.startsWith('image/')) {
-            stage = `<img class="sd-approval-doc-image" src="${esc(viewUrl)}" alt="Document for request #${esc(a.approval_id)}">`;
-        } else {
-            stage = `<div class="sd-approval-doc-empty">
-                <strong>This file type can't be previewed here</strong>
-                <span>Download it to read it in Word or Excel.</span>
-            </div>`;
-        }
-
-        return `<div class="sd-approval-doc-bar">
-                <div class="sd-approval-doc-name">
-                    <strong>${legacy ? 'Generated PDF (earlier version of the system)' : 'Supporting document'}</strong>
-                    <span>${esc(name)}${size ? ` (${esc(fmtSize(size))})` : ''}</span>
-                </div>
-                <div class="sd-approval-doc-tools">
-                    <a class="sd-approval-btn sd-approval-btn--small" href="${esc(viewUrl)}" target="_blank" rel="noopener">Open in new tab</a>
-                    <a class="sd-approval-btn sd-approval-btn--small" href="${esc(downloadUrl)}">Download</a>
-                </div>
-            </div>
-            <div class="sd-approval-doc-stage">${stage}</div>`;
-    }
-
     function decisionHtml(a) {
         const id = esc(a.approval_id);
 
         if (state.isDirectress && a.status === 'submitted') {
-            return `<div class="sd-approval-decision">
-                <h3>Your review</h3>
+            return `<div class="sd-approval-review-box">
                 <label for="sd-approval-note">Review notes <span class="sd-approval-muted">(optional)</span></label>
                 <textarea id="sd-approval-note" class="sd-approval-input" rows="3" maxlength="2000"
                           placeholder="Anything the decision should take into account"></textarea>
@@ -425,8 +381,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         }
 
         if (state.isDirectress && a.status === 'reviewed') {
-            return `<div class="sd-approval-decision">
-                <h3>Your decision</h3>
+            return `<div class="sd-approval-review-box">
                 <label for="sd-approval-note">Decision note <span class="sd-approval-muted">(required to reject)</span></label>
                 <textarea id="sd-approval-note" class="sd-approval-input" rows="3" maxlength="2000"
                           placeholder="Explain the reason for your decision"></textarea>
@@ -442,100 +397,139 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         if (a.status === 'draft') message = 'This is a draft. It has not been submitted for approval.';
         else if (a.status === 'approved' || a.status === 'rejected') message = `This request was ${a.status}. The decision is recorded in the history.`;
         else if (state.isDirectress) message = 'No action is needed on this request.';
-        return `<div class="sd-approval-decision sd-approval-decision--static"><p class="sd-approval-muted">${esc(message)}</p></div>`;
+        return `<div class="sd-approval-review-box"><p class="sd-approval-muted">${esc(message)}</p></div>`;
     }
 
-    function renderWorkspace(a) {
-        $('sd-approval-drawer-id').textContent = `Request #${a.approval_id}`;
-        $('sd-approval-drawer-title').textContent = a.title || 'Untitled request';
-        $('sd-approval-drawer-status').innerHTML = badge(a.status);
+    function renderRequest(a) {
+        const row = (label, value) => `<div class="sd-approval-detail-row"><span class="sd-approval-detail-label">${label}</span><span>${value}</span></div>`;
+        const none = '<span class="sd-approval-muted">None provided.</span>';
 
-        const summary = a.ai_summary ? esc(a.ai_summary) : 'No summary yet.';
+        // The document: a row with Full screen / Download, and the file shown inline below.
+        const mime = String(a.attachment_mime || '');
+        const previewable = mime === 'application/pdf' || mime.startsWith('image/');
+        let fileRow = '';
+        let preview = '';
 
-        $('sd-approval-drawer-body').innerHTML = `
-            <section class="sd-approval-brief">
-                <div class="sd-approval-brief-scroll">
-                    <dl class="sd-approval-facts">
-                        <div><dt>Submitted by</dt><dd>${esc(a.submit_by_name || 'N/A')}</dd></div>
-                        <div><dt>Department</dt><dd>${esc(a.department_name || 'N/A')}</dd></div>
-                        <div><dt>Submitted</dt><dd>${esc(a.submitted_on ? fmtDate(a.submitted_on, true) : 'Not submitted yet')}</dd></div>
-                    </dl>
-
-                    <h3>Description</h3>
-                    <p class="sd-approval-prose">${esc(a.description) || '<span class="sd-approval-muted">None provided.</span>'}</p>
-
-                    <h3>Justification</h3>
-                    <p class="sd-approval-prose">${esc(a.justification) || '<span class="sd-approval-muted">None provided.</span>'}</p>
-
-                    <h3>Decision history and comments</h3>
-                    ${historyHtml(a.history)}
-
-                    <div class="sd-approval-ai">
-                        <div class="sd-approval-ai-head">
-                            <strong>AI summary</strong>
-                            <button type="button" class="sd-approval-btn sd-approval-btn--small" id="sd-approval-summarize" data-action="summarize" data-id="${esc(a.approval_id)}">
-                                ${a.ai_summary ? 'Regenerate' : 'Generate summary'}
-                            </button>
-                        </div>
-                        <p id="sd-approval-ai-text" class="sd-approval-prose ${a.ai_summary ? '' : 'sd-approval-muted'}">${summary}</p>
-                    </div>
-                </div>
-                ${decisionHtml(a)}
-            </section>
-            <section class="sd-approval-doc">${documentHtml(a)}</section>`;
-
-        const img = $('sd-approval-drawer-body').querySelector('.sd-approval-doc-image');
-        if (img) {
-            img.addEventListener('error', () => {
-                const stage = img.closest('.sd-approval-doc-stage');
-                if (stage) stage.innerHTML = '<div class="sd-approval-doc-empty"><strong>The document could not be loaded</strong><span>The file may be missing on the server.</span></div>';
-            });
+        if (a.has_attachment) {
+            const size = a.attachment_size ? ` (${esc(fmtSize(a.attachment_size))})` : '';
+            fileRow = `<div class="sd-approval-detail-row">
+                <span class="sd-approval-detail-label">Request document</span>
+                <span class="sd-approval-attachment-info">
+                    <span class="sd-approval-attachment-name">${esc(a.attachment_name || 'Request document')}${size}</span>
+                    <button type="button" class="sd-approval-btn sd-approval-btn--small" data-action="open-file"
+                            data-id="${esc(a.approval_id)}" data-kind="attachment" data-mime="${esc(mime)}">${previewable ? 'Full screen' : 'Open'}</button>
+                    <a class="sd-approval-btn sd-approval-btn--small" href="${esc(fileUrl(a.approval_id, 'attachment', true))}">Download</a>
+                </span>
+            </div>`;
+            preview = previewable
+                ? `<div class="sd-approval-preview"><iframe class="sd-approval-preview-frame" src="${esc(fileUrl(a.approval_id, 'attachment', false))}" title="Request document preview"></iframe></div>`
+                : '<p class="sd-approval-muted sd-approval-preview-note">This file type can\'t be previewed here. Use Open or Download above.</p>';
+        } else if (a.has_pdf) {
+            fileRow = `<div class="sd-approval-detail-row">
+                <span class="sd-approval-detail-label">Generated PDF</span>
+                <span class="sd-approval-attachment-info">
+                    <button type="button" class="sd-approval-btn sd-approval-btn--small" data-action="open-file"
+                            data-id="${esc(a.approval_id)}" data-kind="pdf" data-mime="application/pdf">Full screen</button>
+                    <a class="sd-approval-btn sd-approval-btn--small" href="${esc(fileUrl(a.approval_id, 'pdf', true))}">Download</a>
+                </span>
+            </div>`;
+            preview = `<div class="sd-approval-preview"><iframe class="sd-approval-preview-frame" src="${esc(fileUrl(a.approval_id, 'pdf', false))}" title="Generated PDF preview"></iframe></div>`;
+        } else {
+            fileRow = row('Request document', '<span class="sd-approval-muted">No document attached</span>');
         }
+
+        $('sd-approval-view-body').innerHTML = `
+            ${row('Request ID', `#${esc(a.approval_id)}`)}
+            ${row('Title', esc(a.title || 'Untitled request'))}
+            ${row('Department', esc(a.department_name || 'N/A'))}
+            ${row('Submitted By', esc(a.submit_by_name || 'N/A'))}
+            ${row('Submitted', esc(a.submitted_on ? fmtDate(a.submitted_on, true) : 'Not submitted yet'))}
+            ${row('Status', badge(a.status))}
+            ${fileRow}
+            ${preview}
+
+            <h4>Description</h4>
+            <p class="sd-approval-prose">${esc(a.description) || none}</p>
+
+            <h4>Justification</h4>
+            <p class="sd-approval-prose">${esc(a.justification) || none}</p>
+
+            <h4>Decision history and comments</h4>
+            ${historyHtml(a.history)}
+
+            <div class="sd-approval-ai">
+                <div class="sd-approval-ai-head">
+                    <strong>AI summary</strong>
+                    <button type="button" class="sd-approval-btn sd-approval-btn--small" id="sd-approval-summarize" data-action="summarize" data-id="${esc(a.approval_id)}">
+                        ${a.ai_summary ? 'Regenerate' : 'Generate summary'}
+                    </button>
+                </div>
+                <p id="sd-approval-ai-text" class="sd-approval-prose ${a.ai_summary ? '' : 'sd-approval-muted'}">${a.ai_summary ? esc(a.ai_summary) : 'No summary yet.'}</p>
+            </div>
+
+            ${decisionHtml(a)}`;
     }
 
-    async function loadWorkspace(id) {
-        const body = $('sd-approval-drawer-body');
-        const seq = ++state.workspaceSeq;
+    async function loadRequest(id) {
+        const body = $('sd-approval-view-body');
+        const seq = ++state.requestSeq;
         try {
             const json = await getJson({ action: 'get', approval_id: id });
-            if (seq !== state.workspaceSeq) return;
+            if (seq !== state.requestSeq) return;
             if (!json.success) {
-                body.innerHTML = stateHtml('This request could not be opened', json.message || '', 'Try again', 'retry-workspace');
+                body.innerHTML = stateHtml('This request could not be opened', json.message || '', 'Try again', 'retry-request');
                 return;
             }
-            renderWorkspace(json.data);
+            renderRequest(json.data);
         } catch (err) {
-            if (seq !== state.workspaceSeq) return;
-            console.error('loadWorkspace error:', err);
-            body.innerHTML = stateHtml('This request could not be opened', 'Check your connection, then try again.', 'Try again', 'retry-workspace');
+            if (seq !== state.requestSeq) return;
+            console.error('loadRequest error:', err);
+            body.innerHTML = stateHtml('This request could not be opened', 'Check your connection, then try again.', 'Try again', 'retry-request');
         }
     }
 
-    function openWorkspace(id, trigger) {
+    function openRequest(id, trigger) {
         state.currentId = id;
         state.lastTrigger = trigger || document.activeElement;
 
-        $('sd-approval-drawer-id').textContent = `Request #${id}`;
-        $('sd-approval-drawer-title').textContent = 'Loading request…';
-        $('sd-approval-drawer-status').innerHTML = '';
-        $('sd-approval-drawer-body').innerHTML = '<div class="sd-approval-state">Loading request…</div>';
-
-        $('sd-approval-drawer-overlay').classList.add('is-open');
+        $('sd-approval-view-body').innerHTML = '<div class="sd-approval-state">Loading request…</div>';
+        $('sd-approval-view-overlay').classList.add('is-open');
         document.body.classList.add('sd-approval-lock');
-        document.querySelector('.sd-approval-drawer .sd-approval-close')?.focus();
 
-        return loadWorkspace(id);
+        return loadRequest(id);
     }
 
-    function closeWorkspace() {
-        const overlay = $('sd-approval-drawer-overlay');
+    function closeRequest() {
+        const overlay = $('sd-approval-view-overlay');
         if (!overlay || !overlay.classList.contains('is-open')) return;
         overlay.classList.remove('is-open');
         document.body.classList.remove('sd-approval-lock');
-        $('sd-approval-drawer-body').innerHTML = ''; // also unloads the PDF viewer
+        $('sd-approval-view-body').innerHTML = ''; // also unloads the PDF viewer
         state.currentId = null;
-        state.workspaceSeq++;
+        state.requestSeq++;
         if (state.lastTrigger && document.contains(state.lastTrigger)) state.lastTrigger.focus();
+    }
+
+    // Full screen viewer: PDFs and images open here; Word/Excel files download instead.
+    function openFile(approvalId, kind, mime) {
+        const previewable = mime === 'application/pdf' || String(mime).startsWith('image/');
+        if (!previewable) {
+            window.location.href = fileUrl(approvalId, kind, true);
+            return;
+        }
+        const overlay = $('sd-approval-file-overlay');
+        const frame = $('sd-approval-file-frame');
+        if (!overlay || !frame) return;
+        frame.src = fileUrl(approvalId, kind, false);
+        overlay.classList.add('is-open');
+    }
+
+    function closeFile() {
+        const overlay = $('sd-approval-file-overlay');
+        if (!overlay || !overlay.classList.contains('is-open')) return;
+        overlay.classList.remove('is-open');
+        const frame = $('sd-approval-file-frame');
+        if (frame) frame.src = '';
     }
 
     // ── Decisions (all consequential actions are confirmed, then saved by the server) ──
@@ -557,7 +551,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
                 const json = await postForm(fd);
                 toast(json.message, json.success ? 'success' : 'error');
                 if (json.success) {
-                    await loadWorkspace(id);
+                    await loadRequest(id);
                     refreshAll();
                 }
             } catch (err) {
@@ -601,7 +595,7 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
                 const json = await postForm(fd);
                 toast(json.message, json.success ? 'success' : 'error');
                 if (json.success) {
-                    await loadWorkspace(id);
+                    await loadRequest(id);
                     refreshAll();
                 }
             } catch (err) {
@@ -708,21 +702,24 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
 
         // Click on a dimmed backdrop closes that layer (the confirm dialog handles its own).
         if (target.classList && target.classList.contains('sd-approval-overlay') && !target.classList.contains('sd-approval-overlay--confirm')) {
-            if (target.id === 'sd-approval-drawer-overlay') closeWorkspace();
+            if (target.id === 'sd-approval-view-overlay') closeRequest();
+            else if (target.id === 'sd-approval-file-overlay') closeFile();
             else closeCreate();
             return;
         }
 
         const el = target.closest('[data-action]');
-        if (!el || !(state.root.contains(el) || (state.layers && state.layers.contains(el)))) return;
+        if (!el || !state.root.contains(el)) return;
 
         switch (el.dataset.action) {
             case 'open-create': openCreate(); break;
             case 'close-create': closeCreate(); break;
             case 'save-draft': submitForm('save_draft'); break;
-            case 'close-drawer': closeWorkspace(); break;
-            case 'review': openWorkspace(el.dataset.id, el); break;
-            case 'retry-workspace': openWorkspace(state.currentId, state.lastTrigger); break;
+            case 'close-view': closeRequest(); break;
+            case 'close-file': closeFile(); break;
+            case 'open-file': openFile(el.dataset.id, el.dataset.kind, el.dataset.mime); break;
+            case 'review': openRequest(el.dataset.id, el); break;
+            case 'retry-request': openRequest(state.currentId, state.lastTrigger); break;
             case 'retry-queue': loadQueue(); break;
             case 'retry-overview': loadOverview(); break;
             case 'clear-filters': clearFilters(); break;
@@ -768,34 +765,19 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         submitForm('submit');
     }
 
-        function init() {
+    function init() {
         const root = document.querySelector('.sd-approval-module');
         if (!root || root.dataset.sdApprovalInit === '1') return;
         root.dataset.sdApprovalInit = '1';
 
-        // Remove layers left in <body> by an earlier visit, then move this page's layers to <body>
-        // so the sidebar / top bar can never be drawn over the drawer and modals.
-        document.querySelectorAll('body > .sd-approval-layers').forEach((el) => el.remove());
-        const layers = root.querySelector('.sd-approval-layers');
-        if (layers) document.body.appendChild(layers);
-
         state.root = root;
-        state.layers = layers;
         state.isDirectress = root.dataset.isDirectress === '1';
-        document.body.classList.remove('sd-approval-lock'); // in case the drawer was open when the user navigated away
+        document.body.classList.remove('sd-approval-lock'); // in case the modal was open when the user navigated away
 
         bindOnce(root, 'click', onRootClick);
         bindOnce(root, 'change', onRootChange);
         bindOnce(root, 'input', onRootInput);
         bindOnce(root, 'submit', onRootSubmit);
-
-        // The drawer and modals now live outside root, so they need the same handlers.
-        if (layers) {
-            bindOnce(layers, 'click', onRootClick);
-            bindOnce(layers, 'change', onRootChange);
-            bindOnce(layers, 'input', onRootInput);
-            bindOnce(layers, 'submit', onRootSubmit);
-        }
 
         refreshAll();
     }
@@ -804,17 +786,12 @@ const APPROVAL_ALLOWED_EXTENSIONS   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape' || !state.root || !document.contains(state.root)) return;
             if (state.confirmCancel) { state.confirmCancel(); return; }
-            if ($('sd-approval-drawer-overlay')?.classList.contains('is-open')) { closeWorkspace(); return; }
+            if ($('sd-approval-file-overlay')?.classList.contains('is-open')) { closeFile(); return; }
+            if ($('sd-approval-view-overlay')?.classList.contains('is-open')) { closeRequest(); return; }
             closeCreate();
         });
         window.sdApprovalEscBound = true;
     }
-
-        window.addEventListener('page:loaded', () => {
-        if (document.querySelector('.sd-approval-module')) return;
-        document.querySelectorAll('body > .sd-approval-layers').forEach((el) => el.remove());
-        document.body.classList.remove('sd-approval-lock');
-    });
 
     // Handles both hard refresh and sidebar navigation.
     window.addEventListener('page:loaded', init);

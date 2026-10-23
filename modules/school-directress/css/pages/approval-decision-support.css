@@ -4,8 +4,7 @@
    Uses the shared theme variables (--color1 … --color10) with fallbacks.
    ============================================================ */
 
-.sd-approval-module,
-.sd-approval-layers {
+.sd-approval-module {
     --sd-purple: var(--color1, #200082);
     --sd-purple-hover: var(--color7, #3a1db0);
     --sd-ink: var(--color2, #1f2330);
@@ -17,29 +16,16 @@
     --sd-green: #16a34a;
     --sd-tint: rgba(32, 0, 130, 0.04);
 
-    /* Layer order for the full-screen layers (drawer, modals, confirm, toasts).
-       These live in .sd-approval-layers, which the script moves to <body> so they
-       are never trapped under the sidebar or top bar. */
-    --sd-z-overlay: 10000;
-
     width: 100%;
     color: var(--sd-ink);
 }
 
 .sd-approval-module *,
-.sd-approval-module *::after,
-.sd-approval-layers *,
-.sd-approval-layers *::after {
+.sd-approval-module *::after {
     box-sizing: border-box;
 }
 
-.sd-approval-layers {
-    width: 0;
-    height: 0;
-}
-
-.sd-approval-module :focus-visible,
-.sd-approval-layers :focus-visible {
+.sd-approval-module :focus-visible {
     outline: 2px solid var(--sd-purple);
     outline-offset: 2px;
 }
@@ -464,45 +450,43 @@ textarea.sd-approval-input {
     margin-top: 0.4rem;
 }
 
-/* ── Overlays ─────────────────────────────────────────── */
+/* ── Overlays & modals (same pattern as the report modals) ── */
 
 .sd-approval-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    /* Above the fixed sidebar and top bar, so the drawer/modals are never covered. */
-    z-index: var(--sd-z-overlay);
-    background: rgba(20, 10, 50, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .sd-approval-overlay.is-open {
     display: flex;
 }
 
-.sd-approval-overlay--center {
-    align-items: center;
-    justify-content: center;
+.sd-approval-overlay--file {
+    z-index: 1050;
 }
 
 .sd-approval-overlay--confirm {
-    z-index: calc(var(--sd-z-overlay) + 100);
-}
-
-.sd-approval-overlay--drawer {
-    justify-content: flex-end;
-    overflow: hidden;
+    z-index: 1100;
 }
 
 .sd-approval-modal {
-    width: 480px;
+    width: 560px;
     max-width: 92vw;
-    max-height: 88vh;
-    max-height: 88dvh;
+    max-height: 82vh;
     overflow-y: auto;
     border: 1px solid var(--sd-line);
     border-radius: 10px;
     background: var(--sd-surface);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.sd-approval-modal--lg {
+    width: 720px;
 }
 
 .sd-approval-modal--small {
@@ -513,19 +497,19 @@ textarea.sd-approval-input {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.1rem 1.5rem;
+    padding: 1.2rem 1.6rem;
     border-bottom: 1px solid var(--sd-line);
 }
 
 .sd-approval-modal-head h2,
 .sd-approval-modal-body h2 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
 }
 
 .sd-approval-modal-body {
-    padding: 1.5rem;
+    padding: 1.6rem;
 }
 
 .sd-approval-modal-body > h2 + p {
@@ -547,10 +531,12 @@ textarea.sd-approval-input {
 }
 
 .sd-approval-close {
+    min-width: 44px;
+    min-height: 44px;
     border: 0;
     background: transparent;
     color: var(--sd-muted);
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     line-height: 1;
     cursor: pointer;
 }
@@ -559,138 +545,99 @@ textarea.sd-approval-input {
     color: var(--sd-ink);
 }
 
-/* ── Review workspace (slide-over) ────────────────────── */
+/* ── Request details modal ────────────────────────────── */
 
-.sd-approval-drawer {
-    display: flex;
-    flex-direction: column;
-    width: min(1180px, 100vw);
-    /* Exactly one screen tall. dvh keeps the bottom visible on mobile browsers
-       whose address bar changes the viewport height; vh is the fallback. */
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100vh;
-    max-height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
-    background: var(--sd-surface);
-    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.22);
-    animation: sd-approval-slide 0.2s ease-out;
-}
-
-@keyframes sd-approval-slide {
-    from { transform: translateX(32px); opacity: 0; }
-    to   { transform: none; opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .sd-approval-drawer { animation: none; }
-}
-
-.sd-approval-drawer-head {
-    flex: none; /* the title and close button never get squeezed out */
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--sd-line);
-}
-
-.sd-approval-drawer-heading {
-    flex: 1;
-    min-width: 0;
-}
-
-.sd-approval-drawer-id {
-    margin: 0 0 0.15rem;
-    color: var(--sd-muted);
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.sd-approval-drawer-heading h2 {
-    margin: 0;
-    overflow: hidden;
-    font-size: 1.15rem;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sd-approval-drawer-body {
-    display: grid;
-    grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
-    /* One row that is exactly as tall as the space left under the header.
-       Without this the row grows to fit the tall details column and pushes
-       the review box off the bottom of the screen. */
-    grid-template-rows: minmax(0, 1fr);
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.sd-approval-drawer-body > .sd-approval-state {
-    grid-column: 1 / -1;
-}
-
-.sd-approval-brief {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    border-right: 1px solid var(--sd-line);
-}
-
-.sd-approval-brief-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    padding: 1.25rem 1.5rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-}
-
-.sd-approval-brief h3 {
-    margin: 1.4rem 0 0.4rem;
-    font-size: 0.88rem;
+.sd-approval-view-body h4 {
+    margin: 1.1rem 0 0.4rem;
+    font-size: 0.82rem;
     font-weight: 700;
 }
 
-.sd-approval-brief h3:first-of-type {
-    margin-top: 1.2rem;
-}
-
-.sd-approval-facts {
-    display: grid;
-    gap: 0.45rem;
+.sd-approval-view-body p {
     margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 
-.sd-approval-facts div {
+.sd-approval-prose {
+    white-space: pre-wrap;
+}
+
+.sd-approval-detail-row {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
-    padding-bottom: 0.45rem;
+    gap: 12px;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--sd-line);
     font-size: 0.85rem;
 }
 
-.sd-approval-facts dt {
+.sd-approval-detail-row > span:last-child {
+    min-width: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.sd-approval-detail-label {
+    flex: 0 0 auto;
     color: var(--sd-muted);
     font-weight: 600;
 }
 
-.sd-approval-facts dd {
-    margin: 0;
-    text-align: right;
+.sd-approval-detail-row .sd-approval-badge {
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
 }
 
-.sd-approval-prose {
-    margin: 0;
-    font-size: 0.86rem;
-    line-height: 1.55;
-    white-space: pre-wrap;
+.sd-approval-attachment-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+}
+
+.sd-approval-attachment-name {
+    min-width: 0;
     overflow-wrap: anywhere;
+}
+
+/* Inline preview of the request document */
+
+.sd-approval-preview {
+    margin-top: 1rem;
+    border: 1px solid var(--sd-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.sd-approval-preview-frame {
+    display: block;
+    width: 100%;
+    height: 60vh;
+    min-height: 320px;
+    border: 0;
+}
+
+.sd-approval-view-body p.sd-approval-preview-note {
+    margin-top: 1rem;
+}
+
+/* Full screen file viewer */
+
+.sd-approval-file-body {
+    padding: 0;
+    height: 72vh;
+}
+
+.sd-approval-file-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
 }
 
 /* Timeline */
@@ -711,11 +658,6 @@ textarea.sd-approval-input {
 .sd-approval-tl:last-child {
     padding-bottom: 0;
 }
-
-.sd-approval-tl--submitted { --sd-tl: var(--sd-purple); }
-.sd-approval-tl--reviewed  { --sd-tl: var(--sd-amber); }
-.sd-approval-tl--approved  { --sd-tl: var(--sd-green); }
-.sd-approval-tl--rejected  { --sd-tl: var(--sd-danger); }
 
 .sd-approval-tl-head {
     display: flex;
@@ -743,8 +685,8 @@ textarea.sd-approval-input {
 /* AI summary */
 
 .sd-approval-ai {
-    margin-top: 1.4rem;
-    padding: 0.9rem 1rem;
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
     border: 1px dashed var(--sd-line);
     border-radius: 8px;
     background: var(--sd-tint);
@@ -754,126 +696,30 @@ textarea.sd-approval-input {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.6rem;
+    gap: 10px;
     margin-bottom: 0.5rem;
-    font-size: 0.84rem;
+    font-size: 0.82rem;
 }
 
-/* Decision panel (pinned to the bottom of the details column, always visible) */
+/* Review / decision box */
 
-.sd-approval-decision {
-    flex: none;
-    padding: 1rem 1.5rem 1.2rem;
-    border-top: 1px solid var(--sd-line);
+.sd-approval-review-box {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--sd-line);
+    border-radius: 8px;
     background: var(--sd-surface);
-    box-shadow: 0 -6px 14px rgba(32, 0, 130, 0.05);
 }
 
-.sd-approval-decision--static {
-    box-shadow: none;
-}
-
-.sd-approval-decision h3 {
-    margin: 0 0 0.5rem;
-    font-size: 0.92rem;
-}
-
-.sd-approval-decision label {
+.sd-approval-review-box label {
     display: block;
-    margin-bottom: 0.35rem;
-    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.78rem;
     font-weight: 600;
 }
 
-.sd-approval-decision p {
-    margin: 0.6rem 0 0;
-}
-
-.sd-approval-decision--static p {
-    margin: 0;
-}
-
-/* Document pane */
-
-.sd-approval-doc {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    background: #f1f1f6;
-}
-
-.sd-approval-doc-bar {
-    flex: none;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem 1rem;
-    padding: 0.75rem 1.2rem;
-    border-bottom: 1px solid var(--sd-line);
-    background: var(--sd-surface);
-}
-
-.sd-approval-doc-name {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    font-size: 0.84rem;
-}
-
-.sd-approval-doc-name span {
-    overflow: hidden;
-    color: var(--sd-muted);
-    font-size: 0.78rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.sd-approval-doc-tools {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.sd-approval-doc-stage {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    overflow: auto;
-}
-
-.sd-approval-doc-frame {
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: #fff;
-}
-
-.sd-approval-doc-image {
-    max-width: 100%;
-    max-height: 100%;
-    margin: auto;
-    object-fit: contain;
-}
-
-.sd-approval-doc-empty {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 2rem;
-    color: var(--sd-muted);
-    font-size: 0.85rem;
-    text-align: center;
-}
-
-.sd-approval-doc-empty strong {
-    color: var(--sd-ink);
-    font-size: 0.92rem;
+.sd-approval-review-box p {
+    margin-top: 0.6rem;
 }
 
 /* ── Toasts ───────────────────────────────────────────── */
@@ -882,7 +728,7 @@ textarea.sd-approval-input {
     position: fixed;
     right: 1.25rem;
     bottom: 1.25rem;
-    z-index: calc(var(--sd-z-overlay) + 200);
+    z-index: 1200;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -909,59 +755,42 @@ textarea.sd-approval-input {
     }
 }
 
-/* Short screens (laptops, landscape phones): tighten the drawer so the
-   review box leaves more room for the details above it. */
-@media (max-height: 800px) {
-    .sd-approval-drawer-head {
-        padding: 0.7rem 1.25rem;
-    }
-
-    .sd-approval-brief-scroll {
-        padding: 1rem 1.25rem;
-    }
-
-    .sd-approval-decision {
-        padding: 0.75rem 1.25rem 0.9rem;
-    }
-
-    .sd-approval-decision textarea.sd-approval-input {
-        min-height: 56px;
-    }
-
-    .sd-approval-decision .sd-approval-actions {
-        margin-top: 0.6rem;
-    }
-}
-
 @media (max-width: 900px) {
     .sd-approval-pipeline {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
 
-    /* Workspace: stack details above the document and scroll as one page. */
-    .sd-approval-drawer-body {
-        display: block;
-        overflow-y: auto;
-        overscroll-behavior: contain;
+@media (max-width: 720px) {
+    .sd-approval-modal,
+    .sd-approval-modal--lg {
+        width: 94vw;
     }
 
-    .sd-approval-brief {
-        overflow: visible;
-        border-right: 0;
-        border-bottom: 1px solid var(--sd-line);
+    .sd-approval-modal-body {
+        padding: 1.1rem;
     }
 
-    .sd-approval-brief-scroll {
-        overflow: visible;
+    .sd-approval-detail-row {
+        flex-direction: column;
+        gap: 4px;
     }
 
-    .sd-approval-doc {
-        overflow: visible;
+    .sd-approval-detail-row > span:last-child {
+        text-align: left;
     }
 
-    .sd-approval-doc-stage {
-        height: 70vh;
-        height: 70dvh;
+    .sd-approval-attachment-info {
+        justify-content: flex-start;
+    }
+
+    .sd-approval-preview-frame {
+        height: 50vh;
+        min-height: 260px;
+    }
+
+    .sd-approval-file-body {
+        height: 65vh;
     }
 }
 
@@ -974,7 +803,6 @@ textarea.sd-approval-input {
     .sd-approval-stage {
         padding: 1rem 1.15rem;
     }
-
 
     .sd-approval-head {
         flex-direction: column;

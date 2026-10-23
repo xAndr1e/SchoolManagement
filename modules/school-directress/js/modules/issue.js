@@ -259,36 +259,33 @@
         loadList();
     }
 
-    // ── Case workspace (drawer) ───────────────────────────────────────────────
-    function openDrawer() {
-        byId('sd-issue-drawer-overlay')?.classList.add('active');
-        byId('sd-issue-drawer-close')?.focus();
-    }
-
-    function closeDrawer() {
-        byId('sd-issue-drawer-overlay')?.classList.remove('active');
+    // ── Concern details modal (same layout as the report details modal) ───────
+    function closeCase() {
+        const overlay = byId('sd-issue-view-overlay');
+        if (!overlay || !overlay.classList.contains('active')) return;
+        overlay.classList.remove('active');
+        const body = byId('sd-issue-view-body');
+        if (body) body.innerHTML = ''; // also unloads the inline file preview
         state.currentId = null;
         state.closing = null;
         if (state.lastFocus && document.contains(state.lastFocus)) state.lastFocus.focus();
     }
 
     async function openCase(id) {
-        const body = byId('sd-issue-drawer-body');
-        if (!body) return;
+        const body = byId('sd-issue-view-body');
+        const overlay = byId('sd-issue-view-overlay');
+        if (!body || !overlay) return;
+
         state.currentId = id;
-        if (!byId('sd-issue-drawer-overlay').classList.contains('active')) {
-            state.lastFocus = document.activeElement;
-        }
-        byId('sd-issue-drawer-id').textContent = '#' + id;
-        byId('sd-issue-drawer-title').textContent = 'Loading…';
+        if (!overlay.classList.contains('active')) state.lastFocus = document.activeElement;
+
         body.innerHTML = '<p class="sd-issue-state">Loading…</p>';
-        openDrawer();
+        overlay.classList.add('active');
 
         const json = await getJson({ action: 'get', issue_id: id });
         if (state.currentId !== id) return;
 
         if (!json.success) {
-            byId('sd-issue-drawer-title').textContent = 'Concern unavailable';
             body.innerHTML = `<p class="sd-issue-state sd-issue-state-error">${esc(json.message || 'Failed to load this concern.')}</p>`;
             return;
         }
@@ -348,18 +345,6 @@
             </section>`;
     }
 
-    function attachmentHtml(c) {
-        if (!c.has_attachment) return '<span class="sd-issue-sub">No attachment</span>';
-        const size = c.attachment_size ? ` (${esc(fileSize(c.attachment_size))})` : '';
-        return `
-            <span class="sd-issue-attachment">
-                <span class="sd-issue-attachment-name">${esc(c.attachment_name || 'Attachment')}${size}</span>
-                <button type="button" class="sd-issue-btn sd-issue-btn-sm" id="sd-issue-view-file"
-                        data-issue-id="${esc(c.issue_id)}" data-mime="${esc(c.attachment_mime || '')}">View</button>
-                <a class="sd-issue-btn sd-issue-btn-sm" href="${esc(fileUrl(c.issue_id, true))}">Download</a>
-            </span>`;
-    }
-
     function actionsHtml(c) {
         if (c.status === 'draft' && c.is_mine) {
             return `<section class="sd-issue-action-box">
@@ -401,9 +386,32 @@
     }
 
     function renderCase(c) {
-        const body = byId('sd-issue-drawer-body');
-        byId('sd-issue-drawer-id').textContent = '#' + c.issue_id;
-        byId('sd-issue-drawer-title').textContent = c.title || 'Concern';
+        const body = byId('sd-issue-view-body');
+        const row = (label, value) => `<div class="sd-issue-detail-row"><span class="sd-issue-detail-label">${label}</span><span>${value}</span></div>`;
+
+        // Attachment: a row with Full screen / Download, and the file shown inline below it.
+        const mime = String(c.attachment_mime || '');
+        const previewable = mime === 'application/pdf' || mime.startsWith('image/');
+        let fileRow;
+        let preview = '';
+
+        if (c.has_attachment) {
+            const size = c.attachment_size ? ` (${esc(fileSize(c.attachment_size))})` : '';
+            fileRow = `<div class="sd-issue-detail-row">
+                <span class="sd-issue-detail-label">Attachment</span>
+                <span class="sd-issue-attachment">
+                    <span class="sd-issue-attachment-name">${esc(c.attachment_name || 'Attachment')}${size}</span>
+                    <button type="button" class="sd-issue-btn sd-issue-btn-sm" id="sd-issue-view-file"
+                            data-issue-id="${esc(c.issue_id)}" data-mime="${esc(mime)}">${previewable ? 'Full screen' : 'Open'}</button>
+                    <a class="sd-issue-btn sd-issue-btn-sm" href="${esc(fileUrl(c.issue_id, true))}">Download</a>
+                </span>
+            </div>`;
+            preview = previewable
+                ? `<div class="sd-issue-preview"><iframe class="sd-issue-preview-frame" src="${esc(fileUrl(c.issue_id, false))}" title="Attachment preview"></iframe></div>`
+                : '<p class="sd-issue-sub sd-issue-preview-note">This file type can\'t be previewed here. Use Open or Download above.</p>';
+        } else {
+            fileRow = row('Attachment', '<span class="sd-issue-sub">No attachment</span>');
+        }
 
         const closed = c.status === 'resolved' || c.status === 'dismissed';
         const resolution = closed && c.resolution_notes
@@ -422,16 +430,20 @@
             </section>`;
 
         body.innerHTML = `
-            <div class="sd-issue-case-top">${statusChip(c.status)}</div>
-            ${stepsHtml(c)}
+            ${row('Concern ID', '#' + esc(c.issue_id))}
+            ${row('Title', esc(c.title || 'Concern'))}
+            ${row('Department', esc(c.department_name ?? 'N/A'))}
+            ${row('Submitted By', esc(c.submitted_by_name ?? 'N/A'))}
+            ${row('Date Reported', esc(fmtDate(c.submitted_on || c.created_at, true)))}
+            ${row('Last Updated', esc(fmtDate(c.updated_at || c.submitted_on || c.created_at, true)))}
+            ${row('Status', statusChip(c.status))}
+            ${fileRow}
+            ${preview}
 
-            <dl class="sd-issue-meta">
-                <div><dt>Department</dt><dd>${esc(c.department_name ?? 'N/A')}</dd></div>
-                <div><dt>Submitted by</dt><dd>${esc(c.submitted_by_name ?? 'N/A')}</dd></div>
-                <div><dt>Date reported</dt><dd>${esc(fmtDate(c.submitted_on || c.created_at, true))}</dd></div>
-                <div><dt>Last updated</dt><dd>${esc(fmtDate(c.updated_at || c.submitted_on || c.created_at, true))}</dd></div>
-                <div class="sd-issue-meta-wide"><dt>Attachment</dt><dd>${attachmentHtml(c)}</dd></div>
-            </dl>
+            <section class="sd-issue-section">
+                <h4>Progress</h4>
+                ${stepsHtml(c)}
+            </section>
 
             <section class="sd-issue-section">
                 <h4>Concern</h4>
@@ -450,7 +462,8 @@
         `;
 
         bindCaseActions(c);
-        body.scrollTop = 0;
+        const modal = byId('sd-issue-view-modal');
+        if (modal) modal.scrollTop = 0;
     }
 
     function bindCaseActions(c) {
@@ -458,7 +471,7 @@
             openAttachment(e.currentTarget.dataset.issueId, e.currentTarget.dataset.mime);
         });
         byId('sd-issue-summarize')?.addEventListener('click', (e) => summarize(e.currentTarget.dataset.issueId));
-        byId('sd-issue-edit-draft')?.addEventListener('click', () => { closeDrawer(); openCreateModal(c); });
+        byId('sd-issue-edit-draft')?.addEventListener('click', () => { closeCase(); openCreateModal(c); });
         byId('sd-issue-mark-reviewed')?.addEventListener('click', (e) => markReviewed(c.issue_id, e.currentTarget));
 
         byId('sd-issue-start-resolve')?.addEventListener('click', () => startClosure('resolved'));
@@ -556,7 +569,7 @@
         if (btn) btn.disabled = false;
     }
 
-    // ── Attachment viewer ─────────────────────────────────────────────────────
+    // ── Attachment viewer (Full screen) ───────────────────────────────────────
     function openAttachment(issueId, mime) {
         const previewable = mime === 'application/pdf' || String(mime).startsWith('image/');
         if (!previewable) {
@@ -698,10 +711,10 @@
             }
         });
 
-        // Drawer + viewer
-        bindOnce(byId('sd-issue-drawer-close'), 'click', closeDrawer);
-        bindOnce(byId('sd-issue-drawer-overlay'), 'click', (e) => {
-            if (e.target.id === 'sd-issue-drawer-overlay') closeDrawer();
+        // Concern details modal + attachment viewer
+        bindOnce(byId('sd-issue-view-close'), 'click', closeCase);
+        bindOnce(byId('sd-issue-view-overlay'), 'click', (e) => {
+            if (e.target.id === 'sd-issue-view-overlay') closeCase();
         });
         bindOnce(byId('sd-issue-viewer-close'), 'click', closeViewer);
         bindOnce(byId('sd-issue-viewer-overlay'), 'click', (e) => {
@@ -735,7 +748,7 @@
             if (e.key !== 'Escape') return;
             if (byId('sd-issue-viewer-overlay')?.classList.contains('active')) closeViewer();
             else if (byId('sd-issue-modal-overlay')?.classList.contains('active')) closeCreateModal();
-            else if (byId('sd-issue-drawer-overlay')?.classList.contains('active')) closeDrawer();
+            else if (byId('sd-issue-view-overlay')?.classList.contains('active')) closeCase();
         });
     }
 

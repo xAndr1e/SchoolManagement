@@ -52,7 +52,7 @@
             <span class="sd-issue-card-note">Reviewed, awaiting resolution</span>
         </div>
         <div class="sd-issue-card sd-issue-card-resolved">
-            <strong class="sd-issue-card-value" id="sd-issue-count-reviewed">–</strong>
+            <strong class="sd-issue-card-value" id="sd-issue-count-resolved">–</strong>
             <span class="sd-issue-card-label">Resolved</span>
             <span class="sd-issue-card-note">Closed as resolved</span>
         </div>
@@ -204,21 +204,20 @@
     </div>
     <?php endif; ?>
 
-    <!-- Case workspace (slide-over) -->
-    <div class="sd-issue-drawer-overlay" id="sd-issue-drawer-overlay">
-        <aside class="sd-issue-drawer" role="dialog" aria-modal="true" aria-labelledby="sd-issue-drawer-title">
-            <div class="sd-issue-drawer-head">
-                <div class="sd-issue-drawer-heading">
-                    <span class="sd-issue-id" id="sd-issue-drawer-id"></span>
-                    <h3 id="sd-issue-drawer-title">Concern</h3>
-                </div>
-                <button type="button" class="sd-issue-close" id="sd-issue-drawer-close" aria-label="Close case">&times;</button>
+    <!-- Concern details modal (same layout as the report details modal) -->
+    <div class="sd-issue-overlay" id="sd-issue-view-overlay">
+        <div class="sd-issue-modal sd-issue-modal-lg" id="sd-issue-view-modal" role="dialog" aria-modal="true" aria-labelledby="sd-issue-view-title">
+            <div class="sd-issue-modal-head">
+                <h3 id="sd-issue-view-title">Concern Details</h3>
+                <button type="button" class="sd-issue-close" id="sd-issue-view-close" aria-label="Close">&times;</button>
             </div>
-            <div class="sd-issue-drawer-body" id="sd-issue-drawer-body"></div>
-        </aside>
+            <div class="sd-issue-modal-body" id="sd-issue-view-body">
+                <!-- populated by JS -->
+            </div>
+        </div>
     </div>
 
-    <!-- Attachment viewer -->
+    <!-- Attachment viewer (Full screen) -->
     <div class="sd-issue-overlay sd-issue-overlay-top" id="sd-issue-viewer-overlay">
         <div class="sd-issue-modal sd-issue-modal-lg" role="dialog" aria-modal="true" aria-labelledby="sd-issue-viewer-title">
             <div class="sd-issue-modal-head">

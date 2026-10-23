@@ -251,7 +251,7 @@ textarea.sd-issue-input { resize: vertical; min-height: 80px; }
 .sd-issue-state .sd-issue-btn { margin-left: 0.5rem; }
 .sd-issue-state-error { color: var(--color10); }
 
-/* ── Overlays: modal ──────────────────────────────── */
+/* ── Overlays & modals (same pattern as the report modals) ── */
 .sd-issue-overlay {
     display: none; position: fixed; inset: 0; z-index: 1000;
     align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45);
@@ -259,38 +259,48 @@ textarea.sd-issue-input { resize: vertical; min-height: 80px; }
 .sd-issue-overlay.active { display: flex; }
 .sd-issue-overlay-top { z-index: 1100; }
 .sd-issue-modal {
-    width: 500px; max-width: 94vw; max-height: 86vh; overflow-y: auto;
+    width: 560px; max-width: 92vw; max-height: 82vh; overflow-y: auto;
     background: var(--color3); border: 1px solid var(--color9); border-radius: var(--sd-issue-radius);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
-.sd-issue-modal-lg { width: 820px; }
-.sd-issue-modal-head, .sd-issue-drawer-head {
+.sd-issue-modal-lg { width: 720px; }
+.sd-issue-modal-head {
     display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--color9);
+    padding: 1.2rem 1.6rem; border-bottom: 1px solid var(--color9);
 }
 .sd-issue-modal-head h3 { margin: 0; color: var(--color2); font-size: 0.95rem; font-weight: 700; }
-.sd-issue-modal-body { padding: 1.5rem; }
-.sd-issue-close { border: none; background: transparent; color: var(--color5); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.sd-issue-modal-body { padding: 1.6rem; }
+.sd-issue-close {
+    min-width: 44px; min-height: 44px; border: none; background: transparent;
+    color: var(--color5); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
 .sd-issue-close:hover { color: var(--color2); }
-.sd-issue-viewer-body { height: 74vh; }
+.sd-issue-viewer-body { height: 72vh; }
 .sd-issue-frame { width: 100%; height: 100%; border: none; }
 
-/* ── Overlays: case drawer ────────────────────────── */
-.sd-issue-drawer-overlay {
-    display: none; position: fixed; inset: 0; z-index: 1000; justify-content: flex-end; background: rgba(0, 0, 0, 0.4);
+/* ── Concern details modal ────────────────────────── */
+.sd-issue-detail-row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 0.5rem 0; border-bottom: 1px solid var(--color9);
+    color: var(--color2); font-size: 0.85rem;
 }
-.sd-issue-drawer-overlay.active { display: flex; }
-.sd-issue-drawer {
-    display: flex; flex-direction: column; width: min(600px, 100%); height: 100%;
-    background: var(--color3); box-shadow: -10px 0 40px rgba(0, 0, 0, 0.2);
+.sd-issue-detail-row > span:last-child { min-width: 0; text-align: right; overflow-wrap: anywhere; }
+.sd-issue-detail-label { flex: 0 0 auto; color: var(--color5); font-weight: 600; }
+.sd-issue-detail-row .sd-issue-status { letter-spacing: 0.03em; text-transform: uppercase; }
+
+.sd-issue-attachment { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; min-width: 0; }
+.sd-issue-attachment-name { min-width: 0; overflow-wrap: anywhere; }
+
+/* Inline preview of the attachment */
+.sd-issue-preview {
+    margin: 1rem 0 1.2rem; border: 1px solid var(--color9); border-radius: 8px;
+    overflow: hidden; background: rgba(0, 0, 0, 0.03);
 }
-.sd-issue-drawer-heading { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-.sd-issue-drawer-heading h3 { margin: 0; color: var(--color2); font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
-.sd-issue-drawer-body { flex: 1; overflow-y: auto; padding: 1.4rem 1.5rem 2rem; }
-.sd-issue-case-top { margin-bottom: 1rem; }
+.sd-issue-preview-frame { display: block; width: 100%; height: 60vh; min-height: 320px; border: 0; }
+.sd-issue-preview-note { margin: 1rem 0 1.2rem; }
 
 /* progress steps */
-.sd-issue-steps { display: grid; grid-template-columns: repeat(3, 1fr); list-style: none; margin: 0 0 1.4rem; padding: 0; }
+.sd-issue-steps { display: grid; grid-template-columns: repeat(3, 1fr); list-style: none; margin: 0 0 0.4rem; padding: 0; }
 .sd-issue-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; text-align: center; padding-top: 1.4rem; }
 .sd-issue-step::before { content: ""; position: absolute; top: 0.45rem; left: -50%; width: 100%; height: 3px; background: var(--color9); }
 .sd-issue-step:first-child::before { display: none; }
@@ -302,15 +312,7 @@ textarea.sd-issue-input { resize: vertical; min-height: 80px; }
 .sd-issue-step-label { color: var(--color2); font-size: 0.8rem; font-weight: 700; }
 .sd-issue-step-date { color: var(--color5); font-size: 0.72rem; }
 
-.sd-issue-notice { margin-bottom: 1.2rem; padding: 0.7rem 0.9rem; border: 1px dashed var(--color4); border-radius: 8px; color: var(--color5); font-size: 0.82rem; }
-
-/* meta grid */
-.sd-issue-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.2rem; margin: 0 0 1.3rem; padding: 1rem 1.1rem; background: rgba(32, 0, 130, 0.025); border: 1px solid var(--color9); border-radius: 8px; }
-.sd-issue-meta dt { margin: 0 0 0.15rem; color: var(--color5); font-size: 0.68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.sd-issue-meta dd { margin: 0; color: var(--color2); font-size: 0.85rem; overflow-wrap: anywhere; }
-.sd-issue-meta-wide { grid-column: 1 / -1; }
-.sd-issue-attachment { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-.sd-issue-attachment-name { min-width: 0; overflow-wrap: anywhere; }
+.sd-issue-notice { padding: 0.7rem 0.9rem; border: 1px dashed var(--color4); border-radius: 8px; color: var(--color5); font-size: 0.82rem; }
 
 .sd-issue-section { margin-bottom: 1.2rem; }
 .sd-issue-section h4, .sd-issue-action-box h4 { margin: 0 0 0.4rem; color: var(--color2); font-size: 0.82rem; font-weight: 700; }
@@ -326,11 +328,11 @@ textarea.sd-issue-input { resize: vertical; min-height: 80px; }
 .sd-issue-record-top { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.85rem; color: var(--color2); }
 .sd-issue-record .sd-issue-text { margin-top: 0.3rem; }
 
-.sd-issue-ai { margin-bottom: 1.2rem; padding: 0.9rem 1rem; border: 1px dashed var(--color9); border-radius: 8px; background: rgba(32, 0, 130, 0.02); }
+.sd-issue-ai { margin-bottom: 1.2rem; padding: 1rem 1.1rem; border: 1px dashed var(--color9); border-radius: 8px; background: rgba(32, 0, 130, 0.02); }
 .sd-issue-ai-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
 .sd-issue-ai-head strong { color: var(--color2); font-size: 0.82rem; }
 
-.sd-issue-action-box { margin-top: 1.4rem; padding: 1rem 1.1rem; border: 1px solid var(--color9); border-radius: 8px; background: var(--color3); }
+.sd-issue-action-box { margin-top: 1.2rem; padding: 1rem 1.1rem; border: 1px solid var(--color9); border-radius: 8px; background: var(--color3); }
 .sd-issue-warning { margin-top: 0.75rem; padding: 0.6rem 0.8rem; border-radius: 7px; background: rgba(184, 134, 11, 0.12); color: #7a5806; font-size: 0.78rem; }
 
 /* ── Toasts ───────────────────────────────────────── */
@@ -360,6 +362,14 @@ textarea.sd-issue-input { resize: vertical; min-height: 80px; }
     .sd-issue-table td::before { content: attr(data-label); flex-shrink: 0; color: var(--color5); font-size: 0.68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-align: left; }
     .sd-issue-table td.sd-issue-state { display: block; text-align: center; }
     .sd-issue-table td.sd-issue-state::before { display: none; }
+
+    .sd-issue-modal, .sd-issue-modal-lg { width: 94vw; }
+    .sd-issue-modal-body { padding: 1.1rem; }
+    .sd-issue-detail-row { flex-direction: column; gap: 4px; }
+    .sd-issue-detail-row > span:last-child { text-align: left; }
+    .sd-issue-attachment { justify-content: flex-start; }
+    .sd-issue-preview-frame { height: 50vh; min-height: 260px; }
+    .sd-issue-viewer-body { height: 65vh; }
 }
 
 @media (max-width: 600px) {
@@ -368,9 +378,7 @@ textarea.sd-issue-input { resize: vertical; min-height: 80px; }
     .sd-issue-card-value { font-size: 1.5rem; }
     .sd-issue-attn-item { flex-direction: column; align-items: flex-start; }
     .sd-issue-attn-side { flex-direction: row; align-items: center; }
-    .sd-issue-meta { grid-template-columns: 1fr; }
     .sd-issue-btn-row .sd-issue-btn { flex: 1; text-align: center; }
-    .sd-issue-viewer-body { height: 66vh; }
     .sd-issue-toast-host { left: 16px; right: 16px; bottom: 16px; }
     .sd-issue-toast { max-width: none; }
 }

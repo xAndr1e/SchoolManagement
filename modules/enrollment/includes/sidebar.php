@@ -19,7 +19,7 @@ foreach ($parts as $p) {
 $userAvatar = $initials !== '' ? $initials : '?';
 
 // Absolute paths
-$logoUrl   = '/SchoolManagement/assets/bcp-logo.png';
+$logoUrl   = '/assets/bcp-logo.png';
 $logoutUrl = '?page=logout';
 ?>
 <aside class="sidebar">

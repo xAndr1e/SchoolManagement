@@ -1,33 +1,35 @@
+
 <?php
 // modules/enrollment/pages/logout.php
-// ============================================================
-// Destroys the session and returns the user to /SchoolManagement/
-// ============================================================
+// Destroy the session and redirect to the live login page.
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 1. Clear all session variables
+// Clear all session variables.
 $_SESSION = [];
 
-// 2. Expire the session cookie
+// Expire the session cookie.
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();
+
     setcookie(
         session_name(),
         '',
-        time() - 42000,
-        $params['path'],
-        $params['domain'],
-        $params['secure'],
-        $params['httponly']
+        [
+            'expires'  => time() - 42000,
+            'path'     => $params['path'],
+            'domain'   => $params['domain'],
+            'secure'   => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ]
     );
 }
 
-// 3. Destroy the session
+// Destroy the session.
 session_destroy();
 
-// 4. Go back to SchoolManagement root
-header('Location: /SchoolManagement/');
+header('Location: /');
 exit;

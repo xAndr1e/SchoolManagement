@@ -1,15 +1,40 @@
 <?php
 // classes/Section.php - FULLY FIXED for `kms` schema (no new columns)
 //
-// KEY FIX:
-//   cc_sections has NO `semester` / `school_year` columns.
-//   Only `semester_id` and `school_year_id` (FKs to rgr_semesters/rgr_school_years).
-//   Every method now JOINs to those tables and aliases `name` back to
-//   `semester` / `school_year` so downstream code keeps working.
-//   Filters now use sem.name / sy.name instead of s.semester / s.school_year.
+// KEY FIXES:
+//   • cc_sections has NO `semester` / `school_year` columns.
+//     Only `semester_id` and `school_year_id` (FKs to rgr_semesters/rgr_school_years).
+//     Every method now JOINs to those tables and aliases `name` back to
+//     `semester` / `school_year` so downstream code keeps working.
+//   • getSectionSubjectsWithSchedules() now accepts ALL semester format variants.
+//   • IDE-friendly: __DIR__ include + @method docblocks.
 
-require_once 'Model.php';
+require_once __DIR__ . '/Model.php';
 
+/**
+ * Section Model
+ *
+ * @method array|false create(array $data)
+ * @method array|false update(int $id, array $data)
+ * @method array|null  findById(int $id)
+ * @method array       findAll(array $conditions = [], ?string $orderBy = null, ?string $limit = null)
+ * @method array|null  findFirst(array $conditions = [])
+ * @method array       findBy(string $field, mixed $value)
+ * @method array       findWhere(string $where, array $params = [], ?string $orderBy = null, ?string $limit = null)
+ * @method bool        delete(int $id)
+ * @method bool        deleteMultiple(array $ids)
+ * @method int         count(array $conditions = [])
+ * @method bool        exists(array $conditions)
+ * @method array|false firstOrCreate(array $conditions, array $data = [])
+ * @method array|false updateOrCreate(array $conditions, array $data)
+ * @method array       rawQuery(string $sql, array $params = [])
+ * @method mixed       rawExecute(string $sql, array $params = [])
+ * @method bool        beginTransaction()
+ * @method bool        commit()
+ * @method bool        rollBack()
+ * @method bool        inTransaction()
+ * @method string|null getLastError()
+ */
 class Section extends Model {
     protected $table      = 'cc_sections';
     protected $primaryKey = 'id';
@@ -57,7 +82,7 @@ class Section extends Model {
     }
 
     /**
-     * Normalize semester to DB format ('First' or 'Second').
+     * Normalize semester to canonical text ('First' or 'Second').
      */
     public function normalizeSemester($semester) {
         if (is_numeric($semester)) {
@@ -84,12 +109,42 @@ class Section extends Model {
         return 'First';
     }
 
+    /**
+     * ✅ NEW HELPER: Returns every plausible semester format
+     * that may be stored in `rgr_curriculum_subjects.semester`.
+     */
+    private function getSemesterVariants($semester) {
+        $normalized = $this->normalizeSemester($semester);
+        $num = ($normalized === 'Second') ? 2 : 1;
+
+        if ($num === 1) {
+            return [
+                'First',
+                'First Semester',
+                'First Sem',
+                '1st',
+                '1st Semester',
+                '1st Sem',
+                '1'
+            ];
+        }
+
+        return [
+            'Second',
+            'Second Semester',
+            'Second Sem',
+            '2nd',
+            '2nd Semester',
+            '2nd Sem',
+            '2'
+        ];
+    }
+
     /* ============================================================
        HELPERS: resolve semester_id / school_year_id from text
     ============================================================ */
 
     private function findSemesterIdByName($name) {
-        // Match flexibly: '1st Semester' → 'First Semester' → 'First'
         $sql = "SELECT id FROM rgr_semesters
                 WHERE name = ?
                    OR name = ?
@@ -115,14 +170,19 @@ class Section extends Model {
 
     /* ============================================================
        CREATE
+       FIX: create() returns ARRAY (row data), extract 'id' properly.
     ============================================================ */
 
     public function createSection($data) {
         try {
+            if (!is_array($data) || empty($data)) {
+                return ['success' => false, 'message' => 'Invalid data provided'];
+            }
+
             if (empty($data['section_code'])) {
                 $sql = "SELECT code FROM rgr_courses WHERE id = ?";
                 $stmt = $this->connection->prepare($sql);
-                $stmt->execute([$data['program_id']]);
+                $stmt->execute([$data['program_id'] ?? 0]);
                 $course = $stmt->fetch();
                 if (!$course) {
                     return ['success' => false, 'message' => 'Course not found'];
@@ -139,11 +199,9 @@ class Section extends Model {
                 unset($data['year_level']);
             }
 
-            // FIX: convert text semester/school_year to FK ids
             $semesterText   = $data['semester']    ?? '1st Semester';
             $schoolYearText = $data['school_year'] ?? (date('Y') . '-' . (date('Y') + 1));
 
-            // If caller already provided ids, respect them
             if (empty($data['semester_id'])) {
                 $semId = $this->findSemesterIdByName($semesterText);
                 if (!$semId) {
@@ -159,7 +217,6 @@ class Section extends Model {
                 $data['school_year_id'] = $syId;
             }
 
-            // Strip text fields that don't exist as columns
             unset($data['semester'], $data['school_year']);
 
             if ($this->hasCapacityColumns) {
@@ -175,11 +232,32 @@ class Section extends Model {
                 return ['success' => false, 'message' => 'Section code already exists'];
             }
 
+            // ✅ create() returns ARRAY (row data) — extract 'id'
             $result = $this->create($data);
-            if ($result) {
-                return ['success' => true, 'message' => 'Section created successfully', 'id' => $result];
+
+            if ($result && is_array($result)) {
+                $newId = $result['id'] ?? $result[$this->primaryKey] ?? null;
+                if ($newId) {
+                    return [
+                        'success' => true,
+                        'message' => 'Section created successfully',
+                        'id'      => (int) $newId,
+                        'data'    => $result
+                    ];
+                }
             }
+
+            // Fallback: kung numeric ID lang ang ni-return
+            if ($result && is_numeric($result)) {
+                return [
+                    'success' => true,
+                    'message' => 'Section created successfully',
+                    'id'      => (int) $result
+                ];
+            }
+
             return ['success' => false, 'message' => 'Failed to create section'];
+
         } catch (Exception $e) {
             error_log('Error in createSection: ' . $e->getMessage());
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
@@ -187,24 +265,20 @@ class Section extends Model {
     }
 
     /* ============================================================
-       FETCHERS — all with JOINs to rgr_semesters / rgr_school_years
+       FETCHERS
     ============================================================ */
 
     public function getAvailableSections($courseId) {
         try {
             if ($this->hasCapacityColumns) {
-                $sql = "SELECT s.*,
-                               sem.name AS semester,
-                               sy.name  AS school_year
+                $sql = "SELECT s.*, sem.name AS semester, sy.name AS school_year
                         FROM cc_sections s
                         LEFT JOIN rgr_semesters sem ON s.semester_id = sem.id
                         LEFT JOIN rgr_school_years sy ON s.school_year_id = sy.id
                         WHERE s.program_id = ? AND s.current_students < s.max_students
                         ORDER BY s.grade_level, sem.name, s.section_code";
             } else {
-                $sql = "SELECT s.*,
-                               sem.name AS semester,
-                               sy.name  AS school_year
+                $sql = "SELECT s.*, sem.name AS semester, sy.name AS school_year
                         FROM cc_sections s
                         LEFT JOIN rgr_semesters sem ON s.semester_id = sem.id
                         LEFT JOIN rgr_school_years sy ON s.school_year_id = sy.id
@@ -347,8 +421,7 @@ class Section extends Model {
             $params = [$courseId, $yearLevel];
 
             if ($semester !== null) {
-                // Accept '1st Semester', 'First', 'First Semester', '1', 1
-                $normalized = $this->normalizeSemester($semester); // 'First' or 'Second'
+                $normalized = $this->normalizeSemester($semester);
                 $sql .= " AND (sem.name = ? OR sem.name = ? OR sem.name = ?)";
                 $params[] = $semester;
                 $params[] = $normalized;
@@ -384,13 +457,14 @@ class Section extends Model {
         }
     }
 
+    /**
+     * ✅ FIXED: now accepts ALL semester format variants.
+     */
     public function getSectionSubjectsWithSchedules($sectionId, $courseId, $yearLevel, $semester, $studentId = null) {
         try {
             $yearLevelNumeric = is_numeric($yearLevel)
                 ? (int) $yearLevel
                 : $this->convertYearLevelToNumeric($yearLevel);
-
-            $semesterDb = $this->normalizeSemester($semester);
 
             $activeSchoolYear = $this->getActiveSchoolYear();
             $activeSemester   = $this->getActiveSemester();
@@ -410,6 +484,10 @@ class Section extends Model {
                 return [];
             }
 
+            // ✅ FIX: Build IN (...) clause for all semester variants
+            $semVariants  = $this->getSemesterVariants($semester);
+            $placeholders = implode(',', array_fill(0, count($semVariants), '?'));
+
             $sql = "SELECT
                         rs.id   AS subject_id,
                         rs.code AS subject_code,
@@ -423,15 +501,20 @@ class Section extends Model {
                     JOIN rgr_subjects rs ON rcs.subject_id = rs.id
                     WHERE rcs.curriculum_id = ?
                       AND rcs.year_level = ?
-                      AND rcs.semester = ?
+                      AND rcs.semester IN ($placeholders)
                     ORDER BY rs.code ASC";
 
+            $params = array_merge(
+                [$curriculum['id'], $yearLevelNumeric],
+                $semVariants
+            );
+
             $stmt = $this->connection->prepare($sql);
-            $stmt->execute([$curriculum['id'], $yearLevelNumeric, $semesterDb]);
+            $stmt->execute($params);
             $curriculumSubjects = $stmt->fetchAll();
 
             if (empty($curriculumSubjects)) {
-                error_log("No curriculum subjects found for curriculum_id={$curriculum['id']}, year={$yearLevelNumeric}, sem='{$semesterDb}'");
+                error_log("No curriculum subjects found for curriculum_id={$curriculum['id']}, year={$yearLevelNumeric}, sem_variants=[" . implode('|', $semVariants) . "]");
                 return [];
             }
 
@@ -1140,7 +1223,6 @@ class Section extends Model {
             $yearLevelNumeric = is_numeric($yearLevel)
                 ? (int) $yearLevel
                 : $this->convertYearLevelToNumeric($yearLevel);
-            $semesterDb = $this->normalizeSemester($semester);
 
             $activeSchoolYear = $this->getActiveSchoolYear();
             $activeSemester   = $this->getActiveSemester();
@@ -1157,6 +1239,10 @@ class Section extends Model {
             if (!$curriculum) {
                 return [];
             }
+
+            // ✅ FIX: IN (...) for all semester variants
+            $semVariants  = $this->getSemesterVariants($semester);
+            $placeholders = implode(',', array_fill(0, count($semVariants), '?'));
 
             if ($sectionId) {
                 $sql = "SELECT rs.id AS subject_id,
@@ -1185,21 +1271,25 @@ class Section extends Model {
                             AND cs.schedule_type = 'Class'
                         WHERE rcs.curriculum_id = ?
                           AND rcs.year_level = ?
-                          AND rcs.semester = ?
+                          AND rcs.semester IN ($placeholders)
                         GROUP BY rs.id, rs.code, rs.name, rs.units,
                                  rs.lecture_hours, rs.lab_hours,
                                  rcs.year_level, rcs.semester
                         ORDER BY rs.code";
 
+                $params = array_merge(
+                    [
+                        $sectionId,
+                        $activeSchoolYear['id'],
+                        $activeSemester['id'],
+                        $curriculum['id'],
+                        $yearLevelNumeric
+                    ],
+                    $semVariants
+                );
+
                 $stmt = $this->connection->prepare($sql);
-                $stmt->execute([
-                    $sectionId,
-                    $activeSchoolYear['id'],
-                    $activeSemester['id'],
-                    $curriculum['id'],
-                    $yearLevelNumeric,
-                    $semesterDb
-                ]);
+                $stmt->execute($params);
             } else {
                 $sql = "SELECT rs.id AS subject_id,
                                rs.code AS subject_code,
@@ -1212,11 +1302,16 @@ class Section extends Model {
                         JOIN rgr_subjects rs ON rcs.subject_id = rs.id
                         WHERE rcs.curriculum_id = ?
                           AND rcs.year_level = ?
-                          AND rcs.semester = ?
+                          AND rcs.semester IN ($placeholders)
                         ORDER BY rs.code";
 
+                $params = array_merge(
+                    [$curriculum['id'], $yearLevelNumeric],
+                    $semVariants
+                );
+
                 $stmt = $this->connection->prepare($sql);
-                $stmt->execute([$curriculum['id'], $yearLevelNumeric, $semesterDb]);
+                $stmt->execute($params);
             }
 
             return $stmt->fetchAll();

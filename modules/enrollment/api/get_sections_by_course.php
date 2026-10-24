@@ -12,6 +12,8 @@
  *   • only_available=0 explicitly disables the filter
  *   • Preserves semantic ORDER BY when only_available is off
  *   • Configurable MAX_STUDENTS via `?max=`
+ *   • ✅ FIX: Accepts BOTH text ('1st Year') AND numeric ('1', '1st', etc.) grade_level
+ *   • ✅ FIX: Accepts BOTH numeric (1) AND text ('1st Semester') semester_id
  */
 
 error_reporting(E_ALL);
@@ -68,7 +70,6 @@ try {
             $activeSchoolYearId = (int) $syRow['id'];
         }
     } catch (Exception $e) {
-        // Non-fatal — we'll fall back to unscoped counts
         error_log('get_sections_by_course: could not resolve active SY: ' . $e->getMessage());
     }
 
@@ -86,20 +87,54 @@ try {
 
     $params = [$courseId];
 
-    // Filter by year level (convert number to text)
+    // ============================================================
+    // ✅ FIX: YEAR LEVEL FILTER — accepts BOTH text and numeric
+    // ============================================================
     if ($yearLevel > 0) {
         $yearMap  = [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year', 4 => '4th Year'];
         $yearText = $yearMap[$yearLevel] ?? null;
+
         if ($yearText) {
-            $sql .= " AND s.grade_level = ?";
-            $params[] = $yearText;
+            // Match any of these variants:
+            //   • '1st Year'  (standard)
+            //   • '1'         (pure numeric)
+            //   • '1st'       (short text)
+            $shortText = $yearLevel . 'st';
+            if ($yearLevel === 2) $shortText = '2nd';
+            if ($yearLevel === 3) $shortText = '3rd';
+            if ($yearLevel === 4) $shortText = '4th';
+
+            $sql .= " AND (
+                        s.grade_level = ?
+                        OR s.grade_level = ?
+                        OR s.grade_level = ?
+                        OR s.grade_level LIKE ?
+                      )";
+            $params[] = $yearText;              // '1st Year'
+            $params[] = (string) $yearLevel;    // '1'
+            $params[] = $shortText;             // '1st'
+            $params[] = $yearLevel . '%';       // '1%' (catches '1st Year', '1st', etc.)
         }
     }
 
-    // Filter by semester (1 = First, 2 = Second) — matches rgr_semesters.id
+    // ============================================================
+    // ✅ FIX: SEMESTER FILTER — accepts BOTH numeric and text
+    // ============================================================
     if ($semester > 0) {
-        $sql .= " AND s.semester_id = ?";
-        $params[] = $semester;
+        $semText = ($semester === 1) ? '1st Semester' : '2nd Semester';
+
+        // Match any of these variants:
+        //   • 1              (numeric semester_id)
+        //   • '1st Semester' (text semester_id)
+        //   • '1st'          (short text)
+        $sql .= " AND (
+                    s.semester_id = ?
+                    OR s.semester_id = ?
+                    OR s.semester_id LIKE ?
+                  )";
+        $params[] = (string) $semester;     // '1'
+        $params[] = $semText;               // '1st Semester'
+        $params[] = $semester . '%';        // '1%'
     }
 
     $sql .= " ORDER BY s.grade_level, s.semester_id, s.section_code";
@@ -128,8 +163,6 @@ try {
         try {
             $placeholders = implode(',', array_fill(0, count($sectionIds), '?'));
 
-            // Scope to active school year if available — otherwise
-            // count only current enrollments across all years.
             if ($activeSchoolYearId !== null) {
                 $countSql = "SELECT e.section_id,
                                     COUNT(DISTINCT e.student_id) AS count
@@ -158,7 +191,6 @@ try {
             }
         } catch (Exception $e) {
             error_log('get_sections_by_course count error: ' . $e->getMessage());
-            // Fail soft — sections still return, just with 0 counts
             $countsBySection = [];
         }
     }
@@ -168,7 +200,6 @@ try {
     // ------------------------------------------------------------
     foreach ($sections as &$sec) {
         $secId = isset($sec['id']) ? (int) $sec['id'] : 0;
-
         $current = $countsBySection[$secId] ?? 0;
 
         $sec['current_students'] = $current;
@@ -188,7 +219,6 @@ try {
             return (int) ($s['available_slots'] ?? 0) > 0;
         }));
 
-        // Only re-sort by availability when the user asked for it
         usort($sections, function ($a, $b) {
             return (int) ($b['available_slots'] ?? 0) - (int) ($a['available_slots'] ?? 0);
         });

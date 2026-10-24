@@ -161,7 +161,10 @@ $alertSignature = "e{$cExpired}-o{$cOut}-l{$cLow}-x{$cExpiring}";
 
 <div class="module-content">
 
-    <!-- ===================== MEDICATION ALERT BANNER (pinaka-taas) ===================== -->
+    <!-- ===================== ANNOUNCEMENTS (pinaka-taas, lahat naka-highlight) ===================== -->
+    <?php include __DIR__ . '/../includes/announcements.php'; ?>
+
+    <!-- ===================== MEDICATION ALERT BANNER ===================== -->
     <?php if ($hasAlert): ?>
     <div class="mal <?= $hasCritical ? 'mal-critical' : 'mal-warning' ?>" id="medAlertBanner" role="alert">
         <div class="mal-top">
@@ -269,8 +272,6 @@ $alertSignature = "e{$cExpired}-o{$cOut}-l{$cLow}-x{$cExpiring}";
             </div>
         </div>
     </div>
-
-    <?php include __DIR__ . '/../includes/announcements.php'; ?>
 
     <!-- ===================== CONSULTATION ANALYTICS ===================== -->
     <div class="student-info">

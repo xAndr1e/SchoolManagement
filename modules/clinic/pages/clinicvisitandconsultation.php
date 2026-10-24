@@ -67,7 +67,7 @@ $csrf_token = $_SESSION['csrf_token'];
     </div>
 
     <!-- ── Clinic Form ───────────────────────────────────────────────────── -->
-    <form id="clinicForm" method="POST">
+    <form id="clinicForm" method="POST" data-custom-handler>
         <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
         <input type="hidden" id="studentId" value="">
 
@@ -265,7 +265,7 @@ $csrf_token = $_SESSION['csrf_token'];
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!--  HIDDEN PRINT AREA                                                      -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<div id="printArea" style="display:none;"></div>
+<!-- Ang #printArea ay ginagawa na ng JS sa mismong <body> kapag pinindot ang Print -->
 
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 <!--  STYLES                                                                 -->
@@ -524,12 +524,40 @@ textarea { resize: vertical; }
 .cv-detail-notes strong { color: var(--cv-muted); font-weight: 600; }
 
 /* ── Print styles ──────────────────────────────────────────── */
+#printArea { display: none; }
+
 @media print {
+    @page { size: A4; margin: 0; }   /* margin 0 = walang browser header/footer (URL, date) */
+
     body > *:not(#printArea) { display: none !important; }
+    html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+
     #printArea {
         display: block !important;
+        padding: 14mm 15mm;
         font-family: Arial, sans-serif; font-size: 13px; color: #000;
     }
+    #printArea, #printArea * {
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    #printArea .pa-head {
+        display: flex; align-items: center; gap: 12px;
+        border-bottom: 3px solid var(--cv-primary); padding-bottom: 10px; margin-bottom: 14px;
+    }
+    #printArea .pa-head img   { width: 52px; height: 52px; object-fit: contain; }
+    #printArea .pa-school     { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+    #printArea .pa-sub        { font-size: 12px; color: #555; }
+    #printArea h2             { font-size: 16px; margin: 0 0 8px; }
+    #printArea .cv-detail-grid { grid-template-columns: repeat(3, 1fr); }
+    #printArea .cv-detail-card,
+    #printArea .cv-detail-section-title,
+    #printArea .cv-detail-notes p { break-inside: avoid; page-break-inside: avoid; }
+    #printArea .pa-foot {
+        margin-top: 24px; padding-top: 8px; border-top: 1px solid #ccc;
+        font-size: 11px; color: #666; display: flex; justify-content: space-between;
+    }
+    #printArea .pa-sign { margin-top: 36px; display: flex; justify-content: space-between; gap: 40px; font-size: 12px; }
+    #printArea .pa-sign div { flex: 1; border-top: 1px solid #000; padding-top: 4px; text-align: center; }
     .no-print { display: none !important; }
 }
 </style>
@@ -1037,13 +1065,39 @@ document.getElementById('modalCloseBtn2').addEventListener('click', closeModal);
 document.getElementById('auditModalBackdrop').addEventListener('click', closeModal);
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
-// ── Print ────────────────────────────────────────────────────────────────────
+// ── Print / Save as PDF ──────────────────────────────────────────────────────
 document.getElementById('modalPrintBtn').addEventListener('click', function () {
-    const body = document.getElementById('modalBody').innerHTML;
+    const body  = document.getElementById('modalBody').innerHTML;
     const title = document.getElementById('modalTitle').textContent;
-    const printArea = document.getElementById('printArea');
-    printArea.innerHTML = `<h2>${esc(title)}</h2>${body}`;
-    window.print();
+
+    // Gumawa ng print area DIRECT sa <body> (para hindi ito matago ng print CSS)
+    document.querySelectorAll('#printArea').forEach(function (el) { el.remove(); });
+    const printArea = document.createElement('div');
+    printArea.id = 'printArea';
+    printArea.innerHTML =
+        '<div class="pa-head">' +
+            '<img src="' + (window.CLINIC_BASE || '.') + '/assets/bcp-logo.png" alt="">' +
+            '<div><div class="pa-school">School Management System</div>' +
+            '<div class="pa-sub">Clinic &mdash; Consultation Record</div></div>' +
+        '</div>' +
+        '<h2>' + esc(title) + '</h2>' + body +
+        '<div class="pa-sign"><div>Nurse signature</div><div>Patient signature</div></div>' +
+        '<div class="pa-foot"><span>Printed: ' + esc(new Date().toLocaleString()) + '</span>' +
+        '<span>Confidential &mdash; for clinic use only</span></div>';
+    document.body.appendChild(printArea);
+
+    // Ang document title ang magiging default na pangalan ng PDF file
+    const oldTitle = document.title;
+    document.title = title.replace(/[^\w\-]+/g, '_').replace(/^_+|_+$/g, '') || 'Consultation';
+
+    window.addEventListener('afterprint', function cleanup() {
+        window.removeEventListener('afterprint', cleanup);
+        printArea.remove();
+        document.title = oldTitle;
+    });
+
+    // Maliit na delay para siguradong na-render na ang logo/layout bago mag-print
+    setTimeout(function () { window.print(); }, 150);
 });
 
 // ── Audit search ─────────────────────────────────────────────────────────────
@@ -1109,10 +1163,16 @@ document.getElementById('auditExportBtn').addEventListener('click', function () 
 });
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function () {
+function initClinicVisitPage() {
     enableFormFields(false);
     loadAuditLog(1, '');
-});
-
+}
+// Tatakbo agad kung tapos na ang DOM (kapag na-load via AJAX), kung hindi, hintayin
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClinicVisitPage);
+} else {
+    initClinicVisitPage();
+}
+                
 })();
 </script>

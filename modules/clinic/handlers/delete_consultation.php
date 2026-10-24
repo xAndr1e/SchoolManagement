@@ -10,7 +10,7 @@ try {
     if ($id <= 0) {
         jsonOut(['success' => false, 'message' => 'Invalid consultation ID.'], 422);
     }
-    $stmt = getDb()->prepare('DELETE FROM clinic_consultations WHERE consultation_id = ?');
+    $stmt = getDb()->prepare('DELETE FROM clinic_consultations WHERE id = ?');
     $stmt->execute([$id]);
 
     jsonOut(['success' => true, 'message' => 'Consultation deleted.']);

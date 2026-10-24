@@ -24,11 +24,11 @@ class Database
             $this->pass = $config['password'];
         } else {
             // Local development configuration
-            $this->host = "localhost";            
+            $this->host = "64.235.61.128";            
             $this->port = "3306";
             $this->db   = "payr_bcp";
-            $this->user = "root";
-            $this->pass = "";
+            $this->user = "payr_bestlink";
+            $this->pass = "12345";
         }
 
         try {
@@ -41,7 +41,7 @@ class Database
             // Forces PDO to return rows as associative arrays by default
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            die("DB Connection failed: " . $e->getMessage());
+            throw $e;
         }
     }
 

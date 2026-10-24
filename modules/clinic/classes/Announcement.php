@@ -1,5 +1,5 @@
 <?php
-include_once __DIR__ . '/../../../database/db.php';
+include_once __DIR__ . '/../../../database/db.php'; // ayusin kung iba ang path mo
 
 class Announcement {
     private $conn;
@@ -15,15 +15,18 @@ class Announcement {
         }
     }
 
-    /** Active = not archived and not past its expiry date. Pinned first, then newest. */
-    public function getActive(int $limit = 5): array {
-        $stmt = $this->conn->prepare(
-            "SELECT * FROM clinic_announcements
-             WHERE is_archived = 0 AND (expires_at IS NULL OR expires_at >= CURDATE())
-             ORDER BY is_pinned DESC, created_at DESC
-             LIMIT :limit"
-        );
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    /** Active = not archived and not past expiry. Pinned first, then newest. */
+    public function getActive(?int $limit = null): array {
+        $sql = "SELECT * FROM cln_announcements
+                WHERE is_archived = 0 AND (expires_at IS NULL OR expires_at >= CURDATE())
+                ORDER BY is_pinned DESC, created_at DESC";
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit";
+        }
+        $stmt = $this->conn->prepare($sql);
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -39,7 +42,7 @@ class Announcement {
 
     public function create(array $d, ?string $postedBy = null): bool {
         $stmt = $this->conn->prepare(
-            "INSERT INTO clinic_announcements (title, message, category, is_pinned, posted_by, expires_at)
+            "INSERT INTO cln_announcements (title, message, category, is_pinned, posted_by, expires_at)
              VALUES (:title, :message, :category, :pinned, :posted_by, :expires_at)"
         );
         $stmt->bindValue(':title', trim($d['title']));
@@ -52,12 +55,12 @@ class Announcement {
     }
 
     public function archive(int $id): bool {
-        $stmt = $this->conn->prepare("UPDATE clinic_announcements SET is_archived = 1 WHERE announcement_id = ?");
+        $stmt = $this->conn->prepare("UPDATE cln_announcements SET is_archived = 1 WHERE announcement_id = ?");
         return $stmt->execute([$id]);
     }
 
     public function togglePin(int $id): bool {
-        $stmt = $this->conn->prepare("UPDATE clinic_announcements SET is_pinned = 1 - is_pinned WHERE announcement_id = ?");
+        $stmt = $this->conn->prepare("UPDATE cln_announcements SET is_pinned = 1 - is_pinned WHERE announcement_id = ?");
         return $stmt->execute([$id]);
     }
 }

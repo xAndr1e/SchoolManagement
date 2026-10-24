@@ -45,7 +45,7 @@ if (!$allStudents) $allStudents = [];
     <!-- Gate pass form -->
     <div class="student-info">
         <h2 id="gpFormTitle">New gate pass</h2>
-        <form id="gpForm" novalidate>
+        <form id="gpForm" novalidate data-custom-handler>
             <input type="hidden" id="incident_id">
 
             <div class="form-row">

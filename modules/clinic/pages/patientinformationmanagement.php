@@ -26,7 +26,9 @@ if (!empty($searchTerm)) {
 $rowsPerPage   = 10;
 $totalStudents = count($students);
 $totalPages    = max(1, (int) ceil($totalStudents / $rowsPerPage));
-$currentPage   = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+
+// FIX: gamit na ang "pg" imbes na "page" para hindi mag-clash sa dashboard router
+$currentPage   = isset($_GET['pg']) && is_numeric($_GET['pg']) ? (int) $_GET['pg'] : 1;
 $currentPage   = max(1, min($currentPage, $totalPages));
 $offset        = ($currentPage - 1) * $rowsPerPage;
 $studentsOnPage = array_slice($students, $offset, $rowsPerPage);
@@ -36,17 +38,17 @@ $studentsOnPage = array_slice($students, $offset, $rowsPerPage);
     <h1>Patient Information</h1>
 </div>
 
-<div class="module-content">
+<div class="module-content" id="patientInfoModule">
 
     <!-- ── Student Search ──────────────────────────────────────────────────── -->
     <div class="form-group">
         <label for="studentSearch">Search by Student Number, Name, or Course:</label>
         <div class="search-container">
             <input type="text"
-                   id="studentSearch"
-                   class="search-input"
-                   placeholder="Enter search term..."
-                   value="<?= htmlspecialchars($searchTerm) ?>">
+                id="studentSearch"
+                class="search-input"
+                placeholder="Enter search term..."
+                value="<?= htmlspecialchars($searchTerm) ?>">
             <button type="button" id="searchBtn" class="btn-primary">Search</button>
             <button type="button" id="clearBtn"  class="btn-secondary">Clear</button>
         </div>
@@ -72,7 +74,7 @@ $studentsOnPage = array_slice($students, $offset, $rowsPerPage);
     <!-- ── Edit Form (hidden until a student is loaded) ────────────────────── -->
     <div id="studentInfo" class="student-info" style="display:none;">
         <h2>Edit Student Information</h2>
-        <form id="studentForm" novalidate>
+        <form id="studentForm" novalidate data-custom-handler>
             <input type="hidden" id="hiddenNumber"   name="student_number">
             <input type="hidden" id="originalNumber" name="original_number">
 
@@ -152,8 +154,13 @@ $studentsOnPage = array_slice($students, $offset, $rowsPerPage);
         ? '- Search Results for "' . htmlspecialchars($searchTerm) . '"'
         : '' ?></span></h2>
 
+    <button type="button" id="backBtn" class="btn-secondary"
+            style="margin-bottom:10px;<?= empty($searchTerm) ? 'display:none;' : '' ?>">
+        &larr; Back to all students
+    </button>
+
     <div class="table-info" id="tableInfo"
-         <?= $totalStudents === 0 ? 'style="display:none;"' : '' ?>>
+        <?= $totalStudents === 0 ? 'style="display:none;"' : '' ?>>
         <p>Showing
             <span id="startResult"><?= $totalStudents > 0 ? $offset + 1 : 0 ?></span> to
             <span id="endResult"><?= min($offset + $rowsPerPage, $totalStudents) ?></span> of
@@ -198,11 +205,10 @@ $studentsOnPage = array_slice($students, $offset, $rowsPerPage);
                             <td><?= htmlspecialchars($s['year_level']    ?? '') ?></td>
                             <td><?= htmlspecialchars($s['address']       ?? '') ?></td>
                             <td>
-                                <!-- data-student keeps the student number safely out of JS string literals -->
                                 <button type="button"
-                                        class="btn-edit"
+                                        class="btn-view"
                                         data-student="<?= htmlspecialchars($s['student_number']) ?>">
-                                    Edit
+                                    View
                                 </button>
                             </td>
                         </tr>
@@ -252,17 +258,80 @@ $studentsOnPage = array_slice($students, $offset, $rowsPerPage);
         <?php endif; ?>
     </div>
 
+    <!-- ── View Student Details Modal ──────────────────────────────────────── -->
+    <div id="viewModal" class="pi-modal" style="display:none;" aria-hidden="true">
+        <div class="pi-modal-box" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
+            <div class="pi-modal-header">
+                <h2 id="viewModalTitle">Patient Details</h2>
+                <button type="button" id="viewCloseX" class="pi-modal-x" aria-label="Close">&times;</button>
+            </div>
+            <div class="pi-modal-body" id="viewModalBody">
+                <!-- filled by JS -->
+            </div>
+            <div class="pi-modal-footer">
+                <button type="button" id="viewEditBtn" class="btn-primary">Edit This Student</button>
+                <button type="button" id="viewCloseBtn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
 </div><!-- /module-content -->
+
+<style>
+.btn-view { margin-right: 4px; }
+.pi-modal {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+}
+.pi-modal-box {
+    background: #fff; border-radius: 10px;
+    width: 100%; max-width: 640px; max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
+}
+.pi-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px; border-bottom: 1px solid #e5e7eb;
+}
+.pi-modal-header h2 { margin: 0; font-size: 1.2rem; }
+.pi-modal-x {
+    background: none; border: none; font-size: 1.8rem; line-height: 1;
+    cursor: pointer; color: #6b7280;
+}
+.pi-modal-body { padding: 16px 20px; overflow-y: auto; }
+.pi-detail-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px;
+}
+.pi-detail-item.full { grid-column: 1 / -1; }
+.pi-detail-label {
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .04em;
+    color: #6b7280; margin-bottom: 2px;
+}
+.pi-detail-value { font-size: 1rem; color: #111827; word-break: break-word; }
+.pi-detail-value.empty { color: #9ca3af; font-style: italic; }
+.pi-modal-footer {
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 12px 20px; border-top: 1px solid #e5e7eb;
+}
+@media (max-width: 520px) {
+    .pi-detail-grid { grid-template-columns: 1fr; }
+}
+</style>
 
 <script>
 (function () {
 'use strict';
 
 // ── Module state ─────────────────────────────────────────────────────────────
-let currentSearchTerm = '<?= addslashes($searchTerm) ?>';
-let currentPage       = <?= $currentPage ?>;
+// FIX: json_encode imbes na addslashes (mas safe sa JS string)
+let currentSearchTerm = <?= json_encode($searchTerm) ?>;
+let currentPage       = <?= (int) $currentPage ?>;
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
+// ── Utilities ────────────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     const d = document.createElement('div');
@@ -279,19 +348,19 @@ function isValidPhone(phone) {
 }
 
 function showMsg(cls, text) {
-    const el = document.getElementById('updateMessage');
-    el.className    = 'message ' + cls;
-    el.textContent  = text;
+    const el = $('updateMessage');
+    el.className     = 'message ' + cls;
+    el.textContent   = text;
     el.style.display = 'block';
 }
 
 function hideMsg() {
-    const el = document.getElementById('updateMessage');
+    const el = $('updateMessage');
     el.style.display = 'none';
     el.textContent   = '';
 }
 
-// ── Load a student into the edit form via AJAX ────────────────────────────────
+// ── Load a student into the edit form via AJAX ───────────────────────────────
 function loadStudent(studentNumber) {
     if (!studentNumber) {
         alert('Please select a student.');
@@ -308,45 +377,119 @@ function loadStudent(studentNumber) {
         .then(student => {
             if (!student || student.error) {
                 alert('Student not found.');
-                document.getElementById('studentInfo').style.display = 'none';
+                $('studentInfo').style.display = 'none';
                 hideMsg();
                 return;
             }
 
-            // Populate form fields
-            document.getElementById('hiddenNumber').value   = student.student_number  || '';
-            document.getElementById('originalNumber').value = student.student_number  || '';
-            document.getElementById('firstName').value      = student.first_name       || '';
-            document.getElementById('lastName').value       = student.last_name        || '';
-            document.getElementById('gender').value         = student.gender           || '';
-            document.getElementById('dob').value            = student.date_of_birth    || '';
-            document.getElementById('phone').value          = student.phone            || '';
-            document.getElementById('email').value          = student.email            || '';
-            document.getElementById('course').value         = student.course           || '';
-            document.getElementById('yearLevel').value      = student.year_level       || '';
-            document.getElementById('address').value        = student.address          || '';
+            $('hiddenNumber').value   = student.student_number || '';
+            $('originalNumber').value = student.student_number || '';
+            $('firstName').value      = student.first_name     || '';
+            $('lastName').value       = student.last_name      || '';
+            $('gender').value         = student.gender         || '';
+            $('dob').value            = student.date_of_birth  || '';
+            $('phone').value          = student.phone          || '';
+            $('email').value          = student.email          || '';
+            $('course').value         = student.course         || '';
+            $('yearLevel').value      = student.year_level     || '';
+            $('address').value        = student.address        || '';
 
-            document.getElementById('studentInfo').style.display = 'block';
+            $('studentInfo').style.display = 'block';
             hideMsg();
-            document.getElementById('studentInfo').scrollIntoView({ behavior: 'smooth' });
+            $('studentInfo').scrollIntoView({ behavior: 'smooth' });
         })
         .catch(err => {
             console.error('loadStudent:', err);
             alert('Error loading student data. Please try again.');
-            document.getElementById('studentInfo').style.display = 'none';
+            $('studentInfo').style.display = 'none';
             hideMsg();
         });
 }
 
-// ── AJAX table search + pagination ────────────────────────────────────────────
+// ── View student details (modal) ─────────────────────────────────────────────
+let viewedStudentNumber = '';
+
+function yearLabel(y) {
+    const map = { '1': '1st Year', '2': '2nd Year', '3': '3rd Year', '4': '4th Year', '5': '5th Year' };
+    return map[String(y)] || '';
+}
+
+function detailItem(label, value, full) {
+    const has = value !== null && value !== undefined && String(value).trim() !== '';
+    return '<div class="pi-detail-item' + (full ? ' full' : '') + '">' +
+           '<div class="pi-detail-label">' + escapeHtml(label) + '</div>' +
+           '<div class="pi-detail-value' + (has ? '' : ' empty') + '">' +
+           (has ? escapeHtml(value) : 'Not provided') + '</div></div>';
+}
+
+function openViewModal() {
+    const m = $('viewModal');
+    m.style.display = 'flex';
+    m.setAttribute('aria-hidden', 'false');
+}
+
+function closeViewModal() {
+    const m = $('viewModal');
+    m.style.display = 'none';
+    m.setAttribute('aria-hidden', 'true');
+}
+
+function viewStudent(studentNumber) {
+    if (!studentNumber) return;
+
+    viewedStudentNumber = studentNumber;
+    $('viewModalBody').innerHTML = '<p>Loading…</p>';
+    openViewModal();
+
+    fetch((window.CLINIC_BASE || '.') + '/handlers/get_student.php?student_number=' + encodeURIComponent(studentNumber))
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(s => {
+            if (!s || s.error) {
+                $('viewModalBody').innerHTML = '<p>Student not found.</p>';
+                return;
+            }
+            $('viewModalTitle').textContent =
+                (s.first_name || '') + ' ' + (s.last_name || '');
+
+            $('viewModalBody').innerHTML =
+                '<div class="pi-detail-grid">' +
+                detailItem('Student Number', s.student_number) +
+                detailItem('Gender',         s.gender) +
+                detailItem('First Name',     s.first_name) +
+                detailItem('Last Name',      s.last_name) +
+                detailItem('Date of Birth',  s.date_of_birth) +
+                detailItem('Year Level',     yearLabel(s.year_level) || s.year_level) +
+                detailItem('Course',         s.course) +
+                detailItem('Phone',          s.phone) +
+                detailItem('Email',          s.email, true) +
+                detailItem('Address',        s.address, true) +
+                '</div>';
+        })
+        .catch(err => {
+            console.error('viewStudent:', err);
+            $('viewModalBody').innerHTML = '<p>Error loading details. Please try again.</p>';
+        });
+}
+
+// ── Back button (lalabas lang kapag may active na search) ────────────────────
+function updateBackBtn() {
+    const b = $('backBtn');
+    if (b) b.style.display = currentSearchTerm ? '' : 'none';
+}
+
+// ── AJAX table search + pagination ───────────────────────────────────────────
 function performSearch(searchTerm, page) {
     page = page || 1;
     currentSearchTerm = searchTerm;
     currentPage       = page;
 
-    document.getElementById('tableBody').innerHTML =
+    $('tableBody').innerHTML =
         '<tr><td colspan="11" class="no-data">Searching…</td></tr>';
 
+    // Ito ay request sa handler (hindi sa browser URL), kaya "page" pa rin ang param dito
     fetch((window.CLINIC_BASE || '.') + '/handlers/search_students.php?search=' + encodeURIComponent(searchTerm) + '&page=' + page)
         .then(res => {
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -357,35 +500,32 @@ function performSearch(searchTerm, page) {
             renderPagination(data.currentPage, data.totalPages);
             renderResultsInfo(data.start, data.end, data.totalStudents);
 
-            // Update search title
-            document.getElementById('searchTitle').textContent = searchTerm
+            $('searchTitle').textContent = searchTerm
                 ? '- Search Results for "' + searchTerm + '"' : '';
+            updateBackBtn();
 
-            // Show / hide table info bar
-            document.getElementById('tableInfo').style.display =
-                data.totalStudents > 0 ? '' : 'none';
+            $('tableInfo').style.display = data.totalStudents > 0 ? '' : 'none';
 
-            // Update browser URL without a reload
-            const url = new URL(window.location.href);
-            searchTerm
-                ? url.searchParams.set('search', searchTerm)
-                : url.searchParams.delete('search');
-            data.currentPage > 1
-                ? url.searchParams.set('page', data.currentPage)
-                : url.searchParams.delete('page');
-            window.history.replaceState({}, '', url);
+            // FIX: huwag galawin ang "page" param ng dashboard; "pg" ang ginagamit natin
+            try {
+                const url = new URL(window.location.href);
+                if (searchTerm) url.searchParams.set('search', searchTerm);
+                else            url.searchParams.delete('search');
+                if (data.currentPage > 1) url.searchParams.set('pg', data.currentPage);
+                else                      url.searchParams.delete('pg');
+                window.history.replaceState({}, '', url);
+            } catch (e) { /* ignore */ }
         })
         .catch(err => {
             console.error('performSearch:', err);
-            document.getElementById('tableBody').innerHTML =
+            $('tableBody').innerHTML =
                 '<tr><td colspan="11" class="no-data">Error searching. Please try again.</td></tr>';
         });
 }
 
-// ── Render helpers ────────────────────────────────────────────────────────────
-
+// ── Render helpers ───────────────────────────────────────────────────────────
 function renderTableBody(students) {
-    const tbody = document.getElementById('tableBody');
+    const tbody = $('tableBody');
 
     if (!students || students.length === 0) {
         tbody.innerHTML = '<tr><td colspan="11" class="no-data">No students found.</td></tr>';
@@ -394,11 +534,9 @@ function renderTableBody(students) {
 
     let html = '';
     students.forEach(s => {
-        // IMPORTANT: data-student attribute instead of inline onclick —
-        // avoids the escapeHtml-breaks-JS-string-literal bug completely.
         html +=
             '<tr>' +
-            '<td>' + escapeHtml(s.student_number)    + '</td>' +
+            '<td>' + escapeHtml(s.student_number)     + '</td>' +
             '<td>' + escapeHtml(s.first_name)         + '</td>' +
             '<td>' + escapeHtml(s.last_name)          + '</td>' +
             '<td>' + escapeHtml(s.gender        || '') + '</td>' +
@@ -408,17 +546,19 @@ function renderTableBody(students) {
             '<td>' + escapeHtml(s.course        || '') + '</td>' +
             '<td>' + escapeHtml(s.year_level    || '') + '</td>' +
             '<td>' + escapeHtml(s.address       || '') + '</td>' +
-            '<td><button type="button" class="btn-edit" data-student="' +
-                escapeHtml(s.student_number) + '">Edit</button></td>' +
+            '<td>' +
+                '<button type="button" class="btn-view" data-student="' +
+                    escapeHtml(s.student_number) + '">View</button>' +
+            '</td>' +
             '</tr>';
     });
 
     tbody.innerHTML = html;
-    bindEditButtons(tbody);   // re-bind after innerHTML wipe
+    // Wala nang rebind: event delegation na ang gamit (tingnan sa init)
 }
 
 function renderPagination(page, totalPages) {
-    const container = document.getElementById('paginationContainer');
+    const container = $('paginationContainer');
 
     if (totalPages <= 1) {
         container.innerHTML = '';
@@ -453,70 +593,81 @@ function renderPagination(page, totalPages) {
 
     if (page < totalPages) {
         html += '<a href="#" class="page-link" data-page="' + (page + 1) + '" title="Next Page">»</a>';
-        html += '<a href="#" class="page-link" data-page="' + totalPages  + '" title="Last Page">»»</a>';
+        html += '<a href="#" class="page-link" data-page="' + totalPages + '" title="Last Page">»»</a>';
     }
 
     html += '</div></div>';
     container.innerHTML = html;
-    bindPaginationLinks(container);
 }
 
 function renderResultsInfo(start, end, total) {
-    const s = document.getElementById('startResult');
-    const e = document.getElementById('endResult');
-    const t = document.getElementById('totalResults');
+    const s = $('startResult');
+    const e = $('endResult');
+    const t = $('totalResults');
     if (s) s.textContent = start;
     if (e) e.textContent = end;
     if (t) t.textContent = total;
 }
 
-// ── Safe event-binding (data-attribute approach, no inline JS) ────────────────
+// ── Init (tumatakbo kahit na-load via AJAX / innerHTML) ──────────────────────
+function init() {
 
-function bindEditButtons(scope) {
-    scope = scope || document;
-    scope.querySelectorAll('button.btn-edit[data-student]').forEach(btn => {
-        // Clone removes stale listeners added by previous renders
-        const fresh = btn.cloneNode(true);
-        btn.parentNode.replaceChild(fresh, btn);
-        fresh.addEventListener('click', function () {
-            const num    = this.getAttribute('data-student');
-            const select = document.getElementById('studentID');
-            // Sync the dropdown if this student exists in it
-            if (select) {
-                const found = Array.from(select.options).some(o => o.value === num);
-                if (found) select.value = num;
-            }
-            loadStudent(num);
-        });
+    // EVENT DELEGATION: Edit buttons (gumagana kahit ma-rerender ang table)
+    $('tableBody').addEventListener('click', function (e) {
+        const viewBtn = e.target.closest('button.btn-view[data-student]');
+        if (viewBtn) {
+            viewStudent(viewBtn.getAttribute('data-student'));
+            return;
+        }
+
     });
-}
 
-function bindPaginationLinks(scope) {
-    scope = scope || document;
-    scope.querySelectorAll('a.page-link[data-page]').forEach(link => {
-        const fresh = link.cloneNode(true);
-        link.parentNode.replaceChild(fresh, link);
-        fresh.addEventListener('click', function (e) {
-            e.preventDefault();
-            performSearch(currentSearchTerm, parseInt(this.getAttribute('data-page'), 10));
-        });
+    // EVENT DELEGATION: Pagination links
+    $('paginationContainer').addEventListener('click', function (e) {
+        const link = e.target.closest('a.page-link[data-page]');
+        if (!link) return;
+        e.preventDefault();
+        e.stopPropagation();
+        performSearch(currentSearchTerm, parseInt(link.getAttribute('data-page'), 10));
     });
-}
 
-// ── Wire everything up after DOM is ready ─────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function () {
+    // View modal: close buttons, click on backdrop, Esc key
+    $('viewCloseBtn').addEventListener('click', closeViewModal);
+    $('viewCloseX').addEventListener('click', closeViewModal);
+    $('viewModal').addEventListener('click', function (e) {
+        if (e.target === this) closeViewModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && $('viewModal') && $('viewModal').style.display !== 'none') {
+            closeViewModal();
+        }
+    });
+    // "Edit This Student" sa loob ng modal
+    $('viewEditBtn').addEventListener('click', function () {
+        const num    = viewedStudentNumber;
+        const select = $('studentID');
+        closeViewModal();
+        if (select && Array.from(select.options).some(o => o.value === num)) select.value = num;
+        loadStudent(num);
+    });
 
-    // Bind PHP-rendered Edit buttons and pagination links on first load
-    bindEditButtons(document.getElementById('tableBody'));
-    bindPaginationLinks(document.getElementById('paginationContainer'));
+    // Back button: balik sa buong listahan
+    $('backBtn').addEventListener('click', function () {
+        $('studentSearch').value       = '';
+        $('studentID').value           = '';
+        $('studentInfo').style.display = 'none';
+        hideMsg();
+        performSearch('', 1);
+    });
+    updateBackBtn();
 
     // Search button
-    document.getElementById('searchBtn').addEventListener('click', function () {
-        performSearch(document.getElementById('studentSearch').value.trim(), 1);
+    $('searchBtn').addEventListener('click', function () {
+        performSearch($('studentSearch').value.trim(), 1);
     });
 
-    // Enter key in the search input
-    document.getElementById('studentSearch').addEventListener('keydown', function (e) {
+    // Enter key sa search input
+    $('studentSearch').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             performSearch(this.value.trim(), 1);
@@ -524,8 +675,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Load Student button (dropdown)
-    document.getElementById('selectSearchBtn').addEventListener('click', function () {
-        const num = document.getElementById('studentID').value.trim();
+    $('selectSearchBtn').addEventListener('click', function () {
+        const num = $('studentID').value.trim();
         if (!num) {
             alert('Please select a student from the list.');
             return;
@@ -533,58 +684,58 @@ document.addEventListener('DOMContentLoaded', function () {
         loadStudent(num);
     });
 
-    // Clear button — resets everything and reloads all students
-    document.getElementById('clearBtn').addEventListener('click', function () {
-        document.getElementById('studentSearch').value       = '';
-        document.getElementById('studentID').value           = '';
-        document.getElementById('studentInfo').style.display = 'none';
+    // Clear button
+    $('clearBtn').addEventListener('click', function () {
+        $('studentSearch').value       = '';
+        $('studentID').value           = '';
+        $('studentInfo').style.display = 'none';
         hideMsg();
         performSearch('', 1);
     });
 
     // Cancel edit button
-    document.getElementById('cancelEditBtn').addEventListener('click', function () {
-        document.getElementById('studentInfo').style.display = 'none';
-        document.getElementById('studentID').value           = '';
+    $('cancelEditBtn').addEventListener('click', function () {
+        $('studentInfo').style.display = 'none';
+        $('studentID').value           = '';
         hideMsg();
     });
 
     // Update student form
-    document.getElementById('studentForm').addEventListener('submit', function (e) {
+    $('studentForm').addEventListener('submit', function (e) {
         e.preventDefault();
 
-        const firstName = document.getElementById('firstName').value.trim();
-        const lastName  = document.getElementById('lastName').value.trim();
+        const firstName = $('firstName').value.trim();
+        const lastName  = $('lastName').value.trim();
 
         if (!firstName || !lastName) {
             alert('First name and last name are required.');
             return;
         }
 
-        const email = document.getElementById('email').value.trim();
+        const email = $('email').value.trim();
         if (email && !isValidEmail(email)) {
             alert('Please enter a valid email address.');
             return;
         }
 
-        const phone = document.getElementById('phone').value.trim();
+        const phone = $('phone').value.trim();
         if (phone && !isValidPhone(phone)) {
             alert('Please enter a valid phone number (10–15 digits).');
             return;
         }
 
         const payload = {
-            original_number: document.getElementById('originalNumber').value,
-            student_number:  document.getElementById('hiddenNumber').value,
+            original_number: $('originalNumber').value,
+            student_number:  $('hiddenNumber').value,
             first_name:      firstName,
             last_name:       lastName,
-            gender:          document.getElementById('gender').value,
-            date_of_birth:   document.getElementById('dob').value,
+            gender:          $('gender').value,
+            date_of_birth:   $('dob').value,
             phone,
             email,
-            course:          document.getElementById('course').value.trim(),
-            year_level:      document.getElementById('yearLevel').value,
-            address:         document.getElementById('address').value.trim()
+            course:          $('course').value.trim(),
+            year_level:      $('yearLevel').value,
+            address:         $('address').value.trim()
         };
 
         showMsg('info', 'Updating student record…');
@@ -602,7 +753,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (result.success) {
                 showMsg('success', 'Student updated successfully!');
                 setTimeout(() => {
-                    document.getElementById('studentInfo').style.display = 'none';
+                    $('studentInfo').style.display = 'none';
                     hideMsg();
                     performSearch(currentSearchTerm, currentPage);
                 }, 1500);
@@ -617,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Export to CSV
-    const exportBtn = document.getElementById('exportBtn');
+    const exportBtn = $('exportBtn');
     if (exportBtn) {
         exportBtn.addEventListener('click', function () {
             const rows = document.querySelectorAll('#tableBody tr');
@@ -661,8 +812,14 @@ document.addEventListener('DOMContentLoaded', function () {
             URL.revokeObjectURL(link.href);
         });
     }
+}
 
-}); // end DOMContentLoaded
+// FIX: tatakbo agad kung tapos na ang DOM (kapag na-load via AJAX), kung hindi, hintayin
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
-})(); // IIFE — no globals leaked
+})(); // IIFE
 </script>

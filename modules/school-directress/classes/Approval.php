@@ -16,23 +16,6 @@
             }
         }
 
-         public function getPdo() {
-            return $this->conn;
-        }
- 
-        // Removes the attachment columns from the current user's own draft. Returns true if a row changed.
-        public function clearAttachment($approval_id, $submit_by) {
-            $stmt = $this->conn->prepare(
-                "UPDATE sd_approvals
-                    SET file_path = NULL, file_name = NULL, file_size = NULL
-                  WHERE approval_id = :approval_id
-                    AND submit_by = :submit_by
-                    AND status = 'draft'"
-            );
-            $stmt->execute([':approval_id' => $approval_id, ':submit_by' => $submit_by]);
-            return $stmt->rowCount() > 0;
-        }
-
         // ── LIST / READ ──────────────────────────────────────────────
         // Kept for backward compatibility with any other caller. The redesigned page
         // uses getQueue() / getOverview() instead.
